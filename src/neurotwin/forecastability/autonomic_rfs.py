@@ -172,6 +172,7 @@ def make_autonomic_fixture(
     *,
     seed: int,
     residual_signal: bool,
+    strength: float = 1.0,
     horizons: tuple[int, ...] = DEFAULT_HORIZONS,
     n_subjects: int = 16,
     epochs_per_subject: int = 180,
@@ -197,15 +198,19 @@ def make_autonomic_fixture(
             cycle = np.sin(2.0 * np.pi * epoch / 30.0)
             precursor = 0.85 * precursor + rng.normal(0.0, 0.4)
             visible = precursor if residual_signal else rng.normal(0.0, 1.0)
+            # `strength` scales the injected autonomic->future-arousal coupling on
+            # the residual path (default 1.0 = unchanged). strength=0 collapses it
+            # to a null; graded values drive a calibration sweep.
+            scale = strength if residual_signal else 1.0
             eeg = rng.normal(0.0, 0.15, size=(samples, 1)).astype(np.float32)
             eeg[:, 0] += 0.6 * cycle * np.sin(2.0 * np.pi * 4.0 * t_axis)
             auto = rng.normal(0.0, 0.12, size=(samples, 4)).astype(np.float32)
-            auto[:, 0] += 1.2 * visible * np.sin(2.0 * np.pi * 1.5 * t_axis)
-            auto[:, 1] += 0.9 * visible * np.cos(2.0 * np.pi * 0.8 * t_axis)
-            auto[:, 2] += 0.7 * visible * np.linspace(-1.0, 1.0, samples)
-            auto[:, 3] += 0.8 * visible * np.sin(2.0 * np.pi * 2.2 * t_axis)
+            auto[:, 0] += 1.2 * scale * visible * np.sin(2.0 * np.pi * 1.5 * t_axis)
+            auto[:, 1] += 0.9 * scale * visible * np.cos(2.0 * np.pi * 0.8 * t_axis)
+            auto[:, 2] += 0.7 * scale * visible * np.linspace(-1.0, 1.0, samples)
+            auto[:, 3] += 0.8 * scale * visible * np.sin(2.0 * np.pi * 2.2 * t_axis)
             logit = -2.2 + 0.8 * cycle + 1.4 * float(np.mean(arousal_events[-6:])) + (
-                2.8 * precursor if residual_signal else 0.0
+                2.8 * strength * precursor if residual_signal else 0.0
             )
             event = int(rng.random() < _sigmoid(logit))
             raw_eeg.append(eeg)

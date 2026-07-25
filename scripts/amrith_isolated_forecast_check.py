@@ -29,28 +29,21 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import sys
 from pathlib import Path
 
 import numpy as np
+
+from _forecast_common import (
+    import_sweep_figure,
+    load_sleep_edf_channel,
+    ridge_fit,
+    ridge_predict,
+)
 
 L = 127                      # known context length (first 127 samples)
 HORIZONS = (1, 2, 4, 8, 16, 32, 64)
 RIDGE_ALPHA = 5.0
 SEED = 0
-
-
-# ---------------------------------------------------------------- baselines ---
-def ridge_fit(x: np.ndarray, y: np.ndarray, alpha: float) -> np.ndarray:
-    """Closed-form ridge weights (bias via appended 1s), x:(n,L) y:(n,)."""
-    xb = np.concatenate([x, np.ones((x.shape[0], 1))], axis=1)
-    a = xb.T @ xb + alpha * np.eye(xb.shape[1])
-    return np.linalg.solve(a, xb.T @ y)
-
-
-def ridge_predict(w: np.ndarray, x: np.ndarray) -> np.ndarray:
-    xb = np.concatenate([x, np.ones((x.shape[0], 1))], axis=1)
-    return xb @ w
 
 
 def gru_direct(train_x, train_y, test_x, *, hidden=32, steps=300, seed=SEED):
@@ -128,26 +121,17 @@ def make_windows(sig: np.ndarray, *, stride: int, max_windows: int, rng):
     return ctx, tgt
 
 
-def load_edf_channel(path: Path, channel="EEG Fpz-Cz", *, skip=1_000_000,
-                     take=300_000) -> np.ndarray | None:
-    import mne
-
+def load_edf_channel(path: Path) -> np.ndarray | None:
+    """Load + z-score one EEG channel, or None if the file is unreadable or too
+    short for the horizon sweep, so a bad recording is skipped, not fatal."""
     try:
-        raw = mne.io.read_raw_edf(path, preload=False, verbose="ERROR")
-        if channel not in raw.ch_names:
-            channel = next((c for c in raw.ch_names if "EEG" in c), None)
-            if channel is None:
-                return None
-        raw.pick([channel])
-        raw.load_data(verbose="ERROR")
-        sig = raw.get_data()[0].astype(np.float64)
+        sig, _ = load_sleep_edf_channel(path)
     except Exception as exc:  # noqa: BLE001 - report, skip bad file honestly
-        print(f"  skip {path.name}: {exc}", file=sys.stderr)
+        print(f"  skip {path.name}: {exc}")
         return None
-    sig = sig[skip:skip + take]
     if len(sig) < L + max(HORIZONS) + 10:
         return None
-    return ((sig - sig.mean()) / (sig.std() + 1e-8)).astype(np.float32)
+    return sig
 
 
 # ------------------------------------------------------------------ old task ---
@@ -299,8 +283,7 @@ def main():
     (args.out / "headline.json").write_text(json.dumps(headline, indent=2))
 
     # figure via the kahlus-sweep-figure helper
-    sys.path.insert(0, "/Users/aayu/.claude/skills/kahlus-sweep-figure/scripts")
-    from sweep_figure import sweep_figure
+    sweep_figure = import_sweep_figure()
 
     sweep_figure(
         rows, x="horizon", x_label="forecast horizon (samples ahead @ 100 Hz)",
