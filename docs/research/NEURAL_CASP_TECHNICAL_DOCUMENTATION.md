@@ -270,13 +270,38 @@ arousal; Huo et al. (2023, *PLOS ONE*) characterise HRV/arousal coupling on MESA
 specifically; Kuo et al. (2015) relate EEG beta power and HRV across cortical and
 autonomic arousals.
 
-**Countervailing prior.** Rao et al. (2025) tested cardiac autonomic predictors in
-a nested-model design and found nothing: HRV (RMSSD) partial r = 0.16, p = 0.29,
-**ΔR² < 0.03, p > 0.25** for subjective sleep quality; heart-rate infraslow power
-likewise. F6/F7 remain defensible only because their outcome is a *within-night,
-event-locked* arousal at a fixed horizon, not a night-level subjective rating —
-different estimand, different timescale. This constraint is recorded in
-`docs/research/rao_2025_methods_mining.md` and should be stated in any writeup.
+**This is forecasting, not detection — the distinction is load-bearing.**
+Arousal *detection* from ECG is close to solved: Basner et al. (2007) reach
+AUC 0.91 from five post-onset beats, and Li et al. (2020) reach AUROC 0.93 on
+MESA. Those models classify an arousal that is already underway, unconditioned.
+Our estimand is strictly-future prediction at a fixed horizon, scored as
+incremental value **beyond a cortical spectral + event-history baseline** — what
+the autonomic block adds over what the cortex already tells you, before the event.
+Any writeup that does not state this in its first paragraph will be read as a
+worse version of Li 2020.
+
+**Countervailing priors — there are three, and they are strong.**
+1. Rao et al. (2025) tested cardiac autonomic predictors in a nested-model design
+   and found nothing: HRV (RMSSD) partial r = 0.16, p = 0.29, **ΔR² < 0.03,
+   p > 0.25** for subjective sleep quality. F6/F7 remain defensible only because
+   their outcome is a *within-night, event-locked* arousal at a fixed horizon, not
+   a night-level subjective rating — different estimand, different timescale.
+   Recorded in `docs/research/rao_2025_methods_mining.md`.
+2. **The autonomic-lead evidence is cohort-specific.** It is strong for
+   *spontaneous* NREM arousals in healthy sleepers (Bonnet & Arand's ≥10 beats;
+   Togo et al. 2006 at ~1 s before EEG desynchronisation; Attoh-Mensah et al. 2023
+   finding cardiorespiratory shifts across the 30 s preceding micro-arousal) and
+   **weak for respiratory-event arousals in apnea cohorts**, where airway
+   reopening, hypoxia relief, cortical change and sympathetic discharge all land
+   within seconds of each other. Bahr-Hamm et al. (2022) found no HRV-entropy
+   difference for OSA respiratory cortical arousals and concluded they were
+   uncoupled from autonomic activation.
+3. Ribeiro et al. (2022, *PNAS*) find peripheral events usually precede cortical
+   ones but **only about half recruit cortex** — which predicts a real-but-modest
+   effect, not a large one.
+
+Consequence for design: spontaneous and respiratory arousals must be **stratified,
+not pooled**. Pooling averages a plausible effect against a documented null.
 
 ### F7 — autonomic → arousal on MIT-BIH slpdb: code complete, run pending
 
@@ -306,7 +331,11 @@ EEG is decimated to 32 Hz to keep the spindle/sigma range resolvable.
 
 **Cohort caveat, recorded in `claim_scope`:** slpdb is a sleep-apnea cohort with a
 high arousal base rate. It is not a healthy-sleeper sample and does not stand in
-for MESA.
+for MESA. Stronger than that: because its arousals are predominantly
+respiratory-event arousals, it is the **sub-population where autonomic precedence
+is least supported in the literature** (see F6). slpdb is therefore an adversarial
+case for this hypothesis, not a small version of the real test — a null here is
+close to uninformative about the MESA question, and must be reported as such.
 
 ---
 
