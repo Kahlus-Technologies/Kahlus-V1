@@ -12,6 +12,7 @@ from neurotwin.data.forecast_contract import (
     ForecastTaskSpec,
     ResolvedForecastTaskSpec,
     WindowExampleProvenance,
+    assert_forecast_scoring_is_leakage_safe,
     strictly_future_metric_mask,
 )
 from neurotwin.data.schemas import NeuralEventBatch
@@ -242,6 +243,12 @@ def build_future_forecasting_task(
                 y_val, forecast_horizon=forecast_horizon, input_length=window_length
             )
         metadata["strictly_future_metric_mask"] = True
+    assert_forecast_scoring_is_leakage_safe(
+        window_length=int(metadata["window_length"]),
+        forecast_horizon=int(metadata["forecast_horizon"]),
+        metric_mask=test_mask,
+        context="eeg_v1 future forecasting task",
+    )
     return SupervisedWindowTask(
         task_id="future_state_forecasting",
         source_modality="eeg",

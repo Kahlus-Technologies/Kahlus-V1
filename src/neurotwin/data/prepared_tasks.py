@@ -13,6 +13,7 @@ from neurotwin.data.forecast_contract import (
     ForecastTaskSpec,
     ResolvedForecastTaskSpec,
     WindowExampleProvenance,
+    assert_forecast_scoring_is_leakage_safe,
     strictly_future_metric_mask,
 )
 from neurotwin.data.schemas import NeuralEventBatch
@@ -198,6 +199,12 @@ def build_future_forecasting_task_from_windows(
         strictly_future_metric_mask(y_val, forecast_horizon=horizon, input_length=x_val.shape[1])
         if y_val is not None and x_val is not None
         else None
+    )
+    assert_forecast_scoring_is_leakage_safe(
+        window_length=int(x_test.shape[1]),
+        forecast_horizon=int(horizon),
+        metric_mask=test_mask,
+        context="prepared future forecasting task",
     )
     return SupervisedWindowTask(
         task_id="future_state_forecasting",
