@@ -238,6 +238,97 @@ def make_autonomic_fixture(
     )
 
 
+def load_slpdb_autonomic_fixture(
+    *,
+    records: tuple[str, ...] | None = None,
+    horizons: tuple[int, ...] = DEFAULT_HORIZONS,
+    max_records: int | None = None,
+    dataset_code: int = 2,
+) -> AutonomicRfsFixture:
+    """Build the autonomic fixture from MIT-BIH slpdb (open, no credentialing).
+
+    Same estimand and nuisance construction as the NSRR path so the two are
+    comparable. Subjects are grouped by slpdb's numeric prefix, so the two
+    two-part recordings (``slp01a``/``slp01b``, ``slp02a``/``slp02b``) cannot put
+    one person on both sides of a subject-held-out split.
+    """
+    import wfdb
+
+    from neurotwin.adapters.slpdb import load_slpdb_record, subject_id_from_record
+
+    names = list(records) if records is not None else list(wfdb.get_record_list("slpdb"))
+    if max_records is not None:
+        names = names[:max_records]
+    subject_codes: dict[str, int] = {}
+    for name in names:
+        subject_codes.setdefault(subject_id_from_record(name), len(subject_codes))
+
+    eeg_epochs: list[np.ndarray] = []
+    autonomic_epochs: list[np.ndarray] = []
+    y_maps: dict[int, list[int]] = {h: [] for h in horizons}
+    subjects: list[int] = []
+    datasets: list[int] = []
+    nuisance: list[list[float]] = []
+    base_rates: list[float] = []
+    channels_used: dict[str, list[str]] = {}
+    skipped: list[str] = []
+    max_h = max(horizons)
+
+    for name in names:
+        try:
+            rec = load_slpdb_record(name)
+        except Exception as exc:  # noqa: BLE001 - skip a bad record, keep the cohort
+            skipped.append(f"{name}:{exc}")
+            continue
+        arousal_mask = rec["arousal"]
+        n_epochs = rec["n_epochs"]
+        if n_epochs < max_h + 4:
+            skipped.append(f"{name}:too_few_epochs")
+            continue
+        channels_used.setdefault("slpdb", [])
+        for label in rec["channels"]:
+            if label not in channels_used["slpdb"]:
+                channels_used["slpdb"].append(label)
+        subj = subject_codes[rec["subject"]]
+        recent_changes = [0]
+        for epoch in range(n_epochs - max_h):
+            for h in horizons:
+                y_maps[h].append(int(np.any(arousal_mask[epoch + 1 : epoch + h + 1])))
+            eeg_epochs.append(_resample_epoch(rec["eeg_epochs"][epoch], target_len=128))
+            autonomic_epochs.append(_resample_epoch(rec["autonomic_epochs"][epoch], target_len=128))
+            subjects.append(subj)
+            datasets.append(dataset_code)
+            recent = float(np.mean(recent_changes[-12:]))
+            nuisance.append(
+                [
+                    1.0,
+                    np.sin(2.0 * np.pi * epoch / max(1, n_epochs)),
+                    np.cos(2.0 * np.pi * epoch / max(1, n_epochs)),
+                    recent,
+                    float(arousal_mask[epoch]),
+                ]
+            )
+            base_rates.append(float(np.mean(arousal_mask[max(0, epoch - 10) : epoch + 1])))
+            recent_changes.append(int(arousal_mask[epoch] != arousal_mask[max(0, epoch - 1)]))
+
+    if not eeg_epochs:
+        raise ValueError(f"no usable slpdb windows parsed (skipped: {skipped})")
+    if len(set(subjects)) < 3:
+        raise ValueError(f"need at least 3 slpdb subjects, got {len(set(subjects))}")
+    if skipped:
+        channels_used["skipped_records"] = skipped
+    return AutonomicRfsFixture(
+        eeg_epochs=np.asarray(eeg_epochs, dtype=np.float32),
+        autonomic_epochs=np.asarray(autonomic_epochs, dtype=np.float32),
+        y_by_horizon={h: np.asarray(y_maps[h], dtype=np.int64) for h in horizons},
+        subject=np.asarray(subjects, dtype=np.int64),
+        dataset=np.asarray(datasets, dtype=np.int64),
+        nuisance=np.asarray(nuisance, dtype=np.float32),
+        base_rate=np.asarray(base_rates, dtype=np.float32),
+        channels_used=channels_used,
+    )
+
+
 def load_nsrr_autonomic_fixture(
     root: str | Path,
     *,
