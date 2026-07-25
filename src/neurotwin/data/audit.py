@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import combinations
 
@@ -38,6 +39,72 @@ def audit_split_manifest(
         violations.extend(_metadata_group_overlap(manifest, "run_id"))
     violations.extend(_forbidden_metadata(manifest.all_records, forbidden_metadata_fields))
     violations.extend(_window_overlap(manifest))
+    return AuditReport(not violations, tuple(violations), tuple(checked))
+
+
+def audit_person_level_split(
+    manifest: SplitManifest,
+    *,
+    person_key: Callable[[RecordingRecord], str] | None = None,
+) -> AuditReport:
+    """Catch nights-as-identities leakage that subject_id auditing cannot see.
+
+    ``audit_split_manifest`` verifies that declared ``subject_id`` values do not
+    span splits, but it trusts those labels. When two nights of one person are
+    labelled as two subjects, that check passes while the person sits on both
+    sides of the split -- the failure behind the invalidated 26-person-overlap
+    run.
+
+    ``person_key`` maps a record to a stable person identifier. Supply the
+    dataset's convention (e.g. Sleep-EDF ``SC4nnN`` -> ``nn``, slpdb
+    ``slp01a``/``slp01b`` -> ``01``). Without it this falls back to
+    ``metadata['person_id']`` and, failing that, reports the check as unverified
+    rather than silently passing.
+    """
+
+    violations: list[str] = []
+    checked: list[str] = ["person_group_overlap", "nights_as_identities"]
+
+    def default_key(record: RecordingRecord) -> str | None:
+        value = record.metadata.get("person_id")
+        return str(value) if value not in (None, "") else None
+
+    resolve = person_key or default_key
+    splits = {"train": manifest.train, "val": manifest.val, "test": manifest.test}
+    per_split: dict[str, set[str]] = {}
+    unresolved = 0
+    for split, records in splits.items():
+        keys: set[str] = set()
+        for record in records:
+            key = resolve(record)
+            if key is None:
+                unresolved += 1
+                continue
+            keys.add(str(key))
+        per_split[split] = keys
+
+    if unresolved:
+        violations.append(
+            f"person identity unverified for {unresolved} record(s): no person_key supplied and "
+            "no metadata['person_id'] present, so nights-as-identities leakage cannot be ruled out"
+        )
+        return AuditReport(False, tuple(violations), tuple(checked))
+
+    for left, right in combinations(per_split, 2):
+        overlap = per_split[left] & per_split[right]
+        if overlap:
+            violations.append(
+                f"person leakage between {left} and {right}: {', '.join(sorted(overlap))}"
+            )
+
+    all_records = manifest.all_records
+    people = set().union(*per_split.values()) if per_split else set()
+    declared = {record.subject_id for record in all_records}
+    if len(people) < len(declared):
+        # Multi-night data: more declared subject_ids than real people. Legal, but
+        # only because the person-level overlap check above passed.
+        checked.append(f"collapsed {len(declared)} subject_ids to {len(people)} people")
+
     return AuditReport(not violations, tuple(violations), tuple(checked))
 
 
