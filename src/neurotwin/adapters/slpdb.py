@@ -21,13 +21,26 @@ Two facts about this dataset drive the implementation:
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 EPOCH_SECONDS = 30.0
-#: Annotation tokens that mark an arousal (see module docstring).
-AROUSAL_TOKENS = frozenset({"A", "LA", "HA", "CAA", "X"})
+#: Arousals that terminate a respiratory event (hypopnea, central apnea,
+#: obstructive apnea). The literature rates autonomic-precedes-cortical evidence
+#: *weak* for this class: airway reopening, hypoxia relief, cortical change and
+#: sympathetic discharge all land within seconds, and Bahr-Hamm et al. (2022)
+#: found OSA respiratory cortical arousals uncoupled from autonomic activation.
+RESPIRATORY_AROUSAL_TOKENS = frozenset({"HA", "CAA", "X"})
+#: Bare arousals (``A``) and leg-movement arousals (``LA``). This is the class
+#: where precedence evidence is strong -- Bonnet & Arand's >=10-beat pre-arousal
+#: heart-rate acceleration, Togo et al.'s ~1 s lead before EEG desynchronisation,
+#: and, for the PLM subset, Allena et al. (2009) and Sforza et al. (2002) finding
+#: heart-rate rise *before* movement onset.
+NON_RESPIRATORY_AROUSAL_TOKENS = frozenset({"A", "LA"})
+#: Annotation tokens that mark an arousal of either class (see module docstring).
+AROUSAL_TOKENS = RESPIRATORY_AROUSAL_TOKENS | NON_RESPIRATORY_AROUSAL_TOKENS
 #: Effective EEG rate after decimation; keeps spindle/sigma band resolvable.
 EEG_TARGET_HZ = 32.0
 #: Autonomic features are computed on a 1 Hz grid (HR, BP, respiration envelopes).
@@ -44,18 +57,30 @@ def subject_id_from_record(record: str) -> str:
     return match.group(1)
 
 
-def parse_stage_and_arousal(aux_note: str) -> tuple[str, bool]:
-    """Split one slpdb annotation into (sleep stage, arousal present).
+def parse_stage_and_arousal_classes(aux_note: str) -> tuple[str, bool, bool]:
+    """Split one annotation into (stage, respiratory arousal, non-respiratory).
 
     Annotations arrive as e.g. ``"2 LA"`` or ``"4 L L"``; some carry trailing NUL
     bytes from the source files, which must be stripped before comparison.
+
+    The two arousal classes are kept apart rather than pooled because the
+    autonomic-precedence hypothesis is supported for one and contradicted for the
+    other (see the token constants). Pooling averages a plausible effect against a
+    documented null and yields a number that cannot be interpreted either way.
     """
     tokens = aux_note.replace("\x00", " ").split()
     if not tokens:
-        return "", False
-    stage = tokens[0]
-    arousal = any(token in AROUSAL_TOKENS for token in tokens[1:])
-    return stage, arousal
+        return "", False, False
+    stage, rest = tokens[0], tokens[1:]
+    respiratory = any(token in RESPIRATORY_AROUSAL_TOKENS for token in rest)
+    non_respiratory = any(token in NON_RESPIRATORY_AROUSAL_TOKENS for token in rest)
+    return stage, respiratory, non_respiratory
+
+
+def parse_stage_and_arousal(aux_note: str) -> tuple[str, bool]:
+    """(stage, arousal of *either* class). Pooled view; prefer the class split."""
+    stage, respiratory, non_respiratory = parse_stage_and_arousal_classes(aux_note)
+    return stage, respiratory or non_respiratory
 
 
 def _decimate(signal: np.ndarray, src_hz: float, target_hz: float) -> np.ndarray:
@@ -112,16 +137,28 @@ def _zscore(x: np.ndarray) -> np.ndarray:
     return ((x - mean) / (std + 1e-8)).astype(np.float32)
 
 
-def load_slpdb_record(record: str, *, pn_dir: str = "slpdb") -> dict[str, Any]:
-    """Load one slpdb record into per-epoch matrices plus the arousal mask.
+def load_slpdb_record(
+    record: str, *, pn_dir: str = "slpdb", data_dir: str | None = None
+) -> dict[str, Any]:
+    """Load one slpdb record into per-epoch matrices plus the arousal masks.
 
     Returns EEG epochs at ``EEG_TARGET_HZ`` and autonomic epochs (heart rate,
     blood pressure, respiration) on a 1 Hz grid, both shaped
     ``(n_epochs, samples, n_channels)``.
+
+    ``data_dir`` reads a local copy (see ``scripts/fetch_slpdb.py``); without it
+    every record streams from PhysioNet, which is slow and reset-prone for these
+    ~32 MB files.
     """
     import wfdb
 
-    rec = wfdb.rdrecord(record, pn_dir=pn_dir)
+    if data_dir is not None:
+        base = str(Path(data_dir) / record)
+        rec = wfdb.rdrecord(base)
+        ann = wfdb.rdann(base, "st")
+    else:
+        rec = wfdb.rdrecord(record, pn_dir=pn_dir)
+        ann = wfdb.rdann(record, "st", pn_dir=pn_dir)
     fs = float(rec.fs)
     names = list(rec.sig_name)
 
@@ -138,13 +175,16 @@ def load_slpdb_record(record: str, *, pn_dir: str = "slpdb") -> dict[str, Any]:
     if eeg is None or ecg is None:
         raise ValueError(f"{record}: missing EEG or ECG channel (have {names})")
 
-    ann = wfdb.rdann(record, "st", pn_dir=pn_dir)
     stages: list[str] = []
     arousals: list[int] = []
+    respiratory_arousals: list[int] = []
+    non_respiratory_arousals: list[int] = []
     for note in ann.aux_note:
-        stage, has_arousal = parse_stage_and_arousal(note)
+        stage, respiratory, non_respiratory = parse_stage_and_arousal_classes(note)
         stages.append(stage)
-        arousals.append(int(has_arousal))
+        arousals.append(int(respiratory or non_respiratory))
+        respiratory_arousals.append(int(respiratory))
+        non_respiratory_arousals.append(int(non_respiratory))
     n_epochs = min(
         len(stages),
         int(len(eeg) // (EPOCH_SECONDS * fs)),
@@ -175,6 +215,10 @@ def load_slpdb_record(record: str, *, pn_dir: str = "slpdb") -> dict[str, Any]:
         "eeg_epochs": eeg_epochs.astype(np.float32),
         "autonomic_epochs": autonomic_epochs.astype(np.float32),
         "arousal": np.asarray(arousals[:n_epochs], dtype=np.int64),
+        "arousal_respiratory": np.asarray(respiratory_arousals[:n_epochs], dtype=np.int64),
+        "arousal_non_respiratory": np.asarray(
+            non_respiratory_arousals[:n_epochs], dtype=np.int64
+        ),
         "stages": stages[:n_epochs],
         "channels": names,
     }

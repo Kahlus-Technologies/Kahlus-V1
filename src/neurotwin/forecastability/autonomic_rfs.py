@@ -243,12 +243,22 @@ def make_autonomic_fixture(
     )
 
 
+#: Which per-epoch mask from the adapter supplies Y for each requested class.
+_AROUSAL_MASK_KEY = {
+    "all": "arousal",
+    "respiratory": "arousal_respiratory",
+    "non_respiratory": "arousal_non_respiratory",
+}
+
+
 def load_slpdb_autonomic_fixture(
     *,
     records: tuple[str, ...] | None = None,
     horizons: tuple[int, ...] = DEFAULT_HORIZONS,
     max_records: int | None = None,
     dataset_code: int = 2,
+    arousal_class: str = "all",
+    data_dir: str | None = None,
 ) -> AutonomicRfsFixture:
     """Build the autonomic fixture from MIT-BIH slpdb (open, no credentialing).
 
@@ -256,12 +266,39 @@ def load_slpdb_autonomic_fixture(
     comparable. Subjects are grouped by slpdb's numeric prefix, so the two
     two-part recordings (``slp01a``/``slp01b``, ``slp02a``/``slp02b``) cannot put
     one person on both sides of a subject-held-out split.
+
+    ``arousal_class`` selects which arousals become Y:
+
+    ``non_respiratory``
+        Bare and leg-movement arousals. The class where autonomic precedence is
+        actually supported (Bonnet & Arand; Togo et al.; Allena et al.).
+    ``respiratory``
+        Arousals terminating a hypopnea or apnea. Precedence evidence here is
+        weak, and Bahr-Hamm et al. (2022) report no autonomic coupling at all.
+    ``all``
+        Pooled. Reported for continuity with earlier runs, but it averages the
+        two classes above and so is the least interpretable of the three.
+
+    Y and its base rate follow the selected class; the nuisance block keeps the
+    *pooled* recent-arousal history, since all arousals are observable to the
+    baseline regardless of which class is being predicted. That makes B stronger
+    and the residual test more conservative.
     """
+    if arousal_class not in _AROUSAL_MASK_KEY:
+        raise ValueError(
+            f"arousal_class must be one of {sorted(_AROUSAL_MASK_KEY)}, got {arousal_class!r}"
+        )
     import wfdb
 
     from neurotwin.adapters.slpdb import load_slpdb_record, subject_id_from_record
 
-    names = list(records) if records is not None else list(wfdb.get_record_list("slpdb"))
+    if data_dir is not None:
+        # Only records whose signal and annotation files are both present locally.
+        local = Path(data_dir)
+        available = {p.stem for p in local.glob("*.dat")} & {p.stem for p in local.glob("*.st")}
+        names = sorted(available) if records is None else [r for r in records if r in available]
+    else:
+        names = list(records) if records is not None else list(wfdb.get_record_list("slpdb"))
     if max_records is not None:
         names = names[:max_records]
     subject_codes: dict[str, int] = {}
@@ -281,11 +318,15 @@ def load_slpdb_autonomic_fixture(
 
     for name in names:
         try:
-            rec = load_slpdb_record(name)
+            rec = load_slpdb_record(name, data_dir=data_dir)
         except Exception as exc:  # noqa: BLE001 - skip a bad record, keep the cohort
             skipped.append(f"{name}:{exc}")
             continue
-        arousal_mask = rec["arousal"]
+        # Y is the requested class; the pooled mask still feeds the nuisance block
+        # so B sees all observable arousal history regardless of class. That makes
+        # B stronger and the residual test correspondingly more conservative.
+        arousal_mask = rec[_AROUSAL_MASK_KEY[arousal_class]]
+        pooled_mask = rec["arousal"]
         n_epochs = rec["n_epochs"]
         if n_epochs < max_h + 4:
             skipped.append(f"{name}:too_few_epochs")
@@ -310,11 +351,11 @@ def load_slpdb_autonomic_fixture(
                     np.sin(2.0 * np.pi * epoch / max(1, n_epochs)),
                     np.cos(2.0 * np.pi * epoch / max(1, n_epochs)),
                     recent,
-                    float(arousal_mask[epoch]),
+                    float(pooled_mask[epoch]),
                 ]
             )
             base_rates.append(float(np.mean(arousal_mask[max(0, epoch - 10) : epoch + 1])))
-            recent_changes.append(int(arousal_mask[epoch] != arousal_mask[max(0, epoch - 1)]))
+            recent_changes.append(int(pooled_mask[epoch] != pooled_mask[max(0, epoch - 1)]))
 
     if not eeg_epochs:
         raise ValueError(f"no usable slpdb windows parsed (skipped: {skipped})")

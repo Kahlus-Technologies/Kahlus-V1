@@ -30,11 +30,26 @@ from neurotwin.forecastability.autonomic_rfs import (
     make_autonomic_fixture,
 )
 
-CLAIM_SCOPE = (
-    "autonomic_residual_forecastability_arousal_beyond_cortical_spectral_"
-    "subject_held_out_mit_bih_slpdb_open_data_apnea_cohort_not_healthy_sleepers_"
-    "not_gastric_egg_not_clinical"
-)
+def claim_scope(arousal_class: str) -> str:
+    """Scope string, including which arousal class Y actually is.
+
+    slpdb is an apnea cohort, so it is not merely unrepresentative of healthy
+    sleepers -- for the respiratory class it is the sub-population where the
+    autonomic-precedence hypothesis is *least* supported. A null there is close to
+    uninformative about MESA, and the scope has to say so rather than reading as a
+    general negative.
+    """
+    return (
+        "autonomic_residual_forecastability_arousal_beyond_cortical_spectral_"
+        "subject_held_out_mit_bih_slpdb_open_data_apnea_cohort_not_healthy_sleepers_"
+        f"arousal_class_{arousal_class}_"
+        + (
+            "adversarial_case_autonomic_lead_weakly_supported_for_this_class_"
+            if arousal_class == "respiratory"
+            else ""
+        )
+        + "not_gastric_egg_not_clinical"
+    )
 
 
 def main() -> int:
@@ -44,6 +59,14 @@ def main() -> int:
     ap.add_argument("--bootstrap-mode", choices=["smoke", "claim"], default="claim")
     ap.add_argument("--max-records", type=int, default=None)
     ap.add_argument("--min-subjects", type=int, default=8)
+    ap.add_argument("--data-dir", default=None,
+                    help="local slpdb copy from scripts/fetch_slpdb.py")
+    ap.add_argument(
+        "--arousal-class",
+        choices=["all", "respiratory", "non_respiratory"],
+        default="non_respiratory",
+        help="which arousals are Y; defaults to the class where precedence is supported",
+    )
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
@@ -63,7 +86,12 @@ def main() -> int:
     real_payload = None
     failures: list[str] = []
     try:
-        fixture = load_slpdb_autonomic_fixture(horizons=horizons, max_records=args.max_records)
+        fixture = load_slpdb_autonomic_fixture(
+            horizons=horizons,
+            max_records=args.max_records,
+            arousal_class=args.arousal_class,
+            data_dir=args.data_dir,
+        )
         print(
             f"slpdb fixture: {len(fixture.subject)} windows, "
             f"{len(set(fixture.subject.tolist()))} subjects"
@@ -92,7 +120,7 @@ def main() -> int:
     gate = {
         "schema": "kahlus.forecastability.slpdb_autonomic.v1",
         "milestone": "slpdb_autonomic_arousal",
-        "claim_scope": CLAIM_SCOPE,
+        "claim_scope": claim_scope(args.arousal_class),
         "stop_reason": stop_reason,
         "gate_passed": gate_passed,
         "bootstrap_mode": args.bootstrap_mode,
