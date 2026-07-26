@@ -267,14 +267,33 @@ def load_challenge2018_record(
     if eeg_channels is None:
         eeg_channels = ["C3-M2", "C4-M1"]
 
+    # Read only the channels we actually use. All 13 as float64 is ~0.56 GB per
+    # record; the 6 we need is ~0.26 GB, which is the difference between fitting
+    # two workers on a small box and swapping.
+    wanted = [*eeg_channels, "ECG", "ABD", "CHEST", "AIRFLOW"]
+
+    def _select(header_names: list[str]) -> list[int] | None:
+        idx = [
+            i
+            for i, n in enumerate(header_names)
+            if any(n.lower() == w.lower() or w.lower() in n.lower() for w in wanted)
+        ]
+        return idx or None
+
     if data_dir is not None:
         # Local mirror: data_dir/training/tr03-0005/tr03-0005.hea
         rec_file = str(Path(data_dir) / rec_path)
-        rec = wfdb.rdrecord(rec_file)
+        chans = _select(list(wfdb.rdheader(rec_file).sig_name))
+        rec = wfdb.rdrecord(rec_file, channels=chans) if chans else wfdb.rdrecord(rec_file)
         ann = wfdb.rdann(rec_file, "arousal")
     else:
         pn_dir, rec_name = _pn_dir_for(rec_path)
-        rec = wfdb.rdrecord(rec_name, pn_dir=pn_dir)
+        chans = _select(list(wfdb.rdheader(rec_name, pn_dir=pn_dir).sig_name))
+        rec = (
+            wfdb.rdrecord(rec_name, pn_dir=pn_dir, channels=chans)
+            if chans
+            else wfdb.rdrecord(rec_name, pn_dir=pn_dir)
+        )
         ann = wfdb.rdann(rec_name, "arousal", pn_dir=pn_dir)
 
     fs = float(rec.fs)
