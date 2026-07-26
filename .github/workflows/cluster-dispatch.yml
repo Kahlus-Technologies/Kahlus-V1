@@ -1,0 +1,90 @@
+name: cluster job
+
+# Dispatch a registered job to the self-hosted cluster runner.
+#
+# The requester picks a job NAME from ops/jobs.yaml and supplies typed
+# parameters. scripts/ops/run_job.py builds the command line itself and refuses
+# anything not registered, so the cluster operator audits the registry once
+# rather than reviewing every request.
+#
+# Requires a PRIVATE repo. On a public repo any stranger could open a PR that
+# executes on the runner, which here has a path to a university cluster.
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Registered job (see ops/jobs.yaml)"
+        required: true
+        type: choice
+        options: [smoke, seal_holdout, extract_c18, validate_qrs, pytest]
+      params:
+        description: 'JSON params, e.g. {"raw_dir":"/data/c18_raw","out_dir":"/data/c18_features","workers":16}'
+        required: false
+        default: "{}"
+        type: string
+      dry_run:
+        description: "Resolve and print argv without executing"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  # One cluster job at a time. Queued rather than cancelled -- a half-finished
+  # extraction leaves partial .npz files that the next run would skip as done.
+  group: cluster-job
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: [self-hosted, kahlus-cluster]
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show what will run
+        run: |
+          python3 scripts/ops/run_job.py --list
+          echo "---"
+          python3 scripts/ops/run_job.py \
+            --job '${{ inputs.job }}' \
+            --params '${{ inputs.params }}' \
+            --dry-run
+
+      - name: Execute
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          python3 scripts/ops/run_job.py \
+            --job '${{ inputs.job }}' \
+            --params '${{ inputs.params }}' \
+            --evidence-out evidence
+
+      - name: Summary
+        if: ${{ always() && inputs.dry_run == false }}
+        run: |
+          if [ -f evidence/result.json ]; then
+            {
+              echo '### `${{ inputs.job }}`'
+              echo '```json'
+              cat evidence/result.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          # Surface the tail of the log even on failure -- the whole point is that
+          # the requester does not need cluster access to see what happened.
+          if [ -f evidence/run.log ]; then
+            echo '<details><summary>run.log (tail)</summary>' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -80 evidence/run.log >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo '</details>' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload evidence
+        if: ${{ always() && inputs.dry_run == false }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ inputs.job }}-${{ github.run_number }}
+          path: evidence/
+          retention-days: 30
+          if-no-files-found: warn
