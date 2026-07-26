@@ -259,6 +259,7 @@ def load_slpdb_autonomic_fixture(
     dataset_code: int = 2,
     arousal_class: str = "all",
     data_dir: str | None = None,
+    target: str = "arousal",
 ) -> AutonomicRfsFixture:
     """Build the autonomic fixture from MIT-BIH slpdb (open, no credentialing).
 
@@ -288,6 +289,8 @@ def load_slpdb_autonomic_fixture(
         raise ValueError(
             f"arousal_class must be one of {sorted(_AROUSAL_MASK_KEY)}, got {arousal_class!r}"
         )
+    if target not in {"arousal", "rem"}:
+        raise ValueError(f"target must be 'arousal' or 'rem', got {target!r}")
     import wfdb
 
     from neurotwin.adapters.slpdb import load_slpdb_record, subject_id_from_record
@@ -325,9 +328,20 @@ def load_slpdb_autonomic_fixture(
         # Y is the requested class; the pooled mask still feeds the nuisance block
         # so B sees all observable arousal history regardless of class. That makes
         # B stronger and the residual test correspondingly more conservative.
-        arousal_mask = rec[_AROUSAL_MASK_KEY[arousal_class]]
         pooled_mask = rec["arousal"]
         n_epochs = rec["n_epochs"]
+        if target == "rem":
+            # Positive control. slpdb staging is R&K-scored from EEG (C4-A1) only,
+            # so Z (ECG / BP / Resp) is disjoint from the scorer's input and a
+            # certification here cannot be the model re-reading the scorer's own
+            # evidence. Wake and movement-time epochs are dropped so the contrast
+            # is REM vs NREM rather than REM vs everything.
+            stages = rec["stages"]
+            arousal_mask = np.asarray([int(s == "R") for s in stages], dtype=np.int64)
+            sleep = np.asarray([s not in {"W", "MT", ""} for s in stages], dtype=bool)
+        else:
+            arousal_mask = rec[_AROUSAL_MASK_KEY[arousal_class]]
+            sleep = np.ones(n_epochs, dtype=bool)
         if n_epochs < max_h + 4:
             skipped.append(f"{name}:too_few_epochs")
             continue
@@ -338,8 +352,14 @@ def load_slpdb_autonomic_fixture(
         subj = subject_codes[rec["subject"]]
         recent_changes = [0]
         for epoch in range(n_epochs - max_h):
+            if not sleep[epoch]:
+                continue
             for h in horizons:
-                y_maps[h].append(int(np.any(arousal_mask[epoch + 1 : epoch + h + 1])))
+                y_maps[h].append(
+                    int(arousal_mask[epoch])
+                    if h == 0
+                    else int(np.any(arousal_mask[epoch + 1 : epoch + h + 1]))
+                )
             eeg_epochs.append(_resample_epoch(rec["eeg_epochs"][epoch], target_len=128))
             autonomic_epochs.append(_resample_epoch(rec["autonomic_epochs"][epoch], target_len=128))
             subjects.append(subj)
