@@ -1,0 +1,79 @@
+# Registry of jobs the cluster runner will execute.
+#
+# The runner refuses anything not listed here. This is the whole security model:
+# the requester chooses a job NAME and parameters, never a command line, so the
+# operator audits this file once instead of reviewing every request.
+#
+# Adding a job requires a commit to this file, which is reviewable and signed by
+# whatever branch protection the repo has. Parameters are typed and constrained;
+# anything failing validation aborts before execution.
+schema: kahlus.ops.job_registry.v1
+
+defaults:
+  timeout_seconds: 21600      # 6 h ceiling on any single job
+  workdir: "${KAHLUS_WORK}"   # operator-set; never chosen by the requester
+
+jobs:
+
+  smoke:
+    description: Fast end-to-end check that the runner and environment work.
+    command: [python3, scripts/extract_challenge2018_local.py]
+    args:
+      - ["--raw", "${raw_dir}"]
+      - ["--out", "${out_dir}"]
+      - ["--workers", "${workers}"]
+      - ["--limit", "5"]
+    params:
+      raw_dir: {type: path, required: true}
+      out_dir: {type: path, required: true}
+      workers: {type: int, min: 1, max: 64, default: 4}
+    timeout_seconds: 1800
+    evidence: ["manifest.json"]
+
+  seal_holdout:
+    description: >
+      Partition subjects into sealed/analysis before any data is examined.
+      Must run before extract_c18.
+    command: [python3, scripts/seal_holdout.py]
+    args:
+      - ["--records-from", "${records_from}"]
+      - ["--out", "${out}"]
+      - ["--sealed-frac", "${sealed_frac}"]
+    params:
+      records_from: {type: str, required: true, choices: ["s3"], default: "s3"}
+      out: {type: path, required: true}
+      sealed_frac: {type: float, min: 0.05, max: 0.5, default: 0.2}
+    timeout_seconds: 900
+    evidence: ["holdout_manifest.json"]
+
+  extract_c18:
+    description: Extract derived features from a local challenge-2018 corpus.
+    command: [python3, scripts/extract_challenge2018_local.py]
+    args:
+      - ["--raw", "${raw_dir}"]
+      - ["--out", "${out_dir}"]
+      - ["--workers", "${workers}"]
+    params:
+      raw_dir: {type: path, required: true}
+      out_dir: {type: path, required: true}
+      workers: {type: int, min: 1, max: 64, default: 8}
+    timeout_seconds: 43200
+    evidence: ["manifest.json"]
+
+  validate_qrs:
+    description: Validate the QRS detector against MIT-BIH annotated beats.
+    command: [python3, scripts/validate_qrs_against_mitdb.py]
+    args:
+      - ["${mitdb_dir}"]
+    params:
+      mitdb_dir: {type: path, required: true}
+    timeout_seconds: 3600
+    evidence: []
+
+  pytest:
+    description: Run the test suite on the cluster environment.
+    command: [python3, -m, pytest, -q]
+    args: []
+    params: {}
+    timeout_seconds: 3600
+    evidence: []
