@@ -173,8 +173,16 @@ def _decimate(signal: np.ndarray, src_hz: float, target_hz: float) -> np.ndarray
     return signal[:usable].reshape(-1, factor).mean(axis=1).astype(np.float32)
 
 
-def _heart_rate_per_second(ecg: np.ndarray, fs: float, n_seconds: int) -> np.ndarray:
-    """Instantaneous HR (bpm) on 1 Hz grid. Falls back to log-power envelope."""
+def _heart_rate_per_second(
+    ecg: np.ndarray, fs: float, n_seconds: int
+) -> tuple[np.ndarray, str]:
+    """Instantaneous HR (bpm) on a 1 Hz grid, plus which path produced it.
+
+    Returns ("qrs"|"envelope_fallback"). The caller must record this: the envelope
+    is an AMPLITUDE measure and cannot carry rate, so any result that leans on
+    fallback records is testing a different quantity than the one claimed. That
+    substitution has already slipped through once on this dataset.
+    """
     try:
         import wfdb.processing as wp
         beats = wp.xqrs_detect(sig=ecg, fs=fs, verbose=False)
@@ -188,14 +196,14 @@ def _heart_rate_per_second(ecg: np.ndarray, fs: float, n_seconds: int) -> np.nda
                 left=float(rate[0]),
                 right=float(rate[-1]),
             )
-            return grid.astype(np.float32)
+            return grid.astype(np.float32), "qrs"
     except Exception:  # noqa: BLE001
         pass
     env = _decimate(np.abs(ecg).astype(np.float32), fs, AUTONOMIC_HZ)
     out = np.zeros(n_seconds, dtype=np.float32)
     take = min(n_seconds, len(env))
     out[:take] = np.log(env[:take] + 1e-8)
-    return out
+    return out, "envelope_fallback"
 
 
 def _envelope_per_second(signal: np.ndarray, fs: float, n_seconds: int) -> np.ndarray:
@@ -284,12 +292,14 @@ def load_challenge2018_record(
                 return np.nan_to_num(rec.p_signal[:, idx].astype(np.float32))
         return None
 
-    # EEG: average requested central channels
-    eeg_arrays = [channel(c) for c in eeg_channels]
-    eeg_arrays = [a for a in eeg_arrays if a is not None]
-    if not eeg_arrays:
+    # EEG: keep requested channels SEPARATE. Averaging C3-M2 with C4-M1 discards
+    # inter-hemispheric information for no saving worth having.
+    eeg_named = [(c, channel(c)) for c in eeg_channels]
+    eeg_named = [(c, a) for c, a in eeg_named if a is not None]
+    if not eeg_named:
         raise ValueError(f"{rec_path}: none of {eeg_channels} found in {names}")
-    eeg = np.mean(np.stack(eeg_arrays, axis=0), axis=0).astype(np.float32)
+    eeg_kept = [c for c, _ in eeg_named]
+    eeg = np.stack([a for _, a in eeg_named], axis=1).astype(np.float32)
 
     ecg = channel("ECG") or channel_contains("ECG")
     abd = channel("ABD")
@@ -306,18 +316,21 @@ def load_challenge2018_record(
     n_seconds = int(n_epochs * EPOCH_SECONDS)
 
     # Autonomic features on 1 Hz grid
-    hr = _heart_rate_per_second(ecg, fs, n_seconds)
+    hr, hr_path = _heart_rate_per_second(ecg, fs, n_seconds)
     abd_env = _envelope_per_second(abd, fs, n_seconds) if abd is not None else np.zeros(n_seconds, np.float32)
     chest_env = _envelope_per_second(chest, fs, n_seconds) if chest is not None else np.zeros(n_seconds, np.float32)
     airflow_env = _envelope_per_second(airflow, fs, n_seconds) if airflow is not None else np.zeros(n_seconds, np.float32)
 
-    # EEG epochs at EEG_TARGET_HZ
-    eeg_ds = _decimate(eeg, fs, EEG_TARGET_HZ)
+    # EEG epochs at EEG_TARGET_HZ, one column per retained channel.
     eeg_per_epoch = int(EPOCH_SECONDS * EEG_TARGET_HZ)
     needed = n_epochs * eeg_per_epoch
-    if len(eeg_ds) < needed:
-        eeg_ds = np.pad(eeg_ds, (0, needed - len(eeg_ds)))
-    eeg_epochs = _zscore(eeg_ds[:needed]).reshape(n_epochs, eeg_per_epoch, 1)
+    cols = []
+    for ch in range(eeg.shape[1]):
+        ds = _decimate(eeg[:, ch], fs, EEG_TARGET_HZ)
+        if len(ds) < needed:
+            ds = np.pad(ds, (0, needed - len(ds)))
+        cols.append(_zscore(ds[:needed]))  # z-score per channel, not pooled
+    eeg_epochs = np.stack(cols, axis=1).reshape(n_epochs, eeg_per_epoch, len(cols))
 
     # Autonomic epochs (30 seconds × 4 channels)
     sec_per_epoch = int(EPOCH_SECONDS)
@@ -341,5 +354,7 @@ def load_challenge2018_record(
         "autonomic_epochs": auto_epochs.astype(np.float32),
         "stages": stages,
         "channels": names,
+        "hr_path": hr_path,
+        "eeg_channels": eeg_kept,
         **arousal_masks,
     }

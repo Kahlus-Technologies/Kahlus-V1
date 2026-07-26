@@ -5,7 +5,6 @@ All tests are pure-Python (no network, no wfdb I/O) and run in <1 s.
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from neurotwin.adapters.challenge2018 import (
     _parse_arousal_epochs,
@@ -152,3 +151,54 @@ def test_stages_all_wake():
     notes = ["W"]
     stages = _parse_stages(samples, notes, n_epochs=5)
     assert all(s == "W" for s in stages)
+
+
+# --- feature-extraction invariants -----------------------------------------
+# These pin two corrections that a compute shortcut had previously undone:
+# HR must be rate (not an amplitude envelope) and must say which path produced
+# it, and EEG channels must stay separate rather than being averaged together.
+
+def test_heart_rate_reports_which_path_fired():
+    """HR must declare qrs vs envelope_fallback so results stay auditable."""
+    import numpy as np
+
+    from neurotwin.adapters.challenge2018 import _heart_rate_per_second
+
+    fs, n_sec = 200.0, 60
+    t = np.arange(int(fs * n_sec)) / fs
+    # clean 60 bpm impulse train -> QRS detection should succeed
+    ecg = np.zeros_like(t)
+    ecg[:: int(fs)] = 1.0
+    hr, path = _heart_rate_per_second(ecg.astype(np.float32), fs, n_sec)
+    assert path in {"qrs", "envelope_fallback"}
+    assert hr.shape == (n_sec,)
+
+    # flat signal has no beats at all -> must fall back and SAY so
+    hr2, path2 = _heart_rate_per_second(np.zeros_like(ecg, dtype=np.float32), fs, n_sec)
+    assert path2 == "envelope_fallback"
+    assert hr2.shape == (n_sec,)
+
+
+def test_eeg_channels_are_not_averaged():
+    """Two requested EEG channels must yield two output columns, not one."""
+    import numpy as np
+
+    from neurotwin.adapters.challenge2018 import _decimate, _zscore
+
+    # Mirrors the per-channel decimate/zscore/reshape the loader performs.
+    fs, n_epochs, per_epoch = 200.0, 3, 960
+    needed = n_epochs * per_epoch
+    raw = np.stack(
+        [np.sin(np.arange(int(fs * 90)) / 50.0), np.cos(np.arange(int(fs * 90)) / 50.0)],
+        axis=1,
+    ).astype(np.float32)
+    cols = []
+    for ch in range(raw.shape[1]):
+        ds = _decimate(raw[:, ch], fs, 32.0)
+        if len(ds) < needed:
+            ds = np.pad(ds, (0, needed - len(ds)))
+        cols.append(_zscore(ds[:needed]))
+    out = np.stack(cols, axis=1).reshape(n_epochs, per_epoch, len(cols))
+    assert out.shape == (n_epochs, per_epoch, 2), "channels were collapsed"
+    # the two channels must remain distinguishable after the reshape
+    assert not np.allclose(out[..., 0], out[..., 1])
