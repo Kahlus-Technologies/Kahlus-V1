@@ -1,41 +1,18 @@
-"""How often does an evaluation protocol certify a finding that is not there?
+"""False-certification rate: how often a protocol certifies an effect that is absent.
 
-The field measures pipelines on accuracy, AUC, F1 -- how well they detect a real
-effect. Nobody measures the complementary quantity: the rate at which a protocol
-*certifies a false positive* on data where the ground-truth answer is "no effect."
-That rate is what determines whether a published incremental-value claim is
-trustworthy, and it is not reported anywhere we could find.
+Ground truth is null by construction, so every certification is an error and the
+rate is certifications/draws. All protocols are scored from the SAME fitted
+payload, so differences are attributable to the decision rule alone:
 
-This benchmark measures it. Ground truth is null by construction, so every
-certification is an error, and the false-certification rate is just
-(certifications / draws).
+  p_only     cluster-permutation p < 0.05
+  ci_only    subject-held-out + bootstrap LCB > 0 (the field's current practice)
+  ci_effect  ci_only plus the 0.02-bit effect floor
+  kahlus     ci_effect plus the control battery and nuisance probes
 
-Protocols form a ladder, each adding one layer of rigor over the last. All are
-scored from the *same* fitted payload, so differences are attributable to the
-decision rule alone and not to modelling choices:
+Null sources: `synthetic` (known-null fixture) and `slpdb_shifted` (real
+recordings, Z circularly shifted within subject -- preserves autocorrelation,
+subject identity and base rates, destroys only Z/Y alignment).
 
-  p_only        cluster-permutation p < 0.05.
-  ci_only       subject-held-out + bootstrap lower bound > 0. This is the field's
-                current good practice -- it is what "we used subject-wise CV and
-                reported a confidence interval" means.
-  ci_effect     ci_only plus an effect-size floor (> 0.02 bits).
-  kahlus        ci_effect plus the control battery (time-shift and circular-shift
-                surrogates below 40% of the real effect) and the nuisance probes
-                (Z must not act as a subject fingerprint).
-
-Two null sources:
-
-  synthetic     The known-null fixture: realistic subject structure and
-                autocorrelation, no Z->Y relationship.
-  slpdb_shifted Real slpdb recordings with Z circularly shifted within each
-                subject by a random offset. This preserves every real property of
-                the data -- Z's autocorrelation and amplitude distribution,
-                subject identity, arousal base rates, class imbalance -- and
-                destroys only the temporal alignment between Z and Y. Ground truth
-                is therefore null while the nuisance structure stays fully real.
-                This is the harder and more informative condition.
-
-Run:
   PYTHONPATH=src python3 scripts/false_certification_benchmark.py \
       --source synthetic --n-draws 40 --out runs/false_certification
 """

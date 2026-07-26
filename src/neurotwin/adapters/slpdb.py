@@ -27,17 +27,11 @@ from typing import Any
 import numpy as np
 
 EPOCH_SECONDS = 30.0
-#: Arousals that terminate a respiratory event (hypopnea, central apnea,
-#: obstructive apnea). The literature rates autonomic-precedes-cortical evidence
-#: *weak* for this class: airway reopening, hypoxia relief, cortical change and
-#: sympathetic discharge all land within seconds, and Bahr-Hamm et al. (2022)
-#: found OSA respiratory cortical arousals uncoupled from autonomic activation.
+#: Respiratory-event arousals. Autonomic precedence is weakly supported here --
+#: airway reopening, hypoxia relief and sympathetic discharge land within seconds
+#: of each other. Keep separate from the class below; see docs/research.
 RESPIRATORY_AROUSAL_TOKENS = frozenset({"HA", "CAA", "X"})
-#: Bare arousals (``A``) and leg-movement arousals (``LA``). This is the class
-#: where precedence evidence is strong -- Bonnet & Arand's >=10-beat pre-arousal
-#: heart-rate acceleration, Togo et al.'s ~1 s lead before EEG desynchronisation,
-#: and, for the PLM subset, Allena et al. (2009) and Sforza et al. (2002) finding
-#: heart-rate rise *before* movement onset.
+#: Bare and leg-movement arousals. The class precedence evidence actually covers.
 NON_RESPIRATORY_AROUSAL_TOKENS = frozenset({"A", "LA"})
 #: Annotation tokens that mark an arousal of either class (see module docstring).
 AROUSAL_TOKENS = RESPIRATORY_AROUSAL_TOKENS | NON_RESPIRATORY_AROUSAL_TOKENS

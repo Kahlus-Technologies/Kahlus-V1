@@ -4,18 +4,11 @@ Run this where the raw .mat files already are. Input is ~134 MB/subject; output
 is ~2 MB/subject, so extracting in place and copying the features back beats
 moving 30 GB anywhere.
 
-Timing note: xqrs_detect is ~7 s for a 7.5 h record at 200 Hz (measured on a
-signal built to those exact dimensions), so QRS is not the bottleneck -- reading
-and parsing the 134 MB .mat is. Workers are therefore I/O-bound; on a 2-core box
-use --workers 2 and expect the disk, not the CPU, to set the pace.
+Workers are I/O-bound: xqrs is ~7 s per record while parsing the 134 MB .mat
+dominates. Resumable -- existing .npz outputs are skipped.
 
-Writes per subject:
-  <out>/features/<subject>.npz
-Then a manifest recording, per record, WHICH heart-rate path fired. Any record
-on envelope_fallback carries amplitude rather than rate and must be excluded
-from -- or at minimum reported alongside -- any autonomic claim.
-
-Resumable: existing .npz outputs are skipped, so an interrupted run continues.
+The manifest records which heart-rate path fired per record. envelope_fallback
+records carry amplitude rather than rate and cannot support an autonomic claim.
 
   python3 scripts/extract_challenge2018_local.py \
       --raw /root/c18_raw --out /root/c18_features --workers 2

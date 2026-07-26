@@ -106,16 +106,13 @@ def _parse_arousal_epochs(
     for sample, note in zip(ann_samples, aux_notes):
         n = note.strip().strip("\x00")
         if n.startswith("("):
-            # Opening bracket: begin interval
             token = n[1:]
             if token in ALL_AROUSAL_TOKENS:
                 open_token = token
                 open_sample = int(sample)
         elif open_token is not None and n == open_token + ")":
-            # Closing bracket: mark all epochs in interval
             _mark(open_token, open_sample, int(sample))
             open_token = None
-        # else: sleep stage label or unmatched token — ignore
 
     any_arousal = ((spontaneous | rera | respiratory) > 0).astype(np.int64)
     return {
@@ -137,7 +134,6 @@ def _parse_stages(
     """
     STAGE_TOKENS = frozenset({"W", "N1", "N2", "N3", "R"})
     epoch_samples = int(EPOCH_SECONDS * fs)
-    # Collect (epoch_index, stage) pairs in order
     transitions: list[tuple[int, str]] = []
     for sample, note in zip(ann_samples, aux_notes):
         n = note.strip().strip("\x00")
@@ -149,13 +145,11 @@ def _parse_stages(
         return ["?"] * n_epochs
 
     stages: list[str] = ["?"] * n_epochs
-    # Apply each transition from its epoch to the next transition
     for k, (ep, stage) in enumerate(transitions):
         end = transitions[k + 1][0] if k + 1 < len(transitions) else n_epochs
         for i in range(ep, min(end, n_epochs)):
             stages[i] = stage
 
-    # Back-fill any leading "?" before the first annotation
     if stages[0] == "?":
         first_stage = transitions[0][1]
         for i in range(transitions[0][0]):
@@ -281,7 +275,6 @@ def load_challenge2018_record(
         return idx or None
 
     if data_dir is not None:
-        # Local mirror: data_dir/training/tr03-0005/tr03-0005.hea
         rec_file = str(Path(data_dir) / rec_path)
         chans = _select(list(wfdb.rdheader(rec_file).sig_name))
         rec = wfdb.rdrecord(rec_file, channels=chans) if chans else wfdb.rdrecord(rec_file)
@@ -334,13 +327,11 @@ def load_challenge2018_record(
 
     n_seconds = int(n_epochs * EPOCH_SECONDS)
 
-    # Autonomic features on 1 Hz grid
     hr, hr_path = _heart_rate_per_second(ecg, fs, n_seconds)
     abd_env = _envelope_per_second(abd, fs, n_seconds) if abd is not None else np.zeros(n_seconds, np.float32)
     chest_env = _envelope_per_second(chest, fs, n_seconds) if chest is not None else np.zeros(n_seconds, np.float32)
     airflow_env = _envelope_per_second(airflow, fs, n_seconds) if airflow is not None else np.zeros(n_seconds, np.float32)
 
-    # EEG epochs at EEG_TARGET_HZ, one column per retained channel.
     eeg_per_epoch = int(EPOCH_SECONDS * EEG_TARGET_HZ)
     needed = n_epochs * eeg_per_epoch
     cols = []
@@ -351,7 +342,6 @@ def load_challenge2018_record(
         cols.append(_zscore(ds[:needed]))  # z-score per channel, not pooled
     eeg_epochs = np.stack(cols, axis=1).reshape(n_epochs, eeg_per_epoch, len(cols))
 
-    # Autonomic epochs (30 seconds × 4 channels)
     sec_per_epoch = int(EPOCH_SECONDS)
     auto = np.stack([
         _zscore(hr),
@@ -361,7 +351,6 @@ def load_challenge2018_record(
     ], axis=1)  # (n_seconds, 4)
     auto_epochs = auto[: n_epochs * sec_per_epoch].reshape(n_epochs, sec_per_epoch, 4)
 
-    # Labels
     arousal_masks = _parse_arousal_epochs(ann.sample, ann.aux_note, fs, n_epochs)
     stages = _parse_stages(ann.sample, ann.aux_note, n_epochs, fs)
 
