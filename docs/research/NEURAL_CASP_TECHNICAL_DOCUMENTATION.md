@@ -303,7 +303,59 @@ worse version of Li 2020.
 Consequence for design: spontaneous and respiratory arousals must be **stratified,
 not pooled**. Pooling averages a plausible effect against a documented null.
 
-### F7 — autonomic → arousal on MIT-BIH slpdb: code complete, run pending
+### F7 — autonomic → arousal on MIT-BIH slpdb: negative, and one caught false positive
+
+**Run: 2026-07-25, 11 records / 9 subjects / 6152 windows, claim bootstrap,
+subject-held-out, stratified by arousal class.** Both classes fail the gate.
+
+| class | h | positive events | RFS bits | LCB | worst control / real | subject probe |
+| --- | --- | --- | --- | --- | --- | --- |
+| non-respiratory | 1 | 190 | −0.0265 | −0.1186 | — | **fail** |
+| non-respiratory | 2 | 288 | −0.0139 | −0.0519 | — | **fail** |
+| non-respiratory | 4 | 408 | −0.0236 | −0.0502 | — | **fail** |
+| respiratory | 1 | 1360 | +0.0058 | −0.0022 | **1.42** | **fail** |
+| respiratory | 2 | 1795 | +0.0087 | **+0.0008** | **1.05** | **fail** |
+| respiratory | 4 | 2170 | +0.0111 | **+0.0015** | **1.57** | **fail** |
+
+**The respiratory rows are the interesting part, and they are a negative.** At
+h=2 and h=4 the subject-cluster bootstrap lower bound clears zero, and the
+cluster-permutation test returns p = 0.031. On the LCB alone these would have
+been reported as positive. They are not, because:
+
+1. **The time-shift control scores as high as or higher than the real effect** at
+   every horizon (ratios 1.42, 1.05, 1.57 against a required < 0.40). Destroying
+   temporal alignment does not reduce the score — so whatever is being measured is
+   not predictive-in-time.
+2. **`subject_probe_above_chance` fires at every horizon in both classes.** The
+   autonomic block identifies *which subject* a window came from. With 9 subjects
+   of differing apnea severity and correspondingly different arousal base rates,
+   a subject fingerprint alone produces an apparent residual.
+
+So the effect is static, subject-level structure, not forecasting. **The bootstrap
+CI would have certified it; the control battery rejected it.** That is the single
+most useful thing this cohort produced — direct evidence, on real data, that the
+controls are load-bearing rather than ceremonial, and a concrete instance of the
+failure mode a CI-only pipeline would have shipped.
+
+**The non-respiratory null is uninformative, and must not be reported as a
+negative result.** That class has 190 positive events at h=1, and **73% of all
+non-respiratory arousals in the cohort come from subject 01** — only 4 of 9
+subjects have ≥10 such events. Its confidence intervals are correspondingly wide
+(h=1 spans [−0.119, +0.043]). This is the class where the hypothesis is actually
+supported by the literature, and slpdb cannot test it: the interval is consistent
+with anything from a large negative to a moderate positive. Report as
+**underpowered**, not as a null.
+
+**Net:** slpdb settles nothing about F6/F7's real question and MESA is required,
+not merely preferable. Reproduce with:
+
+```bash
+PYTHONPATH=src python3 scripts/run_slpdb_autonomic_gate.py \
+  --out artifacts/slpdb_autonomic_non_respiratory --bootstrap-mode claim \
+  --arousal-class non_respiratory --data-dir <local slpdb>
+```
+
+### F7 apparatus notes
 
 slpdb is the one fully open dataset carrying simultaneous cortical EEG and ECG
 with scored arousals, so it can host the F6 estimand without credentialing.
