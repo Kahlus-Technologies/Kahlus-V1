@@ -1,0 +1,322 @@
+{
+  "schema": "kahlus.forecast_validation.v1",
+  "created_utc": "2026-07-28T03:29:25.538131+00:00",
+  "probe_horizons": [
+    1,
+    16,
+    64,
+    256
+  ],
+  "t1_index_audit": {
+    "context_target_shared_samples": 0,
+    "passes": true,
+    "neighbour_window_shared_samples": 127,
+    "neighbour_windows_overlap": true,
+    "note": "context/target overlap is the claim-critical one and is zero; neighbour-window overlap is within-subject only and cannot cross a subject-disjoint split (tested separately in T7)"
+  },
+  "t8_holm": {
+    "4": {
+      "raw_p": 1.4901161193847656e-08,
+      "holm_p": 1.341104507446289e-07,
+      "mean_delta": 0.04495534381301939,
+      "survives_0.05": true
+    },
+    "256": {
+      "raw_p": 1.4901161193847656e-08,
+      "holm_p": 1.341104507446289e-07,
+      "mean_delta": -0.015699681308238848,
+      "survives_0.05": true
+    },
+    "8": {
+      "raw_p": 1.4901161193847656e-07,
+      "holm_p": 1.043081283569336e-06,
+      "mean_delta": 0.06263946029986814,
+      "survives_0.05": true
+    },
+    "16": {
+      "raw_p": 3.725290298461914e-07,
+      "holm_p": 2.2351741790771484e-06,
+      "mean_delta": 0.10305141150236928,
+      "survives_0.05": true
+    },
+    "2": {
+      "raw_p": 1.5929341316223145e-05,
+      "holm_p": 7.964670658111572e-05,
+      "mean_delta": 0.02027251722831718,
+      "survives_0.05": true
+    },
+    "1": {
+      "raw_p": 2.586841583251953e-05,
+      "holm_p": 0.00010347366333007812,
+      "mean_delta": 0.020428158344436786,
+      "survives_0.05": true
+    },
+    "64": {
+      "raw_p": 4.093348979949951e-05,
+      "holm_p": 0.00012280046939849854,
+      "mean_delta": -0.02339187690539511,
+      "survives_0.05": true
+    },
+    "128": {
+      "raw_p": 0.27924175560474396,
+      "holm_p": 0.5584835112094879,
+      "mean_delta": -0.004692746220520771,
+      "survives_0.05": false
+    },
+    "32": {
+      "raw_p": 0.4270208328962326,
+      "holm_p": 0.5584835112094879,
+      "mean_delta": -0.0055653256662763955,
+      "survives_0.05": false
+    }
+  },
+  "t5_ar_sanity": {
+    "1": {
+      "ridge_mse": 0.27947219161016906,
+      "gru_mse": 0.28435597717761996,
+      "n_subjects": 10,
+      "mean_delta": -0.004883785567450907,
+      "median_delta": -0.004790380365381458,
+      "ci95_low": -0.007616253959151167,
+      "ci95_high": -0.002096737362377046,
+      "wilcoxon_p": 0.013671875,
+      "n_subjects_favoring_reference": 1
+    },
+    "16": {
+      "ridge_mse": 1.0071946056244108,
+      "gru_mse": 1.0061148226261138,
+      "n_subjects": 10,
+      "mean_delta": 0.0010797829982967411,
+      "median_delta": 9.535105328362103e-06,
+      "ci95_low": -0.0012520497037967204,
+      "ci95_high": 0.0036749029438919137,
+      "wilcoxon_p": 0.6953125,
+      "n_subjects_favoring_reference": 5
+    },
+    "64": {
+      "ridge_mse": 1.021996450299635,
+      "gru_mse": 1.0232303023338318,
+      "n_subjects": 10,
+      "mean_delta": -0.0012338520341967473,
+      "median_delta": -0.0010483248376286225,
+      "ci95_low": -0.002469413441762285,
+      "ci95_high": 1.5596556572693465e-05,
+      "wilcoxon_p": 0.083984375,
+      "n_subjects_favoring_reference": 2
+    },
+    "256": {
+      "ridge_mse": 0.9849060261624206,
+      "gru_mse": 1.005647784471512,
+      "n_subjects": 10,
+      "mean_delta": -0.02074175830909112,
+      "median_delta": -0.020693381156228985,
+      "ci95_low": -0.02722588970131296,
+      "ci95_high": -0.014212901391378124,
+      "wilcoxon_p": 0.001953125,
+      "n_subjects_favoring_reference": 0
+    }
+  },
+  "t2_t3_nulls_h16": {
+    "shuffled_targets": {
+      "ridge_mse": 0.9910050653961163,
+      "gru_mse": 1.0216059662677623,
+      "n_subjects": 27,
+      "mean_delta": -0.030600900871646082,
+      "median_delta": -0.028612257379809103,
+      "ci95_low": -0.034898602958688484,
+      "ci95_high": -0.026449028584695687,
+      "wilcoxon_p": 1.4901161193847656e-08,
+      "n_subjects_favoring_reference": 0
+    },
+    "noise_input": {
+      "ridge_mse": 0.9949650062069288,
+      "gru_mse": 0.9963584961714568,
+      "n_subjects": 27,
+      "mean_delta": -0.0013934899645280303,
+      "median_delta": -0.0006907858040766657,
+      "ci95_low": -0.0026211635201460306,
+      "ci95_high": -0.0002014879832387756,
+      "wilcoxon_p": 0.07722577452659607,
+      "n_subjects_favoring_reference": 11
+    }
+  },
+  "t4_linear_sgd": {
+    "1": {
+      "ridge_mse": 0.29579369043286374,
+      "linear_sgd_mse": 0.351613230727337,
+      "gru_mse": 0.2737984174379596,
+      "gru_vs_linear_sgd": {
+        "n_subjects": 27,
+        "mean_delta": 0.07781481328937742,
+        "median_delta": 0.069300077855587,
+        "ci95_low": 0.06537046529076718,
+        "ci95_high": 0.0915335918949158,
+        "wilcoxon_p": 1.4901161193847656e-08,
+        "n_subjects_favoring_reference": 27
+      },
+      "linear_sgd_vs_ridge": {
+        "n_subjects": 27,
+        "mean_delta": -0.05581954029447334,
+        "median_delta": -0.051845572324607875,
+        "ci95_low": -0.06262776797996576,
+        "ci95_high": -0.04946814928151032,
+        "wilcoxon_p": 1.4901161193847656e-08,
+        "n_subjects_favoring_reference": 0
+      }
+    },
+    "16": {
+      "ridge_mse": 0.8298273888490016,
+      "linear_sgd_mse": 0.8863173325856527,
+      "gru_mse": 0.7339113972805165,
+      "gru_vs_linear_sgd": {
+        "n_subjects": 27,
+        "mean_delta": 0.15240593530513621,
+        "median_delta": 0.128728985786438,
+        "ci95_low": 0.1219632813224086,
+        "ci95_high": 0.1843043210329833,
+        "wilcoxon_p": 1.4901161193847656e-08,
+        "n_subjects_favoring_reference": 27
+      },
+      "linear_sgd_vs_ridge": {
+        "n_subjects": 27,
+        "mean_delta": -0.056489943736651185,
+        "median_delta": -0.05273268073533077,
+        "ci95_low": -0.06654734352391665,
+        "ci95_high": -0.0466065060690966,
+        "wilcoxon_p": 2.9802322387695312e-08,
+        "n_subjects_favoring_reference": 1
+      }
+    },
+    "64": {
+      "ridge_mse": 0.8770501228832424,
+      "linear_sgd_mse": 0.9190939377855372,
+      "gru_mse": 0.8953848392875107,
+      "gru_vs_linear_sgd": {
+        "n_subjects": 27,
+        "mean_delta": 0.02370909849802653,
+        "median_delta": 0.019068658351898193,
+        "ci95_low": 0.007904467814498477,
+        "ci95_high": 0.04029023663865195,
+        "wilcoxon_p": 0.006450757384300232,
+        "n_subjects_favoring_reference": 21
+      },
+      "linear_sgd_vs_ridge": {
+        "n_subjects": 27,
+        "mean_delta": -0.04204381490229475,
+        "median_delta": -0.03542129618381207,
+        "ci95_low": -0.05250422523651673,
+        "ci95_high": -0.03232946913741068,
+        "wilcoxon_p": 1.4901161193847656e-08,
+        "n_subjects_favoring_reference": 0
+      }
+    },
+    "256": {
+      "ridge_mse": 0.9950203980149565,
+      "linear_sgd_mse": 1.0680251518885295,
+      "gru_mse": 0.9960316706586767,
+      "gru_vs_linear_sgd": {
+        "n_subjects": 27,
+        "mean_delta": 0.07199348122985275,
+        "median_delta": 0.08011138439178467,
+        "ci95_low": 0.062158342809588825,
+        "ci95_high": 0.08184276383232186,
+        "wilcoxon_p": 1.4901161193847656e-08,
+        "n_subjects_favoring_reference": 27
+      },
+      "linear_sgd_vs_ridge": {
+        "n_subjects": 27,
+        "mean_delta": -0.073004753873573,
+        "median_delta": -0.07506346712752565,
+        "ci95_low": -0.08305324242219582,
+        "ci95_high": -0.06296577041363861,
+        "wilcoxon_p": 1.4901161193847656e-08,
+        "n_subjects_favoring_reference": 0
+      }
+    }
+  },
+  "t6_split_robustness": {
+    "16": {
+      "n_splits": 8,
+      "deltas": [
+        0.09591599156848504,
+        0.10475180155508991,
+        0.08697287933878958,
+        0.10695453549069056,
+        0.09913879332589666,
+        0.08122754364346078,
+        0.08858282640553378,
+        0.09392021061771726
+      ],
+      "mean": 0.09468307274320795,
+      "std": 0.008303876672082808,
+      "n_positive": 8,
+      "min": 0.08122754364346078,
+      "max": 0.10695453549069056
+    },
+    "64": {
+      "n_splits": 8,
+      "deltas": [
+        -0.01833471640426822,
+        -0.006181439532462463,
+        -0.029016108809189298,
+        -0.014121192057333856,
+        -0.005376181210457008,
+        -0.03192790067599377,
+        -0.013552422285730224,
+        -0.0034429862768621997
+      ],
+      "mean": -0.01524411840653713,
+      "std": 0.010002911814955892,
+      "n_positive": 0,
+      "min": -0.03192790067599377,
+      "max": -0.0034429862768621997
+    }
+  },
+  "t7_non_overlapping": {
+    "stride": 384,
+    "1": {
+      "ridge_mse": 0.30110295877496246,
+      "gru_mse": 0.29145971851216423,
+      "n_subjects": 27,
+      "mean_delta": 0.009643240262798248,
+      "median_delta": 0.012751850058435557,
+      "ci95_low": 0.004620320887093345,
+      "ci95_high": 0.014471243554433985,
+      "wilcoxon_p": 0.0012526363134384155,
+      "n_subjects_favoring_reference": 21
+    },
+    "16": {
+      "ridge_mse": 0.8400012046662029,
+      "gru_mse": 0.7436720750950001,
+      "n_subjects": 27,
+      "mean_delta": 0.09632912957120278,
+      "median_delta": 0.08834912306221243,
+      "ci95_low": 0.0672384400650005,
+      "ci95_high": 0.1250293498176958,
+      "wilcoxon_p": 2.518296241760254e-06,
+      "n_subjects_favoring_reference": 24
+    },
+    "64": {
+      "ridge_mse": 0.8813006953077361,
+      "gru_mse": 0.8792367290567469,
+      "n_subjects": 27,
+      "mean_delta": 0.0020639662509892944,
+      "median_delta": 0.0037917624924267423,
+      "ci95_low": -0.00404479556798235,
+      "ci95_high": 0.008712310157083167,
+      "wilcoxon_p": 0.5780609846115112,
+      "n_subjects_favoring_reference": 16
+    },
+    "256": {
+      "ridge_mse": 1.0095641297721796,
+      "gru_mse": 1.013954140521862,
+      "n_subjects": 27,
+      "mean_delta": -0.004390010749682343,
+      "median_delta": -0.0037604709148595372,
+      "ci95_low": -0.0066053191775236495,
+      "ci95_high": -0.0021729464842387396,
+      "wilcoxon_p": 0.0007440149784088135,
+      "n_subjects_favoring_reference": 6
+    }
+  }
+}
