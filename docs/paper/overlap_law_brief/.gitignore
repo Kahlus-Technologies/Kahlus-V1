@@ -1,0 +1,5 @@
+overlap_law_brief.pdf
+*.aux
+*.log
+*.out
+pg-*.png
