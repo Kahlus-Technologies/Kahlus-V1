@@ -1,8 +1,8 @@
 # F8 — Horizon-resolved crossover: the GRU beats a tuned linear AR below ~160 ms and not above
 
 **Date:** 2026-07-27. **Status:** positive result, powered, pre-baseline-tuned.
-**Artifacts:** `runs/forecast_scaleup/results.json`,
-`runs/forecast_scaleup/forecast_crossover.png`.
+**Artifacts (tracked):** `artifacts/forecast_crossover/` — results, validation and
+figure. `runs/` is gitignored, so cite the `artifacts/` copies.
 **Reproduce:**
 
 ```
@@ -127,7 +127,7 @@ a baseline tuned to convergence, and the two inflation mechanisms.
 
 Eight falsification tests, each written so that a *failure* kills F8 rather than
 a pass confirming it. Code `scripts/validate_forecast_claim.py`, output
-`runs/forecast_validation/validation.json`.
+`artifacts/forecast_crossover/adversarial_validation.json`.
 
 | test | what would falsify F8 | result |
 | --- | --- | --- |
