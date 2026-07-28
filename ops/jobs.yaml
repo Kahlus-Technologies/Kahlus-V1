@@ -59,21 +59,3 @@ jobs:
       workers: {type: int, min: 1, max: 64, default: 8}
     timeout_seconds: 43200
     evidence: ["manifest.json"]
-
-  validate_qrs:
-    description: Validate the QRS detector against MIT-BIH annotated beats.
-    command: [python3, scripts/validate_qrs_against_mitdb.py]
-    args:
-      - ["${mitdb_dir}"]
-    params:
-      mitdb_dir: {type: path, required: true}
-    timeout_seconds: 3600
-    evidence: []
-
-  pytest:
-    description: Run the test suite on the cluster environment.
-    command: [python3, -m, pytest, -q]
-    args: []
-    params: {}
-    timeout_seconds: 3600
-    evidence: []

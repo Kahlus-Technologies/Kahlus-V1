@@ -17,7 +17,7 @@ on:
         description: "Registered job (see ops/jobs.yaml)"
         required: true
         type: choice
-        options: [smoke, seal_holdout, extract_c18, validate_qrs, pytest]
+        options: [smoke, seal_holdout, extract_c18]
       params:
         description: 'JSON params, e.g. {"raw_dir":"/data/c18_raw","out_dir":"/data/c18_features","workers":16}'
         required: false

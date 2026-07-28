@@ -58,6 +58,22 @@ class JobRunnerRefusalTests(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
         self.assertIn("missing required parameter", r.stderr)
 
+    def test_registry_is_exactly_the_allowlisted_jobs(self) -> None:
+        """The registry is the trust boundary; nothing may creep into it."""
+        import yaml
+
+        reg = yaml.safe_load((REPO / "ops" / "jobs.yaml").read_text())["jobs"]
+        self.assertEqual(sorted(reg), ["extract_c18", "seal_holdout", "smoke"])
+
+    def test_worker_ceiling_is_64(self) -> None:
+        import yaml
+
+        reg = yaml.safe_load((REPO / "ops" / "jobs.yaml").read_text())["jobs"]
+        for name, job in reg.items():
+            spec = (job.get("params") or {}).get("workers")
+            if spec is not None:
+                self.assertEqual(spec["max"], 64, name)
+
     def test_valid_request_resolves_argv_from_registry(self) -> None:
         r = run("--job", "seal_holdout", "--params", '{"out":"/tmp/h.json"}', "--dry-run")
         self.assertEqual(r.returncode, 0, r.stderr)
