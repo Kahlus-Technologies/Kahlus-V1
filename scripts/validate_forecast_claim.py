@@ -35,6 +35,7 @@ from amrith_isolated_forecast_check import L, _mse, gru_direct, ridge_predict  #
 from forecast_scaleup_paired import (  # noqa: E402
     load_corpus,
     paired_stats,
+    split_subjects,
     tune_ridge,
 )
 
@@ -92,15 +93,6 @@ def per_subject_mse(corpus, subjects, h, pred_all):
     return out
 
 
-def split_subjects(subjects, seed):
-    rng = np.random.default_rng(seed)
-    order = list(rng.permutation(sorted(subjects)))
-    n_test = int(round(0.35 * len(order)))
-    n_val = int(round(0.15 * len(order)))
-    return (sorted(order[n_test + n_val:]), sorted(order[n_test:n_test + n_val]),
-            sorted(order[:n_test]))
-
-
 # ------------------------------------------------------------------- T1 ------
 def t1_index_audit(stride: int, max_h: int) -> dict:
     """Context indices and target index must be disjoint, for every window."""
@@ -137,7 +129,7 @@ def t2_t3_nulls(corpus, train_s, val_s, test_s, h, rng) -> dict:
 
     # T2: permute training targets -> context carries no information about y.
     perm = rng.permutation(tr_y.shape[0])
-    alpha, w = tune_ridge(tr_ctx, tr_y[perm], va_ctx, va_y)
+    _, w = tune_ridge(tr_ctx, tr_y[perm], va_ctx, va_y)
     r_ps = per_subject_mse(corpus, test_s, h, ridge_predict(w, te_ctx))
     g_ps = per_subject_mse(corpus, test_s, h,
                            gru_direct(tr_ctx, tr_y[perm], te_ctx,
@@ -154,7 +146,7 @@ def t2_t3_nulls(corpus, train_s, val_s, test_s, h, rng) -> dict:
     noise_tr = rng.normal(size=(n_tr, L)).astype(np.float32)
     noise_va = rng.normal(size=(va_ctx.shape[0], L)).astype(np.float32)
     noise_te = rng.normal(size=(n_te, L)).astype(np.float32)
-    alpha, w = tune_ridge(noise_tr, tr_y, noise_va, va_y)
+    _, w = tune_ridge(noise_tr, tr_y, noise_va, va_y)
     r_ps = per_subject_mse(corpus, test_s, h, ridge_predict(w, noise_te))
     g_ps = per_subject_mse(corpus, test_s, h,
                            gru_direct(noise_tr, tr_y, noise_te,
@@ -175,7 +167,7 @@ def t4_linear_sgd(corpus, train_s, val_s, test_s, h) -> dict:
     va_ctx, va_y = pooled(corpus, val_s, h)
     te_ctx = np.concatenate([corpus[s][0] for s in test_s])
 
-    alpha, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
+    _, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
     ridge_ps = per_subject_mse(corpus, test_s, h, ridge_predict(w, te_ctx))
     lin_ps = per_subject_mse(corpus, test_s, h, linear_sgd(tr_ctx, tr_y, te_ctx))
     gru_ps = per_subject_mse(corpus, test_s, h,
@@ -218,7 +210,7 @@ def t5_ar_sanity(rng) -> dict:
         tr_ctx, tr_y = pooled(corpus, tr, h)
         va_ctx, va_y = pooled(corpus, va, h)
         te_ctx = np.concatenate([corpus[s][0] for s in te])
-        alpha, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
+        _, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
         r_ps = per_subject_mse(corpus, te, h, ridge_predict(w, te_ctx))
         g_ps = per_subject_mse(corpus, te, h,
                                gru_direct(tr_ctx, tr_y, te_ctx,
@@ -242,7 +234,7 @@ def t6_split_robustness(corpus, h, n_splits) -> dict:
         tr_ctx, tr_y = pooled(corpus, tr, h)
         va_ctx, va_y = pooled(corpus, va, h)
         te_ctx = np.concatenate([corpus[s][0] for s in te])
-        alpha, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
+        _, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
         r_ps = per_subject_mse(corpus, te, h, ridge_predict(w, te_ctx))
         g_ps = per_subject_mse(corpus, te, h,
                                gru_direct(tr_ctx, tr_y, te_ctx, hidden=GRU_HIDDEN,
@@ -341,7 +333,7 @@ def main() -> int:
         tr_ctx, tr_y = pooled(corpus_ns, tr2, h)
         va_ctx, va_y = pooled(corpus_ns, va2, h)
         te_ctx = np.concatenate([corpus_ns[s][0] for s in te2])
-        alpha, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
+        _, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
         r_ps = per_subject_mse(corpus_ns, te2, h, ridge_predict(w, te_ctx))
         g_ps = per_subject_mse(corpus_ns, te2, h,
                                gru_direct(tr_ctx, tr_y, te_ctx, hidden=GRU_HIDDEN,

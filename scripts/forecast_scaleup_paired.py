@@ -125,6 +125,27 @@ def load_corpus(data: Path, *, n_subjects: int, stride: int, max_windows: int,
     return out
 
 
+def split_subjects(subjects, seed: int) -> tuple[list, list, list]:
+    """Deterministic subject-disjoint (train, val, test) partition.
+
+    Shared with `validate_forecast_claim.py` on purpose: if the validation suite
+    re-derived the split it could silently drift and end up validating a
+    different partition than the one the finding reports.
+    """
+    rng = np.random.default_rng(seed)
+    order = list(rng.permutation(sorted(subjects)))
+    n_test = int(round(0.35 * len(order)))
+    n_val = int(round(0.15 * len(order)))
+    test, val = sorted(order[:n_test]), sorted(order[n_test:n_test + n_val])
+    train = sorted(order[n_test + n_val:])
+    # Disjointness is the one property the whole result rests on; assert it
+    # pairwise (a 3-way intersection can be empty while two sets still overlap).
+    assert not (set(test) & set(train)), "train/test subject overlap"
+    assert not (set(test) & set(val)), "val/test subject overlap"
+    assert not (set(train) & set(val)), "train/val subject overlap"
+    return train, val, test
+
+
 def tune_ridge(train_ctx, train_y, val_ctx, val_y) -> tuple[float, np.ndarray]:
     """Pick alpha on validation subjects. A linear baseline is only a fair
     comparator if it got its own hyperparameter search."""
@@ -270,18 +291,7 @@ def main() -> int:
     if len(subjects) < 12:
         ap.error(f"need >=12 subjects for a paired test, got {len(subjects)}")
 
-    rng = np.random.default_rng(SEED)
-    order = list(rng.permutation(subjects))
-    n_test = int(round(0.35 * len(order)))
-    n_val = int(round(0.15 * len(order)))
-    test_subj = sorted(order[:n_test])
-    val_subj = sorted(order[n_test:n_test + n_val])
-    train_subj = sorted(order[n_test + n_val:])
-    # Disjointness is the one property the whole result rests on; assert it
-    # pairwise (a 3-way intersection can be empty while two sets still overlap).
-    assert not (set(test_subj) & set(train_subj)), "train/test subject overlap"
-    assert not (set(test_subj) & set(val_subj)), "val/test subject overlap"
-    assert not (set(train_subj) & set(val_subj)), "train/val subject overlap"
+    train_subj, val_subj, test_subj = split_subjects(subjects, SEED)
     if min(len(train_subj), len(val_subj), len(test_subj)) < 3:
         ap.error(f"split too small: train {len(train_subj)} val {len(val_subj)} "
                  f"test {len(test_subj)} -- need >=3 each, pass more --subjects")
