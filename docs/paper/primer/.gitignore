@@ -1,0 +1,5 @@
+kahlus_primer.pdf
+*.aux
+*.log
+*.out
+p-*.png

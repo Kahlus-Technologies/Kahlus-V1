@@ -1,0 +1,552 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.0in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{longtable}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\usepackage{url}
+\urlstyle{tt}
+% Long repo paths must be allowed to break, or they run off the page.
+\newcommand{\fp}[1]{\path{#1}}
+\sloppy
+
+\captionsetup{font=small,labelfont=bf}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{10pt}{5pt}
+\setlist{itemsep=2pt,parsep=0pt,topsep=3pt}
+
+\definecolor{boxbg}{RGB}{245,245,245}
+\newmdenv[backgroundcolor=boxbg,linewidth=0.4pt,linecolor=gray,
+          innertopmargin=6pt,innerbottommargin=6pt,skipabove=6pt,skipbelow=6pt]{keybox}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Kahlus --- primer}
+\rhead{\small 28 July 2026}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries Kahlus: a primer}\\[6pt]
+{\large Everything the project rests on, explained from zero}\\[12pt]
+{\small Written to be read straight through. No prior background assumed.}
+\end{center}
+
+\vspace{4pt}\hrule\vspace{8pt}
+
+\begin{keybox}
+\textbf{How to use this.} Part I is what we are actually researching and why.
+Part II is the vocabulary --- if a word in a meeting confuses you, it is defined
+there. Part III is the statistics. Part IV explains what ``F9'' means and lists
+every finding. Part V works through the two real results in full, equation by
+equation. Part VI is every paper we rely on and what each one is for. Part VII is
+a glossary, Part VIII is the questions you will get asked.
+
+\textbf{Where I am uncertain I say so.} Anything marked \textbf{[ours]} is a claim
+this project makes; anything marked \textbf{[established]} is standard published
+background you can assert freely.
+\end{keybox}
+
+\section{Part I --- What are we actually researching?}
+
+\subsection{The question in one sentence}
+
+\textbf{Can you see a change in someone's brain state before it happens?}
+
+Not diagnose it after. Not detect it as it occurs. \emph{Predict} it, from the
+signal alone, with enough lead time to do something about it. That is the
+long-term goal --- seizures, arousals from sleep, lapses in attention.
+
+Everything in this project is machinery for answering a narrower, more honest
+version of that question: \textbf{does a brain signal contain information about
+its own future that a simple method cannot already extract?} If a complicated
+model does no better than a simple one, the complicated model has found nothing.
+
+\subsection{What EEG is} \textbf{[established]}
+
+Electroencephalography. Electrodes on the scalp measure voltage fluctuations
+caused by the synchronised electrical activity of large populations of cortical
+neurons --- principally the summed postsynaptic potentials of pyramidal cells
+aligned perpendicular to the cortical surface. The signal is tiny, on the order of
+tens of microvolts, and it is filtered by the skull and scalp, so it is spatially
+blurred: one electrode sees a smeared average of a large patch of cortex.
+
+Two properties matter enormously for us:
+
+\begin{itemize}
+\item \textbf{EEG is heavily autocorrelated.} The voltage 10\,ms from now is very
+similar to the voltage now. This is why trivial ``just repeat the last value''
+prediction is a surprisingly strong baseline, and why you must always report it.
+\item \textbf{EEG is dominated by rhythms.} Activity clusters into frequency
+bands: delta (0.5--4\,Hz, deep sleep), theta (4--8\,Hz), alpha (8--13\,Hz, relaxed
+wakefulness, prominent with eyes closed), beta (13--30\,Hz), gamma ($>$30\,Hz).
+Sleep staging is largely reading which rhythms dominate.
+\end{itemize}
+
+\subsection{The data we use} \textbf{[established]}
+
+\textbf{Sleep-EDF (sleep-cassette).} A public PhysioNet dataset. \textbf{78
+subjects}, most with two full nights recorded. Two EEG channels (Fpz-Cz and
+Pz-Oz --- these names are electrode pairs, forehead-to-centre and
+parietal-to-occipital), plus an EOG channel that picks up eye movement. Sampled at
+\textbf{100\,Hz}, meaning one sample every 10\,milliseconds.
+
+\begin{keybox}
+\textbf{Internalise this conversion, you will use it constantly.} At 100\,Hz,
+1 sample = 10\,ms. So 127 samples $\approx$ 1.27 seconds. A ``horizon of 16''
+means 160\,ms into the future. When we say the model works out to 160\,ms, that
+is a horizon of 16 samples.
+\end{keybox}
+
+Each night is also \emph{hypnogram-scored}: a human expert labelled every
+30-second epoch as wake, one of several non-REM depths, or REM. This is why the
+dataset is useful --- it has ground-truth state labels alongside the raw signal.
+
+We also use \textbf{slpdb} (MIT-BIH Polysomnographic Database) for signal
+diversity: it carries ECG (heart), blood pressure, respiration and EEG together.
+And \textbf{ds005620}, an OpenNeuro propofol-anaesthesia dataset (21 subjects),
+used to test whether complexity measures track loss of consciousness.
+
+\section{Part II --- The vocabulary}
+
+\subsection{Forecasting, windows, horizons}
+
+You hand a model a stretch of recent signal --- the \textbf{input window}, length
+$W$ --- and ask it to predict the signal at some point in the future. How far
+ahead is the \textbf{horizon}, $H$. Both are counted in samples.
+
+\subsection{MSE, and what a number actually means}
+
+Mean squared error. Take the model's prediction, subtract the truth, square it,
+average over all cases:
+\begin{equation}
+\mathrm{MSE} = \frac{1}{n}\sum_{i=1}^{n}\bigl(y_i - \hat{y}_i\bigr)^2
+\end{equation}
+where $y_i$ is the true value, $\hat{y}_i$ the prediction, $n$ the number of
+cases. Lower is better; zero is perfect.
+
+\begin{keybox}
+\textbf{Why our MSE numbers hover around 1.0.} We \emph{z-score} every recording
+first --- subtract its mean, divide by its standard deviation --- so the signal
+has variance 1. That makes numbers comparable across people and machines. The
+consequence: \textbf{an MSE of 1.0 means the model is doing no better than
+guessing the average.} MSE 0.73 means it explained about 27\,\% of the variance.
+So when you see ``GRU 0.7268'', read it as ``about a quarter better than useless''
+--- which for brain data at 160\,ms is genuinely respectable.
+\end{keybox}
+
+\subsection{The four models we compare}
+
+Listed weakest to strongest. \textbf{You must always report the weak ones} ---
+that is the whole discipline.
+
+\begin{itemize}
+\item \textbf{Mean-of-trace.} Predict the average of the input window. A floor.
+\item \textbf{Persistence.} Predict that the future equals the last value you saw.
+Sounds stupid; on autocorrelated signals it is hard to beat. In forecasting
+generally this is called the \emph{naive} forecast, and a large literature exists
+on methods that fail to beat it.
+\item \textbf{Ridge-AR.} A \emph{linear} model. It takes a weighted sum of the
+past $W$ samples to predict the future one. ``AR'' is autoregressive --- predicting
+a signal from its own past. ``Ridge'' means it is fitted with a penalty on large
+weights, which prevents overfitting; the strength of that penalty is called
+$\alpha$ and must be tuned. It has a closed-form solution, so it is fast and
+exactly optimal for its model class.
+\item \textbf{GRU.} Gated Recurrent Unit --- a small neural network that reads the
+input sequence one step at a time, keeping an internal memory it chooses what to
+write to and forget. It is \emph{nonlinear}, so it can represent relationships a
+ridge cannot. This is ``the deep model'' in our comparisons.
+\end{itemize}
+
+\begin{keybox}
+\textbf{The entire scientific question in our benchmark is:} does the nonlinear
+GRU beat the linear ridge, \emph{when the ridge has been tuned properly?} If it
+doesn't, the extra complexity bought nothing.
+\end{keybox}
+
+\subsection{Train, validation, test --- and why ``subject-held-out''}
+
+You split data three ways. \textbf{Train} fits the model. \textbf{Validation}
+picks settings ($\alpha$, network size). \textbf{Test} is touched once, to report
+the number.
+
+\textbf{Subject-held-out} means the split is by \emph{person}, not by recording or
+window. If any data from a person appears in training, none of that person's data
+may appear in test. Otherwise the model can recognise the individual rather than
+learn the phenomenon --- EEG is somewhat like a fingerprint. Our split is 39
+people train, 12 validation, 27 test, and both nights of a person always travel
+together.
+
+\section{Part III --- The statistics, in plain terms}
+
+\subsection{$p$-values}
+
+A $p$-value answers: \emph{if there were genuinely no effect, how often would I see
+a result this strong by luck?} $p = 3.7\times10^{-7}$ means roughly once in three
+million. It does \textbf{not} say the effect is large or important --- only that it
+is unlikely to be noise.
+
+\subsection{Wilcoxon signed-rank test}
+
+We compute each held-out person's error separately, giving 27 paired comparisons
+(ridge vs GRU on the same person). The Wilcoxon test asks whether those paired
+differences lean consistently one way. We use it instead of a $t$-test because it
+makes no assumption that the differences are normally distributed.
+
+\textbf{Say it as:} ``we compared the two models within each person, then asked
+whether the direction was consistent across people.''
+
+\subsection{Bootstrap confidence intervals}
+
+Resample your 27 people with replacement, 10{,}000 times, recomputing the average
+difference each time. The middle 95\,\% of those values is the confidence
+interval. If it excludes zero, the effect is stable. It is a way of asking ``how
+much would this move if I'd happened to recruit different people?''
+
+\subsection{Holm correction}
+
+We tested nine horizons. Test enough things and something looks significant by
+chance. Holm adjusts the thresholds to control that. Our headline survives it
+($p = 2.2\times10^{-6}$ after correction), which is the point of reporting it.
+
+\subsection{Controls}
+
+A control is a deliberately broken version of your experiment that \emph{must}
+fail. If it doesn't, your pipeline is manufacturing results. Ours:
+
+\begin{itemize}
+\item \textbf{Shuffled targets.} Randomly permute the answers. Both models must
+collapse to MSE $\approx$ 1.0. They did (0.991 and 1.022).
+\item \textbf{Noise input.} Replace the brain signal with random noise. Same
+expectation. They did (0.995 and 0.996).
+\item \textbf{AR(2) sanity.} Generate synthetic data where the mathematically
+optimal predictor is provably \emph{linear}. The GRU must therefore \emph{fail} to
+beat ridge. It did lose ($p = 0.014$). \textbf{This is the strongest control we
+have} --- it shows the apparatus cannot manufacture a win for our own model.
+\end{itemize}
+
+\section{Part IV --- What ``F9'' means, and every finding}
+
+\textbf{F-numbers are just our internal IDs for findings}, F0 through F9, recorded
+in \fp{docs/results/findings-ledger.md}. There is nothing standard about them;
+they exist so every claim has an address. \textbf{F9 is the overlap inflation law}
+--- the newest result, Part V.
+
+\begin{center}\small
+\begin{longtable}{p{0.05\textwidth}p{0.42\textwidth}p{0.45\textwidth}}
+\toprule
+\textbf{ID} & \textbf{What it is} & \textbf{Verdict, in plain terms} \\
+\midrule
+F0 & The evaluation apparatus (``gates'' M0--M5) & \textbf{Works.} Passes on planted signals, fails on planted nulls. This is the asset --- a referee we trust. \\
+F1 & The 3.116 MSE / $r$=0.972 forecasting result & \textbf{Invalidated.} The overlap illusion. Kept on record as evidence of the bug. \\
+F2 & GRU vs trivial baselines on BNCI motor-imagery data & \textbf{Negative} --- but only 2 test subjects and an untuned baseline. Below the standard we now hold ourselves to; needs re-running. \\
+F3 & Do heart/breathing signals help predict sleep transitions? & \textbf{Negative (scout).} No detectable extra information. \\
+F4 & Do complexity measures beat a simple frequency baseline for wake/NREM/REM? & \textbf{Powered negative.} 78 subjects, 413{,}828 windows. Clearly no. \\
+F5 & Same question under propofol anaesthesia & \textbf{Powered negative.} All 21 subjects. Clearly no. \\
+F6 & Autonomic signals for micro-arousal prediction & \textbf{Incomplete.} Works on synthetic data; real test needs NSRR data access. \\
+F8 & Corrected forecasting benchmark & \textbf{Positive, bounded.} The GRU genuinely beats a tuned ridge out to 160\,ms; the advantage ends by 320\,ms. \\
+F9 & The overlap inflation law & \textbf{Exact bound, verified.} 286 configurations, zero violations. \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\begin{keybox}
+\textbf{Seven of nine are negative or incomplete, and that is deliberately on the
+record.} The honest summary of this project is: \emph{we built a referee that
+bites, pointed it at our own work, and most of what we hoped for did not survive.}
+Two things did --- F8 and F9. A reviewer who sees the negatives reported plainly
+will trust the positives far more.
+\end{keybox}
+
+\section{Part V --- The two real results, worked through}
+
+\subsection{F9: the overlap inflation law} \textbf{[ours]}
+
+\textbf{The mistake.} Build a forecasting example like this: take a stretch of
+signal, use the first $W$ samples as input $X$, and ask the model to predict a
+window $Y$ that starts $H$ samples later:
+\begin{equation}
+X = \mathrm{seq}[0 : W], \qquad Y = \mathrm{seq}[H : H+W].
+\end{equation}
+Both are length $W$. Now look at what is actually in $Y$. Its $k$-th entry is
+$Y[k] = \mathrm{seq}[H+k]$. As long as $H+k < W$, that value is \emph{also inside
+$X$}, at position $H+k$. So:
+
+\begin{itemize}
+\item $W - H$ entries of $Y$ are \textbf{copyable} --- already handed to the model.
+\item Only $H$ entries are genuinely in the future.
+\end{itemize}
+
+With $W = 127$ and $H = 1$: 126 copyable, 1 real. The model learned to shift its
+input by one position and got 126 of 127 ``predictions'' exactly right. Scored
+over the whole window, it looked near-perfect.
+
+\textbf{The derivation.} Score \emph{one} model's \emph{one} set of predictions
+three ways, changing only which positions you average over:
+\begin{align}
+\mathrm{MSE}_{\text{overlap}} &= \text{average over all } W \text{ positions (what the flawed protocol reports)}\\
+\mathrm{MSE}_{\text{copy}} &= \text{average over the } W-H \text{ copyable positions}\\
+\mathrm{MSE}_{\text{future}} &= \text{average over the } H \text{ genuinely-future positions (the honest number)}
+\end{align}
+Because an average over a set equals the weighted average of its parts, these are
+related \emph{by definition}, not by any assumption:
+\begin{equation}
+\mathrm{MSE}_{\text{overlap}}
+= \frac{(W-H)\,\mathrm{MSE}_{\text{copy}} + H\,\mathrm{MSE}_{\text{future}}}{W}
+\label{eq:identity}
+\end{equation}
+Define the inflation factor as how much better the flawed score looks than the
+honest one, and substitute \eqref{eq:identity}:
+\begin{equation}
+\boxed{\;
+\text{inflation} \;=\; \frac{\mathrm{MSE}_{\text{future}}}{\mathrm{MSE}_{\text{overlap}}}
+\;=\;
+\frac{W/H}{\,1 + \frac{W-H}{H}\cdot\frac{\mathrm{MSE}_{\text{copy}}}{\mathrm{MSE}_{\text{future}}}\,}
+\;\le\; \frac{W}{H}\;}
+\label{eq:law}
+\end{equation}
+
+\textbf{Reading equation \eqref{eq:law} in words.} The denominator is at least 1,
+so the whole thing is at most $W/H$. If the model copies the copyable positions
+perfectly, $\mathrm{MSE}_{\text{copy}} = 0$, the denominator becomes exactly 1, and
+the inflation is exactly $W/H$. If it copies them badly, the denominator grows and
+the inflation is smaller. \textbf{So $W/H$ is a ceiling, and a model that is good
+at copying sits right on it.}
+
+\textbf{Why this matters to other people.} $W$ and $H$ are printed in the methods
+section of any paper. You do not need their data, their code, or their model.
+Divide the two numbers and you have an upper bound on how inflated their result
+is.
+
+\textbf{Verification.} 286 combinations of $W$ and $H$, across 11 signals: three
+Sleep-EDF channels, four slpdb channels, and four synthetic processes. Result:
+\textbf{zero violations}, median observed/predicted $= 1.000$. Our own historical
+bug ($W=127$, $H=1$) predicted $127\times$; we had measured $126.1\times$.
+
+\begin{keybox}
+\textbf{The single best piece of evidence:} we ran it on \emph{pure random noise},
+where nothing whatsoever is predictable. It still inflated by exactly the
+predicted factor. That is what proves this is a property of the \emph{scoring
+rule}, not of brain data --- the copyable positions are sitting in the input
+regardless of whether anything is forecastable.
+\end{keybox}
+
+\subsection{F8: the corrected benchmark} \textbf{[ours]}
+
+Having fixed the scoring, we re-ran the actual experiment: 78 subjects, 39/12/27
+split, predicting a single strictly-future sample so that input and target share
+nothing.
+
+\begin{center}\small
+\begin{tabular}{rrrrrr}
+\toprule
+Horizon & Time & Persistence & Ridge-AR & GRU & Holm $p$ \\
+\midrule
+4 & 40\,ms & 0.5691 & 0.4399 & \textbf{0.3950} & $1.3\times10^{-7}$ \\
+16 & 160\,ms & 1.3814 & 0.8298 & \textbf{0.7268} & $2.2\times10^{-6}$ \\
+32 & 320\,ms & 1.7600 & \textbf{0.8700} & 0.8756 & n.s. \\
+256 & 2560\,ms & 1.8746 & \textbf{0.9942} & 1.0099 & $1.3\times10^{-7}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+At 160\,ms the GRU beats a fully-tuned ridge on 26 of 27 held-out people, and is
+47\,\% better than persistence. By 320\,ms the advantage is gone and never returns.
+
+\textbf{A second lesson hidden in this table.} Early on, we ran this with the
+ridge's $\alpha$ fixed at an arbitrary value, and later with a search grid that
+was too narrow. \emph{Both gave the wrong scientific conclusion, in opposite
+directions.} Only after extending the grid until the search stopped picking its
+own edge did the answer stabilise. \textbf{An under-tuned baseline is the second
+way these results inflate}, and we caught ourselves doing it twice.
+
+\textbf{What broke under scrutiny.} We had reported that ridge beats the GRU at
+640\,ms ($p=4.1\times10^{-5}$). Under a stricter windowing check that became a tie
+($p = 0.58$). We narrowed the claim rather than removing the test. Say this out
+loud when asked --- it is the most credible thing in the project.
+
+\section{Part VI --- Every paper, and what each is for}
+
+\subsection{Establishing that our overlap axis is new}
+
+These all address leakage --- and all address a \emph{different} kind than ours.
+They are how we know the finding is novel.
+
+\begin{itemize}
+\item \textbf{Bernett et al.\ (2024), \emph{Nature Methods}.} Seven questions to
+prevent data leakage in biological machine learning. \emph{Why it matters:} the
+authoritative checklist --- and none of its seven questions asks whether a
+regression target overlaps its own input.
+\item \textbf{Del Pup et al.\ (2025), \emph{Computers in Biology and Medicine}.}
+Compared five cross-validation schemes across over 100{,}000 trained EEG models.
+\emph{Why it matters:} the most thorough study of EEG splitting that exists, and
+our artifact survives every scheme in it.
+\item \textbf{Apicella et al.\ (2024), \emph{AI Review}.} A taxonomy of leakage
+across the ML workflow. \emph{Why it matters:} the within-example case is absent.
+\item \textbf{Lee et al.\ (2023), \emph{Scientific Reports}.} Overlapping
+cross-validation inflating EEG diagnosis performance. \emph{Why:} overlap
+\emph{between} augmented samples --- the other axis.
+\item \textbf{Dehghani et al.\ (2019), \emph{Sensors}.} Overlapping vs
+non-overlapping sliding windows in activity recognition; the apparent benefit of
+overlap was an artifact of subject-dependent validation. \emph{Why:} same lesson,
+still the between-example axis.
+\item \textbf{Wosiak et al.\ (2025), \emph{Algorithms}.} Argues window overlap
+should be a first-class reported parameter --- and still never mentions horizon
+versus window length.
+\end{itemize}
+
+\subsection{Establishing that the paper's shape is respected}
+
+\begin{itemize}
+\item \textbf{McGreivy \& Hakim (2024), \emph{Nature Machine Intelligence}.}
+Reviewed machine-learning papers claiming to beat numerical solvers and found
+\textbf{79\,\% (60/76) compared against a weak baseline}. \emph{Why it matters:}
+this is the template for our paper, in a different field, in a top journal. It
+proves the genre is publishable at the highest level.
+\item \textbf{Lin (2019), \emph{SIGIR Forum}} and \textbf{Yang et al.\ (2019).}
+The ``neural hype'' papers in information retrieval; re-ran neural models against
+strong baselines and found most reported gains illusory. \emph{Why:} the same
+move, a decade earlier, in another field.
+\item \textbf{Beck et al.\ (2025), \emph{Applied Intelligence}.} ``Mind the naive
+forecast!'' --- on volatile series no method reliably beat the no-change forecast.
+\emph{Why:} justifies always reporting persistence.
+\item \textbf{Wu et al.\ (2025), \emph{IEEE Access}.} Reviewed 149 EEG
+seizure-prediction studies and named \textbf{``few linear baselines''} as a
+field-wide failure, explicitly calling for benchmarks against well-tuned linear
+models. \emph{Why it matters:} our corrected benchmark answers a gap the field has
+already stated in print. Quote this one.
+\item \textbf{Puffay et al.\ (2023), \emph{J.\ Neural Engineering}.} 29 EEG-speech
+deep learning studies; recurring pitfalls were biased cross-validation and
+leakage.
+\end{itemize}
+
+\subsection{Direct comparators --- know these or you will be caught out}
+
+\begin{itemize}
+\item \textbf{Pankka et al.\ (2024).} WaveNet forecasting resting-state EEG
+\textbf{150\,ms ahead}, beating an autoregressive model on amplitude and phase.
+\emph{Why it matters:} \textbf{this is our exact horizon regime.} ``A deep model
+beats AR at $\sim$150\,ms'' is already published. Our contribution therefore
+\emph{cannot} be that claim --- it is the audit, the law, and the horizon-resolved
+crossover. Never claim novelty for beating AR at 150\,ms.
+\item \textbf{Onojima et al.\ (2025).} Predicts the complex analytic signal from
+raw \emph{multichannel} EEG, beating AR both within and across subjects.
+\emph{Why:} a comparator, and evidence that multichannel is where a nonlinear
+model should earn its keep --- our single-channel setup is the likeliest reason our
+advantage closes so early.
+\end{itemize}
+
+\subsection{Background for the negative findings}
+
+\begin{itemize}
+\item \textbf{Casali et al.\ (2013)} --- the Perturbational Complexity Index (PCI),
+which perturbs cortex with TMS and measures the complexity of the response as a
+consciousness marker. \emph{Why it matters:} F4 and F5 test whether \emph{passive}
+complexity (no perturbation) can do something similar. They cannot.
+\textbf{Careful:} we have never measured PCI and must never claim to have beaten
+it.
+\item \textbf{Lempel--Ziv complexity, permutation entropy} (Bandt \& Pompe),
+\textbf{multiscale entropy} --- the specific complexity measures in F4/F5. All are
+ways of asking ``how compressible / how disordered is this signal?''
+\item \textbf{McAllester \& Stratos (2018).} Proves you cannot obtain a
+distribution-free high-confidence lower bound on mutual information much larger
+than $\log N$ from $N$ samples. \emph{Why it matters:} it is why our RFS score
+(below) is described as a bounded functional of held-out predictions and
+\textbf{not} as a mutual-information estimate. Getting this wrong in a talk would
+be a real error.
+\end{itemize}
+
+\subsection{One more equation you will be asked about: RFS}
+
+Residual Forecastability Score, used in the F3--F6 gates:
+\begin{equation}
+\mathrm{RFS}_{\text{bits}} = \frac{\mathrm{NLL}_{\text{baseline}} - \mathrm{NLL}_{\text{model}}}{\ln 2}
+\end{equation}
+NLL is negative log-likelihood --- roughly, how surprised a model is by the truth
+(lower is better). So the numerator is how much less surprised the full model is
+than the baseline. Dividing by $\ln 2$ converts to bits. \textbf{Positive means
+the extra information helped; zero or negative means it did not.} Our real-data
+values came out negative, which is why F3--F5 are negatives.
+
+\section{Part VII --- Glossary}
+
+\begin{center}\small
+\begin{longtable}{p{0.22\textwidth}p{0.71\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Meaning} \\
+\midrule
+Autocorrelation & How similar a signal is to itself a moment later. High in EEG. \\
+Horizon ($H$) & How far ahead you predict, in samples. $H=16$ at 100\,Hz is 160\,ms. \\
+Window ($W$) & How many samples you feed in, or score over. \\
+Epoch & (a) A 30-second scored segment of sleep; (b) one pass through training data. Context decides. \\
+Hypnogram & The expert's sleep-stage labelling of a night. \\
+z-scoring & Rescaling to mean 0, variance 1, so MSE 1.0 means ``no better than the mean''. \\
+Ridge / $\alpha$ & Linear regression with a penalty on large weights; $\alpha$ is the penalty strength, tuned on validation. \\
+GRU & Gated Recurrent Unit; small nonlinear sequence network with learned memory. \\
+Persistence & Predict that nothing changes. The naive baseline. \\
+Subject-held-out & Splitting by person, so no individual appears in both train and test. \\
+Leakage & Information reaching the model that it should not have; inflates results. \\
+Bootstrap & Resampling your data many times to see how stable a number is. \\
+Wilcoxon & A paired test that does not assume normally distributed differences. \\
+Holm & A correction for having run many tests. \\
+Control & A deliberately broken run that must fail; proves the pipeline is honest. \\
+RFS & Residual Forecastability Score, in bits. Positive means extra signal helped. \\
+PCI & Perturbational Complexity Index --- a TMS-based consciousness measure. \textbf{We do not measure it.} \\
+Gate & Our pass/fail rule for whether a result may be claimed. \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\section{Part VIII --- Questions you will be asked}
+
+\textbf{``What's the contribution?''} A closed-form bound letting anyone compute
+how inflated a published forecasting number is from two numbers in its methods
+section, plus a corrected benchmark showing where a neural model genuinely beats a
+classical one.
+
+\textbf{``Isn't this just data leakage?''} Different axis. Standard leakage is
+information crossing the train/test split, fixed by splitting correctly. Ours is
+inside a single example --- the answer overlaps the question --- so splitting
+cannot fix it.
+
+\textbf{``How is the law not just a curve fit?''} It's derived from the definition
+of an average, then checked 286 times without a violation. On pure noise, where
+nothing is predictable, it still holds exactly.
+
+\textbf{``Does your model actually work?''} Out to 160\,ms, yes, on 26 of 27
+held-out people against a properly tuned baseline. Past 320\,ms, no. We also had a
+long-horizon claim that failed our own check and we reported that.
+
+\textbf{``Is this clinically useful?''} Not yet, and we don't claim it. The
+timescale that matters for predicting state changes is around a minute --- hundreds
+of times longer than what we demonstrate.
+
+\textbf{``What's next?''} A prevalence survey: how often does published work use a
+horizon smaller than its window? That converts a tool into a finding about the
+field, and it is the McGreivy move.
+
+\textbf{``What are you least sure about?''} Single channel, single corpus. The
+advantage may close early precisely because one electrode has no spatial
+information to exploit --- Onojima's multichannel result suggests that is where to
+look next.
+
+\vspace{6pt}\hrule\vspace{5pt}
+\noindent\footnotesize
+\textbf{Source documents.} \fp{docs/results/findings-ledger.md} (all findings)
+$\cdot$ \fp{docs/results/overlap_inflation_law_2026-07-28.md} (F9) $\cdot$
+\fp{docs/results/forecast_crossover_2026-07-27.md} (F8) $\cdot$
+\fp{docs/research/baseline_fairness_literature_2026-07-27.md} (citations)
+$\cdot$ \fp{docs/research/eval_leakage_audit_2026-07-21.md} (the original
+bug audit).
+
+\end{document}
