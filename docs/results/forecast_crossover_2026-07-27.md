@@ -69,11 +69,19 @@ error reduction over that baseline for horizons from 10 ms to 160 ms, and the
 margin grows monotonically with horizon across that range. Both learned models
 beat persistence everywhere.
 
-**Also claimed, and it cuts against us.** The advantage **inverts** past ~320 ms.
-At 640 ms and 2560 ms the tuned linear model is better with high confidence
-(`p = 4.1e-05` and `1.5e-08`; at 2560 ms **zero of 27** subjects favour the GRU).
-The nonlinear architecture earns its complexity only in a bounded short-horizon
-regime.
+**Also claimed, and it cuts against us.** The advantage **disappears** past
+~320 ms. From 320 ms outward the GRU never wins again at any horizon, on any
+split. The nonlinear architecture earns its complexity only in a bounded
+short-horizon regime.
+
+**Deliberately NOT claimed: that the tuned ridge decisively *beats* the GRU at
+long horizons.** The primary run reported ridge winning at 640 ms (`p = 4.1e-05`)
+and 2560 ms (`p = 1.5e-08`), and that direction reproduces across 8 resampled
+splits (0/8 favour the GRU at 640 ms). But the 640 ms ridge advantage
+**vanishes under fully non-overlapping windows** (Δ = +0.0021, `p = 0.58`,
+validation T7). The effect there is small (~0.015 MSE) and windowing-sensitive.
+The honest statement is *the GRU's advantage ends by ~320 ms*, not *linear wins
+after it*. See §4.
 
 **Not claimed.** Nothing about clinical utility. 160 ms is roughly 400× shorter
 than the ~1 min precursor timescale the HNPH line targets. Nothing multichannel —
@@ -115,7 +123,66 @@ horizon. "A deep model beats AR at ~150 ms" is therefore *not* novel. What is
 ours is the horizon-resolved crossover with per-subject paired statistics against
 a baseline tuned to convergence, and the two inflation mechanisms.
 
-## 4. Loose ends
+## 4. Adversarial validation
+
+Eight falsification tests, each written so that a *failure* kills F8 rather than
+a pass confirming it. Code `scripts/validate_forecast_claim.py`, output
+`runs/forecast_validation/validation.json`.
+
+| test | what would falsify F8 | result |
+| --- | --- | --- |
+| **T1** index audit | any shared sample between context and target | 0 shared, at every horizon. **Pass** |
+| **T2** shuffled targets | a win surviving label permutation | ridge 0.9910 / GRU 1.0216, both at the variance floor; GRU **worse** (p=1.5e-08). **Pass** |
+| **T3** white-noise input | a win with no signal present | 0.9950 / 0.9964, Δ −0.0014, p=0.077 n.s. **Pass** |
+| **T4** linear-SGD control | GRU margin explained by the optimiser | linear-SGD is **worse than closed-form ridge at every horizon** (Δ −0.042 to −0.073, all p<1e-7). SGD is a handicap for a linear model, not an advantage. **Pass** |
+| **T5** AR(2) sanity | GRU beating ridge where linear is provably optimal | at h=1 the GRU **loses** to ridge (0.2844 vs 0.2795, p=0.014). The harness cannot manufacture GRU wins. **Pass** |
+| **T6** split robustness | h=16 being a lucky seed-0 split | 8/8 splits positive, mean +0.0947, sd 0.0083, range +0.081..+0.107. **Pass** |
+| **T7** non-overlapping windows | margin driven by correlated neighbouring windows | h=16 Δ +0.0963 (vs +0.1031 primary), p=2.5e-06. **Pass at h=16**; see failure below |
+| **T8** Holm correction | h=16 not surviving 9-horizon correction | Holm p = 2.24e-06. 7 of 9 horizons survive. **Pass** |
+
+**T5 is the strongest control.** On a stationary AR(2) process the minimum-MSE
+predictor *is* linear, so a correctly specified comparison must show the GRU
+failing there. It does — the GRU loses at the only horizon where AR(2) retains
+predictability. The same GRU, same optimiser, same tuning budget wins on real
+sleep EEG. The difference is therefore a property of the data, not of the harness.
+
+**T4 closes the obvious alternative explanation.** A linear map trained by the
+GRU's exact optimiser and step budget is *worse* than closed-form tuned ridge at
+all four probe horizons. So "the GRU only wins because SGD with early stopping
+regularises better than an L2 penalty" is false: the ordering is
+GRU < ridge < linear-SGD at short horizons. The GRU beats the best linear model
+available, not a weakened one.
+
+### What validation broke
+
+- **The 640 ms ridge advantage does not survive T7.** Primary run: ridge wins,
+  Δ −0.0234, p=4.1e-05. Non-overlapping windows: Δ +0.0021, p=0.58 — a dead tie.
+  The direction still reproduces across resampled splits (T6: 0/8 favour the GRU,
+  mean −0.0152), but the effect is ~0.015 MSE and windowing-sensitive. §2 has been
+  amended: the claim is now that the GRU's advantage *ends*, not that ridge wins.
+- **The h=1 margin roughly halves** under non-overlapping windows (+0.0204 →
+  +0.0096) while staying significant (p=0.00125, 21/27). The short-horizon claim
+  is safest stated at h=4..16, where T7 leaves it essentially unchanged.
+- **h=32 and h=128 do not survive Holm** — both were already non-significant, so
+  nothing was claimed at those horizons, but they must not be described as
+  evidence of a tie either.
+- **One of 8 resampled splits selected ridge alpha at the bottom grid edge**
+  (0.1) at h=16. Its delta (+0.0939) sits mid-range among the other seven, so the
+  effect is bounded, but that split's baseline is not confirmed converged.
+
+### Not yet tested
+
+- **Transductive normalisation.** Each recording is z-scored with its own
+  full-recording mean and sd, which includes the test targets. Standard practice,
+  and it applies identically to every model, so it is unlikely to create a
+  GRU-vs-ridge difference — but it is not a causal normalisation and has not been
+  ablated.
+- **Recording segment.** All windows come from a fixed 50-minute span beginning
+  ~2.8 h into each recording. Identical across models; not varied.
+- **Sleep-stage composition.** The margin has not been decomposed by stage, so it
+  is unknown whether the short-horizon advantage is uniform or driven by one stage.
+
+## 5. Loose ends
 
 - Persistence MSE is non-monotonic (2.4660 at 1280 ms, 1.8746 at 2560 ms). For
   z-scored signals an uncorrelated lag gives ~2.0, so exceeding it at 1280 ms
