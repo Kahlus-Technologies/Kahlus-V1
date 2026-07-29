@@ -49,9 +49,16 @@ from testmode_fixtures import FIXTURES, build_fixture, check_verdict  # noqa: E4
 
 HORIZONS = (1, 16, 64)
 SEED = 0
-STEPS = 900
 BATCH = 256
-LR = 2e-2
+MAX_STEPS = 3000
+EVAL_EVERY = 100
+PATIENCE = 6
+#: Ranked on validation with a short probe, then the winner is trained to
+#: convergence. A single fixed LR cannot serve all four families -- 2e-2 trains a
+#: GRU well and makes a transformer diverge, which is exactly how the first
+#: TESTMODE run produced a false "no headroom" verdict.
+LR_GRID = (1e-3, 3e-3, 1e-2, 3e-2)
+PROBE_STEPS = 400
 
 #: (family, width) -- width spans ~2 orders of magnitude in parameter count so a
 #: plateau is visible if one exists.
@@ -124,34 +131,91 @@ def _build(family: str, width: int):
     return {"mlp": MLP, "gru": GRU, "tcn": TCN, "transformer": Transformer}[family]()
 
 
-def fit_predict(family, width, train_x, train_y, test_x, *, seed=0, steps=STEPS):
-    """Identical optimiser and budget for every family -- the comparison is about
-    capacity and inductive bias, so nothing else may differ."""
+def _infer(net, x, batch=4096):
+    import torch
+
+    preds = []
+    with torch.no_grad():
+        for i in range(0, x.shape[0], batch):
+            preds.append(net(torch.as_tensor(x[i:i + batch], dtype=torch.float32)).numpy())
+    return np.concatenate(preds)
+
+
+def _train(family, width, train_x, train_y, val_x, val_y, *, lr, max_steps,
+           seed, early_stop):
+    """Train one model, optionally early-stopping on validation MSE."""
     import torch
     from torch import nn
 
     torch.manual_seed(seed)
-    torch.set_num_threads(max(1, (torch.get_num_threads() or 4)))
     net = _build(family, width)
-    n_params = sum(p.numel() for p in net.parameters())
-    opt = torch.optim.AdamW(net.parameters(), lr=LR)
+    opt = torch.optim.AdamW(net.parameters(), lr=lr)
     xt = torch.as_tensor(train_x, dtype=torch.float32)
     yt = torch.as_tensor(train_y, dtype=torch.float32)
     rng = np.random.default_rng(seed)
     n = xt.shape[0]
-    net.train()
-    for _ in range(steps):
+    best_val, best_state, bad, used = np.inf, None, 0, 0
+
+    for step in range(1, max_steps + 1):
+        net.train()
         idx = rng.integers(0, n, size=min(BATCH, n))
         opt.zero_grad(set_to_none=True)
-        nn.functional.mse_loss(net(xt[idx]), yt[idx]).backward()
+        loss = nn.functional.mse_loss(net(xt[idx]), yt[idx])
+        if not torch.isfinite(loss):
+            break                       # diverged; keep the best state so far
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(net.parameters(), 1.0)
         opt.step()
+
+        if early_stop and step % EVAL_EVERY == 0:
+            net.eval()
+            v = _mse(val_y, _infer(net, val_x))
+            if v < best_val - 1e-6:
+                best_val, bad = v, 0
+                best_state = {k: t.detach().clone() for k, t in net.state_dict().items()}
+                used = step
+            else:
+                bad += 1
+                if bad >= PATIENCE:
+                    break
+
+    if early_stop and best_state is not None:
+        net.load_state_dict(best_state)
+    else:
+        net.eval()
+        best_val = _mse(val_y, _infer(net, val_x))
+        used = max_steps
     net.eval()
-    preds = []
-    with torch.no_grad():
-        for i in range(0, test_x.shape[0], 4096):
-            chunk = torch.as_tensor(test_x[i:i + 4096], dtype=torch.float32)
-            preds.append(net(chunk).numpy())
-    return np.concatenate(preds), n_params
+    return net, float(best_val), used
+
+
+def fit_predict(family, width, train_x, train_y, test_x, *, val_x=None, val_y=None,
+                seed=0, max_steps=MAX_STEPS):
+    """Rank learning rates on validation with a short probe, then train the winner
+    to convergence with early stopping.
+
+    Every family gets the same *procedure* and the same budget ceiling. Forcing an
+    identical learning rate is not fairness -- it silently cripples whichever
+    family that rate does not suit, and produces a plateau that is an artifact of
+    optimisation rather than a property of the data.
+    """
+    n_params = sum(p.numel() for p in _build(family, width).parameters())
+    if val_x is None:
+        net, _, used = _train(family, width, train_x, train_y, train_x, train_y,
+                              lr=1e-2, max_steps=max_steps, seed=seed, early_stop=False)
+        return _infer(net, test_x), n_params
+
+    ranked = []
+    for lr in LR_GRID:
+        _, v, _ = _train(family, width, train_x, train_y, val_x, val_y,
+                         lr=lr, max_steps=PROBE_STEPS, seed=seed, early_stop=True)
+        ranked.append((v, lr))
+    best_lr = min(ranked)[1]
+    net, val_mse, used = _train(family, width, train_x, train_y, val_x, val_y,
+                                lr=best_lr, max_steps=max_steps, seed=seed,
+                                early_stop=True)
+    return _infer(net, test_x), n_params, {"lr": best_lr, "steps": used,
+                                           "val_mse": val_mse}
 
 
 def per_subject(corpus, subjects, h, pred_all):
@@ -188,17 +252,19 @@ def probe_a_capacity(corpus, tr, va, te, out_path: Path) -> dict:
 
         for family, width in GRID:
             t0 = time.time()
-            pred, n_params = fit_predict(family, width, tr_ctx, tr_y, te_ctx)
+            pred, n_params, hp = fit_predict(family, width, tr_ctx, tr_y, te_ctx,
+                                             val_x=va_ctx, val_y=va_y)
             ps = per_subject(corpus, te, h, pred)
             mse = float(np.mean(list(ps.values())))
             d = np.array([ridge_ps[s] - ps[s] for s in te])
             row[f"{family}_{width}"] = {
                 "family": family, "width": width, "n_params": n_params,
                 "mse": mse, "vs_ridge": paired_stats(d), "per_subject": ps,
-                "seconds": round(time.time() - t0, 1),
+                "chosen": hp, "seconds": round(time.time() - t0, 1),
             }
             print(f"  h={h:>3} {family:>11}_{width:<4} params {n_params:>8,} "
                   f"mse {mse:.4f}  vs_ridge {d.mean():+.4f}  "
+                  f"lr={hp['lr']:g} steps={hp['steps']}  "
                   f"({time.time() - t0:.0f}s)", flush=True)
         results[str(h)] = row
         out_path.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
@@ -263,13 +329,15 @@ def run_testmode(args) -> int:
 
         per_family = {}
         for family, width in probe_grid:
-            pred, n_params = fit_predict(family, width, tr_ctx, tr_y, te_ctx)
+            pred, n_params, hp = fit_predict(family, width, tr_ctx, tr_y, te_ctx,
+                                             val_x=va_ctx, val_y=va_y)
             mse = float(np.mean(list(per_subject(corpus, te, 1, pred).values())))
-            per_family[f"{family}_{width}"] = mse
+            per_family[f"{family}_{width}"] = {"mse": mse, "chosen": hp}
             print(f"  {family:>11}_{width:<4} {mse:.4f}  "
-                  f"({(ridge_mse - mse) / ridge_mse:+.1%} vs ridge)", flush=True)
+                  f"({(ridge_mse - mse) / ridge_mse:+.1%} vs ridge)  "
+                  f"lr={hp['lr']:g} steps={hp['steps']}", flush=True)
 
-        best = min(per_family.values())
+        best = min(v["mse"] for v in per_family.values())
         v = check_verdict(kind, ridge_mse, best)
         v["per_family"] = per_family
         verdicts.append(v)
