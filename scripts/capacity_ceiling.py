@@ -45,6 +45,7 @@ from forecast_scaleup_paired import (  # noqa: E402
     split_subjects,
     tune_ridge,
 )
+from testmode_fixtures import FIXTURES, build_fixture, check_verdict  # noqa: E402
 
 HORIZONS = (1, 16, 64)
 SEED = 0
@@ -233,6 +234,63 @@ def probe_b_personalisation(corpus, te, out_path: Path) -> dict:
     return results
 
 
+def run_testmode(args) -> int:
+    """Validate the harness against fixtures whose answers we already know.
+
+    A sweep that cannot recover a planted answer cannot be trusted to report an
+    honest one. One representative width per family at h=1 -- the fixtures encode
+    their dependence in the nearest lags, so a wider grid buys nothing here.
+    """
+    kinds = list(FIXTURES) if args.testmode == "all" else [args.testmode]
+    probe_grid = [("mlp", 256), ("gru", 256), ("tcn", 128), ("transformer", 128)]
+    verdicts, out = [], {}
+
+    for kind in kinds:
+        print(f"\n=== fixture: {kind} ===", flush=True)
+        corpus = build_fixture(kind, horizons=(1,), n_subjects=40,
+                               windows_per_subject=400, seed=SEED)
+        tr, va, te = split_subjects(list(corpus), SEED)
+        tr_ctx = np.concatenate([corpus[s][0] for s in tr])
+        va_ctx = np.concatenate([corpus[s][0] for s in va])
+        te_ctx = np.concatenate([corpus[s][0] for s in te])
+        tr_y = np.concatenate([corpus[s][1][1] for s in tr])
+        va_y = np.concatenate([corpus[s][1][1] for s in va])
+
+        _, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
+        ridge_mse = float(np.mean(list(per_subject(corpus, te, 1,
+                                                   ridge_predict(w, te_ctx)).values())))
+        print(f"  ridge {ridge_mse:.4f}", flush=True)
+
+        per_family = {}
+        for family, width in probe_grid:
+            pred, n_params = fit_predict(family, width, tr_ctx, tr_y, te_ctx)
+            mse = float(np.mean(list(per_subject(corpus, te, 1, pred).values())))
+            per_family[f"{family}_{width}"] = mse
+            print(f"  {family:>11}_{width:<4} {mse:.4f}  "
+                  f"({(ridge_mse - mse) / ridge_mse:+.1%} vs ridge)", flush=True)
+
+        best = min(per_family.values())
+        v = check_verdict(kind, ridge_mse, best)
+        v["per_family"] = per_family
+        verdicts.append(v)
+        out[kind] = v
+        print(f"  -> expected nonlinear wins={v['expected_nonlinear_wins']}  "
+              f"observed={v['observed_nonlinear_wins']}  gap={v['relative_gap']:+.1%}  "
+              f"HARNESS {'OK' if v['harness_correct'] else 'WRONG'}", flush=True)
+
+    args.out.mkdir(parents=True, exist_ok=True)
+    all_ok = all(v["harness_correct"] for v in verdicts)
+    (args.out / "testmode.json").write_text(
+        json.dumps({"schema": "kahlus.capacity_testmode.v1",
+                    "created_utc": datetime.now(timezone.utc).isoformat(),
+                    "all_fixtures_correct": all_ok, "verdicts": out}, indent=2) + "\n",
+        encoding="utf-8")
+    print(f"\n{'ALL FIXTURES CORRECT' if all_ok else 'HARNESS FAILED A FIXTURE'} "
+          f"({sum(v['harness_correct'] for v in verdicts)}/{len(verdicts)})")
+    print(f"wrote {args.out / 'testmode.json'}")
+    return 0 if all_ok else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", type=Path,
@@ -242,7 +300,13 @@ def main() -> int:
     ap.add_argument("--max-windows", type=int, default=400)
     ap.add_argument("--workers", type=int, default=10)
     ap.add_argument("--probe", choices=["a", "b", "both"], default="both")
+    ap.add_argument("--testmode", choices=[*FIXTURES, "all"],
+                    help="run against planted-signal fixtures with known verdicts "
+                         "instead of real data, to validate the harness first")
     args = ap.parse_args()
+
+    if args.testmode:
+        return run_testmode(args)
 
     args.out.mkdir(parents=True, exist_ok=True)
     corpus = load_corpus(args.data, n_subjects=args.subjects, stride=256,
