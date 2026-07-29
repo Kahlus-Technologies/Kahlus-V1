@@ -320,6 +320,7 @@ def run_testmode(args) -> int:
     their dependence in the nearest lags, so a wider grid buys nothing here.
     """
     kinds = list(FIXTURES) if args.testmode == "all" else [args.testmode]
+    n_seeds = max(1, args.seeds)
     # Mid-width models, not the largest. The question here is whether the harness
     # can DETECT a 4.5% planted effect, which a width-64 model answers as well as
     # a width-256 one at roughly a quarter of the cost. Capacity itself is what
@@ -328,9 +329,11 @@ def run_testmode(args) -> int:
     verdicts, out = [], {}
 
     for kind in kinds:
-        print(f"\n=== fixture: {kind} ===", flush=True)
+      for seed in range(n_seeds):
+        tag = kind if n_seeds == 1 else f"{kind}#seed{seed}"
+        print(f"\n=== fixture: {tag} ===", flush=True)
         corpus = build_fixture(kind, horizons=(1,), n_subjects=30,
-                               windows_per_subject=300, seed=SEED)
+                               windows_per_subject=300, seed=SEED + seed)
         tr, va, te = split_subjects(list(corpus), SEED)
         tr_ctx = np.concatenate([corpus[s][0] for s in tr])
         va_ctx = np.concatenate([corpus[s][0] for s in va])
@@ -346,7 +349,7 @@ def run_testmode(args) -> int:
         per_family = {}
         for family, width in probe_grid:
             pred, n_params, hp = fit_predict(family, width, tr_ctx, tr_y, te_ctx,
-                                             val_x=va_ctx, val_y=va_y)
+                                             val_x=va_ctx, val_y=va_y, seed=seed)
             mse = float(np.mean(list(per_subject(corpus, te, 1, pred).values())))
             per_family[f"{family}_{width}"] = {"mse": mse, "chosen": hp}
             print(f"  {family:>11}_{width:<4} {mse:.4f}  "
@@ -356,13 +359,27 @@ def run_testmode(args) -> int:
         best = min(v["mse"] for v in per_family.values())
         v = check_verdict(kind, ridge_mse, best)
         v["per_family"] = per_family
+        v["seed"] = seed
         verdicts.append(v)
-        out[kind] = v
+        out[tag] = v
         print(f"  -> expected nonlinear wins={v['expected_nonlinear_wins']}  "
               f"observed={v['observed_nonlinear_wins']}  gap={v['relative_gap']:+.1%}  "
               f"HARNESS {'OK' if v['harness_correct'] else 'WRONG'}", flush=True)
 
     args.out.mkdir(parents=True, exist_ok=True)
+    null_gaps = [v["relative_gap"] for v in verdicts
+                 if v["fixture"] in ("neutral", "no_signal")]
+    if len(null_gaps) >= 3:
+        a = np.array(null_gaps)
+        print(f"\nnull-fixture gap distribution over {a.size} runs: "
+              f"mean {a.mean():+.4f}  sd {a.std():.4f}  max {a.max():+.4f}  "
+              f"p95 {np.percentile(a, 95):+.4f}", flush=True)
+        print("  -> a detection threshold must sit ABOVE this, or the harness "
+              "reports noise as signal", flush=True)
+        out["_null_noise_floor"] = {
+            "n_runs": int(a.size), "mean": float(a.mean()), "sd": float(a.std()),
+            "max": float(a.max()), "p95": float(np.percentile(a, 95)),
+        }
     all_ok = all(v["harness_correct"] for v in verdicts)
     (args.out / "testmode.json").write_text(
         json.dumps({"schema": "kahlus.capacity_testmode.v1",
@@ -384,6 +401,9 @@ def main() -> int:
     ap.add_argument("--max-windows", type=int, default=400)
     ap.add_argument("--workers", type=int, default=10)
     ap.add_argument("--probe", choices=["a", "b", "both"], default="both")
+    ap.add_argument("--seeds", type=int, default=1,
+                    help="repeat each fixture with N seeds; used to measure the "
+                         "run-to-run noise floor on the null fixtures")
     ap.add_argument("--testmode", choices=[*FIXTURES, "all"],
                     help="run against planted-signal fixtures with known verdicts "
                          "instead of real data, to validate the harness first")
