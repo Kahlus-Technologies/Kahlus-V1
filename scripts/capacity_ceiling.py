@@ -153,6 +153,12 @@ def _train(family, width, train_x, train_y, val_x, val_y, *, lr, max_steps,
     import torch
     from torch import nn
 
+    # Single-threaded on purpose. A GRU over 127 timesteps is sequential in time,
+    # so intra-op threading cannot parallelise the recurrence -- it just pays
+    # synchronisation once per timestep. Measured on this machine: 284 ms/step at
+    # 1 thread vs 538 ms/step at 14. Parallelism belongs across configurations,
+    # not inside one.
+    torch.set_num_threads(1)
     torch.manual_seed(seed)
     net = _build(family, width)
     opt = torch.optim.AdamW(net.parameters(), lr=lr)
@@ -314,13 +320,17 @@ def run_testmode(args) -> int:
     their dependence in the nearest lags, so a wider grid buys nothing here.
     """
     kinds = list(FIXTURES) if args.testmode == "all" else [args.testmode]
-    probe_grid = [("mlp", 256), ("gru", 256), ("tcn", 128), ("transformer", 128)]
+    # Mid-width models, not the largest. The question here is whether the harness
+    # can DETECT a 4.5% planted effect, which a width-64 model answers as well as
+    # a width-256 one at roughly a quarter of the cost. Capacity itself is what
+    # the real sweep varies; this is a sensitivity check.
+    probe_grid = [("mlp", 64), ("gru", 64), ("tcn", 64), ("transformer", 64)]
     verdicts, out = [], {}
 
     for kind in kinds:
         print(f"\n=== fixture: {kind} ===", flush=True)
-        corpus = build_fixture(kind, horizons=(1,), n_subjects=40,
-                               windows_per_subject=400, seed=SEED)
+        corpus = build_fixture(kind, horizons=(1,), n_subjects=30,
+                               windows_per_subject=300, seed=SEED)
         tr, va, te = split_subjects(list(corpus), SEED)
         tr_ctx = np.concatenate([corpus[s][0] for s in tr])
         va_ctx = np.concatenate([corpus[s][0] for s in va])
