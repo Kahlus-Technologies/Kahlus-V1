@@ -56,3 +56,5 @@ One line per cycle. `advanced` / `killed` / `inconclusive` / `blocked`.
 | Cycle | Date | Decision worked | Outcome | Note |
 | --- | --- | --- | --- | --- |
 | 0 | 2026-07-28 | — | setup | Register created; nothing run yet |
+| 1 | 2026-07-29 | D1 | advanced | Built the capacity-ceiling harness (`scripts/capacity_ceiling.py`). Also merged the F8 branch into `research/auto-survey` — `forecast_scaleup_paired.py` was not reachable from this branch, which the loop prompt tells the agent to reuse. |
+| 2 | 2026-07-29 | D1 | **harness rejected** | TESTMODE fixtures built (`scripts/testmode_fixtures.py`), harness scored **3/4**. Failed `small_win`: 4.5% planted nonlinear headroom, best model −2.6% vs ridge. On real data this would have fired H1's falsifier and killed the hypothesis for an optimisation reason, not a data reason. Root cause: one shared `lr=2e-2` across four families; the transformer diverged everywhere (−87%, −134%, −283%). Fixed with per-family LR ranking + early stopping. Re-validating. |

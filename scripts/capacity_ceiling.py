@@ -59,6 +59,12 @@ PATIENCE = 6
 #: TESTMODE run produced a false "no headroom" verdict.
 LR_GRID = (1e-3, 3e-3, 1e-2, 3e-2)
 PROBE_STEPS = 400
+#: Extended below the shared default (which starts at 0.1) because the fixtures
+#: repeatedly selected that bottom edge. An edge selection means the baseline
+#: wanted less regularisation than the grid allowed, i.e. it is under-tuned --
+#: which would inflate exactly the neural advantage this experiment measures.
+RIDGE_ALPHAS_WIDE = (1e-4, 1e-3, 1e-2, 0.1, 0.5, 1.0, 5.0, 20.0, 100.0, 500.0,
+                     2000.0, 1e4, 5e4, 2e5, 1e6, 5e6, 2e7)
 
 #: (family, width) -- width spans ~2 orders of magnitude in parameter count so a
 #: plateau is visible if one exists.
@@ -240,7 +246,7 @@ def probe_a_capacity(corpus, tr, va, te, out_path: Path) -> dict:
         va_y = np.concatenate([corpus[s][1][h] for s in va])
         row: dict[str, dict] = {}
 
-        alpha, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
+        alpha, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y, alphas=RIDGE_ALPHAS_WIDE)
         ridge_ps = per_subject(corpus, te, h, ridge_predict(w, te_ctx))
         ridge_mse = float(np.mean(list(ridge_ps.values())))
         row["ridge"] = {"width": None, "n_params": L + 1, "alpha": alpha,
@@ -322,7 +328,7 @@ def run_testmode(args) -> int:
         tr_y = np.concatenate([corpus[s][1][1] for s in tr])
         va_y = np.concatenate([corpus[s][1][1] for s in va])
 
-        _, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y)
+        _, w = tune_ridge(tr_ctx, tr_y, va_ctx, va_y, alphas=RIDGE_ALPHAS_WIDE)
         ridge_mse = float(np.mean(list(per_subject(corpus, te, 1,
                                                    ridge_predict(w, te_ctx)).values())))
         print(f"  ridge {ridge_mse:.4f}", flush=True)
