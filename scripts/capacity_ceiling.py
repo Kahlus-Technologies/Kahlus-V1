@@ -356,14 +356,29 @@ def run_testmode(args) -> int:
                   f"({(ridge_mse - mse) / ridge_mse:+.1%} vs ridge)  "
                   f"lr={hp['lr']:g} steps={hp['steps']}", flush=True)
 
-        best = min(v["mse"] for v in per_family.values())
+        # Select the family on VALIDATION, then report ITS test MSE. Taking the
+        # minimum test MSE over four families is selection on the test set: the
+        # max of k noisy estimates is biased upward even when every true effect is
+        # zero, so a null fixture yields an apparent win. Measured on `neutral`,
+        # where linear is provably optimal, min-over-test gave +1.2% and +2.0% on
+        # consecutive seeds -- both in the same direction, which is the signature
+        # of bias rather than noise.
+        chosen_family = min(per_family.items(),
+                            key=lambda kv: kv[1]["chosen"]["val_mse"])[0]
+        best = per_family[chosen_family]["mse"]
         v = check_verdict(kind, ridge_mse, best)
+        v["chosen_family"] = chosen_family
+        v["best_test_mse_if_selected_on_test"] = min(
+            x["mse"] for x in per_family.values())
         v["per_family"] = per_family
         v["seed"] = seed
         verdicts.append(v)
         out[tag] = v
-        print(f"  -> expected nonlinear wins={v['expected_nonlinear_wins']}  "
-              f"observed={v['observed_nonlinear_wins']}  gap={v['relative_gap']:+.1%}  "
+        naive = (ridge_mse - v["best_test_mse_if_selected_on_test"]) / ridge_mse
+        print(f"  -> val-selected {chosen_family}  gap={v['relative_gap']:+.1%}  "
+              f"(selection-on-test would report {naive:+.1%})", flush=True)
+        print(f"     expected nonlinear wins={v['expected_nonlinear_wins']}  "
+              f"observed={v['observed_nonlinear_wins']}  "
               f"HARNESS {'OK' if v['harness_correct'] else 'WRONG'}", flush=True)
 
     args.out.mkdir(parents=True, exist_ok=True)
