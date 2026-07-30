@@ -38,8 +38,8 @@ in windowed forecast evaluation}\\[7pt]
 
 \begin{quote}\small
 \textbf{Scope.} Two results: an exact bound on how much a window-scored
-forecast metric can overstate forecast skill --- derived, not fitted, and verified
-on 286 configurations without a violation --- and a corrected benchmark that
+forecast metric can overstate forecast skill --- derived, not fitted, and violated
+by no $(W,H)$ pair on any trace we tested --- and a corrected benchmark that
 survived eight falsification tests, one of which broke a secondary claim we had
 made. That failure is reported here rather than removed. Every number is
 traceable to a named artifact.
@@ -108,16 +108,17 @@ real recordings.}
 
 \section{Verification}
 
-$W\in\{32,64,128,256\}\times H\in\{1,\dots,128\}$, $H<W$, over eleven signals
-spanning autocorrelation as widely as possible: three Sleep-EDF channels (Fpz-Cz,
-Pz-Oz, EOG), four MIT-BIH polysomnographic channels (ECG, blood pressure, O2-A1
-EEG, nasal respiration), and four synthetic processes (white noise, AR(1)
-$\phi{=}0.5$, AR(1) $\phi{=}0.95$, random walk).
+A 26-point grid, $W\in\{32,64,128,256\}\times H\in\{1,\dots,128\}$ with $H<W$, on each
+of 11 traces: \textbf{7 recorded channels from two public datasets} --- Sleep-EDF
+(Fpz-Cz, Pz-Oz, EOG) and MIT-BIH polysomnographic (ECG, blood pressure, O2-A1 EEG,
+nasal respiration) --- plus 4 synthetic processes (white noise, AR(1) $\phi{=}0.5$,
+AR(1) $\phi{=}0.95$, random walk). Two datasets, picked for spread in
+autocorrelation rather than for count.
 
 \vspace{1pt}
-\noindent\textbf{Bound violations: 0 of 286.} Observed/bound median $1.000$, mean
-$0.981$; the exact formula matches observed inflation to a maximum relative error
-of $1.3\times10^{-15}$.
+\noindent\textbf{No $(W,H)$ pair violated the bound, on any trace} (286 grid cells
+in total). Observed/bound median $1.000$, mean $0.981$; the exact formula matches
+observed inflation to a maximum relative error of $1.3\times10^{-15}$.
 
 Agreement is at machine precision because the relation is an identity; the code
 asserts the decomposition per cell, so an incorrect mask fails loudly rather than
