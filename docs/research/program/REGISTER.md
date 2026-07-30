@@ -39,7 +39,7 @@ Append-only. Never delete a row — move it to **Killed** with a date and reason
 
 | ID | Hypothesis | Killed | Why | Evidence |
 | --- | --- | --- | --- | --- |
-| — | *(none yet)* | | | |
+| H6 | F9's `W/H` bound transfers from MSE to reported correlation, so one methods-section number audits both metrics | 2026-07-30 | **Falsified, 223/286 cells.** The exact bound is `1 + ((W−H)/H)·(s_pred·s_targ)^(−1/2)`; `W/H` is only the `s_pred = s_targ = 1` case. Regularised models shrink toward the mean exactly where the signal is unpredictable, so `s_pred < 1` (median 0.700) and the true deflation *exceeds* `W/H` — median 1.21×, up to 10.8×. `W/H` understates correlation inflation, and does so worst where there is least real signal. **Pre-registration caveat:** H6 was never in the Open table. Its falsifier was encoded in the harness (`gap_bound_W_over_H`, `wh_respected`) before the data run, so the test was not tuned to its outcome — but it does not carry the full guarantee the Open table is for, and is entered here rather than claimed as pre-registered. | `docs/results/correlation_inflation_law_2026-07-30.md`, `artifacts/correlation_law/` |
 
 ## Inconclusive — needs more power or better method
 
@@ -57,4 +57,5 @@ One line per cycle. `advanced` / `killed` / `inconclusive` / `blocked`.
 | --- | --- | --- | --- | --- |
 | 0 | 2026-07-28 | — | setup | Register created; nothing run yet |
 | 1 | 2026-07-29 | D1 | advanced | Built the capacity-ceiling harness (`scripts/capacity_ceiling.py`). Also merged the F8 branch into `research/auto-survey` — `forecast_scaleup_paired.py` was not reachable from this branch, which the loop prompt tells the agent to reuse. |
+| 3 | 2026-07-30 | D4 | **killed H6** | Derived the correlation analogue of F9 (F10), verified 0/286 violations on the exact bound — and falsified the convenient extrapolation that `W/H` carries over. It does not, 223/286, and it errs in the flattering direction. Recorded as H6 in Killed — see the caveat on that row about its pre-registration status. |
 | 2 | 2026-07-29 | D1 | **harness rejected** | TESTMODE fixtures built (`scripts/testmode_fixtures.py`), harness scored **3/4**. Failed `small_win`: 4.5% planted nonlinear headroom, best model −2.6% vs ridge. On real data this would have fired H1's falsifier and killed the hypothesis for an optimisation reason, not a data reason. Root cause: one shared `lr=2e-2` across four families; the transformer diverged everywhere (−87%, −134%, −283%). Fixed with per-family LR ranking + early stopping. Re-validating. |
