@@ -29,6 +29,12 @@ def copy_repo_to_temp_git(tmp: str) -> Path:
     subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=tmp_repo, check=True)
     subprocess.run(["git", "config", "user.name", "Bundle Test"], cwd=tmp_repo, check=True)
     subprocess.run(["git", "config", "commit.gpgsign", "false"], cwd=tmp_repo, check=True)
+    # A throwaway repo must not run background maintenance. `git commit` can fire
+    # `gc --auto`, which writes .git/objects/info/packs and .git/info/refs after
+    # the test body finishes -- racing TemporaryDirectory cleanup and failing it
+    # with "Directory not empty". Observed intermittently (~40% of runs) on macOS.
+    subprocess.run(["git", "config", "gc.auto", "0"], cwd=tmp_repo, check=True)
+    subprocess.run(["git", "config", "maintenance.auto", "false"], cwd=tmp_repo, check=True)
     subprocess.run(["git", "add", "."], cwd=tmp_repo, check=True)
     subprocess.run(["git", "commit", "-q", "-m", "bundle test"], cwd=tmp_repo, check=True)
     return tmp_repo
