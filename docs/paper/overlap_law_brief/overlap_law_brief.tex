@@ -1,5 +1,5 @@
 \documentclass[10pt]{article}
-\usepackage[margin=0.9in]{geometry}
+\usepackage[margin=0.8in]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
@@ -18,7 +18,7 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\rhead{\small Kahlus --- overlap inflation law, 28 July 2026}
+\rhead{\small Kahlus --- metric inflation in windowed forecast evaluation, 30 July 2026}
 \cfoot{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -29,7 +29,7 @@
 in windowed forecast evaluation}\\[7pt]
 {\large And a corrected, powered EEG forecasting benchmark}\\[10pt]
 {\normalsize Kahlus / Neural-CASP}\\[5pt]
-{\small 28 July 2026}\\[3pt]
+{\small 30 July 2026}\\[3pt]
 {\small Repository \texttt{Kahlus-V1}, branches
 \texttt{finding/overlap-inflation-law}, \texttt{finding/forecast-crossover-f8}}
 \end{center}
@@ -37,12 +37,14 @@ in windowed forecast evaluation}\\[7pt]
 \vspace{2pt}\hrule\vspace{5pt}
 
 \begin{quote}\small
-\textbf{Scope.} Two results: an exact bound on how much a window-scored
+\textbf{Scope.} Three results: an exact bound on how much a window-scored
 forecast metric can overstate forecast skill --- derived, not fitted, and violated
-by no $(W,H)$ pair on any trace we tested --- and a corrected benchmark that
-survived eight falsification tests, one of which broke a secondary claim we had
-made. That failure is reported here rather than removed. Every number is
-traceable to a named artifact.
+by no $(W,H)$ pair on any trace we tested; the corresponding result for
+\emph{correlation}, which turns out \emph{not} to inherit the same constant, so
+the convenient extrapolation is falsified here rather than left to a reader; and
+a corrected benchmark that survived eight falsification tests, one of which
+broke a secondary claim we had made. Both failures are reported rather than
+removed. Every number is traceable to a named artifact.
 \end{quote}
 
 \vspace{2pt}
@@ -62,11 +64,10 @@ dilutes a genuine forecast error with positions a model can copy.
 
 This is not the leakage the field guards against. It survives subject-wise
 partitioning, nested cross-validation and non-overlapping strides, because it lives
-\emph{inside a single training example} rather than across the train/test split. We
-could not find it addressed in the leakage literature (Bernett et al.,
-\textit{Nat.\ Methods} 2024; Del Pup et al.\ 2025, five CV schemes over $10^5$
-trained EEG models; Apicella et al.\ 2024), all of which treat information shared
-\emph{between} examples.
+\emph{inside a single training example} rather than across the train/test split ---
+and the leakage literature we could find (Bernett et al., \textit{Nat.\ Methods}
+2024; Del Pup et al.\ 2025, five CV schemes over $10^5$ trained EEG models;
+Apicella et al.\ 2024) treats only information shared \emph{between} examples.
 
 \section{The law}
 
@@ -95,43 +96,76 @@ reporting a number that may be up to $128\times$ better than its forecast error.
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=0.90\textwidth]{overlap_law.png}
-\caption{\textbf{Left:} predicted bound $W/H$ against observed inflation, log--log,
-with the identity line. Points lie on it and never above it; the region where a
-counterexample would appear is empty. Colour is the correction term. The star is
-this project's own invalidated result ($W{=}127$, $H{=}1$): predicted $127\times$,
-measured $126.1\times$. \textbf{Right:} every departure from the bound is
-explained by the single term $\mathrm{MSE}_{\text{copy}}/\mathrm{MSE}_{\text{future}}$,
-monotonically, across five decades. Triangles are synthetic processes, circles
-real recordings.}
+\includegraphics[width=0.88\textwidth]{overlap_law.png}
+\caption{\textbf{Left:} predicted bound $W/H$ against observed MSE inflation,
+log--log. Points lie on the identity and never above it; the region where a
+counterexample would appear is empty. The star is this project's own invalidated
+result ($W{=}127$, $H{=}1$): predicted $127\times$, measured $126.1\times$.
+\textbf{Right:} every departure is explained by the single term
+$\mathrm{MSE}_{\text{copy}}/\mathrm{MSE}_{\text{future}}$, monotonically, across
+five decades. Triangles synthetic, circles real recordings.}
+\end{figure}
+
+\section{The same question for correlation, and a negative answer}
+
+Most work in this area leads with $r$, not MSE, so whether $W/H$ transfers
+decides how far the bound reaches. Correlation is a ratio, not a per-position
+average, so the identity above does not apply. An AM-GM argument on the pooled
+deviation moments still gives an exact, assumption-free bound,
+\[
+|r_{\text{overlap}}| \;\le\; \bigl|\,\mu\, r_{\text{copy}} + (1-\mu)\, r_{\text{future}}\bigr|,
+\]
+with $\mu$ the variance share of the copyable positions --- a reported
+correlation is at most a variance-weighted blend of how well a model copies and
+how well it forecasts. Violated by none of the 286 cells.
+
+\textbf{But $W/H$ does not carry over.} Expanding $\mu$ gives the exact
+correlation-gap bound $1 + \frac{W-H}{H}(s_{p}s_{t})^{-1/2}$, where $s_p, s_t$
+are the future/copy per-position variance ratios of the prediction and target;
+$W/H$ is only the case $s_p{=}s_t{=}1$. Targets are variance-stationary
+($s_t$ median $0.996$), but predictions are not: a regularised model shrinks
+toward the mean precisely where the signal is unpredictable ($s_p$ median
+$0.700$). So the true deflation \emph{exceeds} $W/H$ --- median $1.21\times$, up
+to $10.8\times$ --- on \textbf{223 of 286 cells}, always in the direction that
+flatters the paper, and worst where there is least real signal. The shrinkage
+form reproduces the measured bound to median relative error $7.1\times10^{-16}$,
+so this is a mechanism, not an anomaly. \textbf{The sharpest case is white
+noise at $W{=}32, H{=}1$: reported $r=0.984$, true $r_{\text{future}}=0.014$.}
+
+What survives with no data is one-directional: $r < 1-H/W$ proves a reported
+correlation bounds nothing; clearing that screen does not prove it informative.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.88\textwidth]{correlation_law.png}
+\caption{\textbf{Left:} the exact correlation bound is violated by none of the
+286 cells; the $W/H$ shortcut carried over from the MSE law is violated by 223,
+all of them in the shaded region where a reported number looks better than it
+is. \textbf{Right:} the departure is not noise. Rearranging the exact bound
+forces $(\text{exact}-1)/(W/H-1) = (s_p s_t)^{-1/2}$ with no fitted parameter,
+and every cell lies on that curve across three decades. $W/H$ is correct only
+where the dotted line crosses it --- i.e.\ only for a model that does not shrink.}
 \end{figure}
 
 \section{Verification}
 
-A 26-point grid, $W\in\{32,64,128,256\}\times H\in\{1,\dots,128\}$ with $H<W$, on each
-of 11 traces: \textbf{7 recorded channels from two public datasets} --- Sleep-EDF
-(Fpz-Cz, Pz-Oz, EOG) and MIT-BIH polysomnographic (ECG, blood pressure, O2-A1 EEG,
-nasal respiration) --- plus 4 synthetic processes (white noise, AR(1) $\phi{=}0.5$,
-AR(1) $\phi{=}0.95$, random walk). Two datasets, picked for spread in
-autocorrelation rather than for count.
+Both laws are checked on the same 26-point grid,
+$W\in\{32,64,128,256\}\times H\in\{1,\dots,128\}$ with $H<W$, over 11 traces:
+\textbf{7 recorded channels} from Sleep-EDF (Fpz-Cz, Pz-Oz, EOG) and MIT-BIH
+polysomnographic (ECG, blood pressure, O2-A1 EEG, nasal respiration), plus 4
+synthetic processes (white noise, AR(1) $\phi{\in}\{0.5,0.95\}$, random walk) ---
+picked for spread in autocorrelation rather than for count.
 
 \vspace{1pt}
-\noindent\textbf{No $(W,H)$ pair violated the bound, on any trace} (286 grid cells
-in total). Observed/bound median $1.000$, mean $0.981$; the exact formula matches
-observed inflation to a maximum relative error of $1.3\times10^{-15}$.
-
-Agreement is at machine precision because the relation is an identity; the code
-asserts the decomposition per cell, so an incorrect mask fails loudly rather than
-producing a plausible curve. Departures are monotone in the correction term: mean
-observed/bound is $1.000$ below $10^{-5}$ (126 cells), $0.986$ over
-$10^{-3}$--$10^{-2}$ (38 cells), $0.428$ above $10^{-1}$ (4 cells). That
-monotonicity is the argument --- the law is not approximately right by luck, it is
-exactly right with a known correction.
-
-\textbf{The sharpest test is white noise.} A signal with no predictable structure
-still inflates at the bound (median $1.000$): the copyable positions are in the
-input whether or not anything is forecastable. The artifact belongs to the
-\emph{metric}, not to the signal or the model.
+\noindent\textbf{No $(W,H)$ pair violated either exact bound, on any trace}
+(286 grid cells). For the MSE law, observed/bound median $1.000$, mean $0.981$,
+matching the exact formula to a maximum relative error of $1.3\times10^{-15}$ ---
+machine precision, because the relation is an identity, and the code asserts the
+decomposition per cell so an incorrect mask fails loudly rather than producing a
+plausible curve. Departures are monotone in the correction term: the law is not
+approximately right by luck, it is exactly right with a known correction. White
+noise, where nothing whatever is predictable, still inflates at the bound --- the
+artifact belongs to the \emph{metric}, not to the signal or the model.
 
 \section{The corrected benchmark}
 
@@ -169,21 +203,21 @@ to ``the advantage ends by 320\,ms'' rather than ``linear wins beyond it''.
 \noindent\small
 \textbf{Not claimed.} No clinical utility --- 160\,ms is roughly $400\times$ shorter
 than the $\sim$1\,minute precursor timescale of interest. Single channel, one
-corpus. The law governs the \emph{metric}, not model quality: a good model and a
-useless one inflate identically. The prevalence survey, establishing how often
-published work uses $H<W$, is not done; that is what would turn this from a tool
+corpus. The prevalence survey, establishing how often published work uses $H<W$,
+is not done; that is what would turn these from tools for auditing one paper
 into a finding about the field.
 
 \vspace{3pt}
 \noindent\scriptsize
-\textbf{Artifacts.} \texttt{artifacts/overlap\_law/} and
-\texttt{artifacts/forecast\_crossover/} hold the 286 cells, the figure, the
-benchmark and the eight-test validation; the corresponding write-ups are
-\texttt{docs/results/overlap\_inflation\_law\_2026-07-28.md} and
-\texttt{forecast\_crossover\_2026-07-27.md}; produced by
-\texttt{scripts/overlap\_inflation\_law.py}, \texttt{forecast\_scaleup\_paired.py}
-and \texttt{validate\_forecast\_claim.py}. The invalidated $3.116$\,MSE\,/\,$r{=}0.972$
-result is retained in \texttt{docs/results/a100-run-history.md} as evidence of the
-bug, not as performance.
+\textbf{Artifacts.} \texttt{artifacts/\{overlap\_law, correlation\_law,
+forecast\_crossover\}/} hold the cells, figures, benchmark and the eight-test
+validation, each beside its write-up in \texttt{docs/results/}. Produced by
+\texttt{scripts/\{overlap\_inflation\_law, correlation\_inflation\_law,
+forecast\_scaleup\_paired, validate\_forecast\_claim\}.py}; the correlation
+harness carries a \texttt{--selftest} for the theorem. The invalidated
+$3.116$\,MSE\,/\,$r{=}0.972$ result is retained in
+\texttt{docs/results/a100-run-history.md} as evidence of the bug, not as
+performance --- note it fails the $r<1-H/W$ screen, so it never bounded forecast
+skill at all.
 
 \end{document}
