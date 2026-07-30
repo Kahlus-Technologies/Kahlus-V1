@@ -172,6 +172,7 @@ def make_autonomic_fixture(
     *,
     seed: int,
     residual_signal: bool,
+    strength: float = 1.0,
     horizons: tuple[int, ...] = DEFAULT_HORIZONS,
     n_subjects: int = 16,
     epochs_per_subject: int = 180,
@@ -197,15 +198,19 @@ def make_autonomic_fixture(
             cycle = np.sin(2.0 * np.pi * epoch / 30.0)
             precursor = 0.85 * precursor + rng.normal(0.0, 0.4)
             visible = precursor if residual_signal else rng.normal(0.0, 1.0)
+            # `strength` scales the injected autonomic->future-arousal coupling on
+            # the residual path (default 1.0 = unchanged). strength=0 collapses it
+            # to a null; graded values drive a calibration sweep.
+            scale = strength if residual_signal else 1.0
             eeg = rng.normal(0.0, 0.15, size=(samples, 1)).astype(np.float32)
             eeg[:, 0] += 0.6 * cycle * np.sin(2.0 * np.pi * 4.0 * t_axis)
             auto = rng.normal(0.0, 0.12, size=(samples, 4)).astype(np.float32)
-            auto[:, 0] += 1.2 * visible * np.sin(2.0 * np.pi * 1.5 * t_axis)
-            auto[:, 1] += 0.9 * visible * np.cos(2.0 * np.pi * 0.8 * t_axis)
-            auto[:, 2] += 0.7 * visible * np.linspace(-1.0, 1.0, samples)
-            auto[:, 3] += 0.8 * visible * np.sin(2.0 * np.pi * 2.2 * t_axis)
+            auto[:, 0] += 1.2 * scale * visible * np.sin(2.0 * np.pi * 1.5 * t_axis)
+            auto[:, 1] += 0.9 * scale * visible * np.cos(2.0 * np.pi * 0.8 * t_axis)
+            auto[:, 2] += 0.7 * scale * visible * np.linspace(-1.0, 1.0, samples)
+            auto[:, 3] += 0.8 * scale * visible * np.sin(2.0 * np.pi * 2.2 * t_axis)
             logit = -2.2 + 0.8 * cycle + 1.4 * float(np.mean(arousal_events[-6:])) + (
-                2.8 * precursor if residual_signal else 0.0
+                2.8 * strength * precursor if residual_signal else 0.0
             )
             event = int(rng.random() < _sigmoid(logit))
             raw_eeg.append(eeg)
@@ -235,6 +240,158 @@ def make_autonomic_fixture(
         dataset=np.asarray(datasets, dtype=np.int64),
         nuisance=np.asarray(nuisance, dtype=np.float32),
         base_rate=np.asarray(base_rates, dtype=np.float32),
+    )
+
+
+#: Which per-epoch mask from the adapter supplies Y for each requested class.
+_AROUSAL_MASK_KEY = {
+    "all": "arousal",
+    "respiratory": "arousal_respiratory",
+    "non_respiratory": "arousal_non_respiratory",
+}
+
+
+def load_slpdb_autonomic_fixture(
+    *,
+    records: tuple[str, ...] | None = None,
+    horizons: tuple[int, ...] = DEFAULT_HORIZONS,
+    max_records: int | None = None,
+    dataset_code: int = 2,
+    arousal_class: str = "all",
+    data_dir: str | None = None,
+    target: str = "arousal",
+) -> AutonomicRfsFixture:
+    """Build the autonomic fixture from MIT-BIH slpdb (open, no credentialing).
+
+    Same estimand and nuisance construction as the NSRR path so the two are
+    comparable. Subjects are grouped by slpdb's numeric prefix, so the two
+    two-part recordings (``slp01a``/``slp01b``, ``slp02a``/``slp02b``) cannot put
+    one person on both sides of a subject-held-out split.
+
+    ``arousal_class`` selects which arousals become Y:
+
+    ``non_respiratory``
+        Bare and leg-movement arousals. The class where autonomic precedence is
+        actually supported (Bonnet & Arand; Togo et al.; Allena et al.).
+    ``respiratory``
+        Arousals terminating a hypopnea or apnea. Precedence evidence here is
+        weak, and Bahr-Hamm et al. (2022) report no autonomic coupling at all.
+    ``all``
+        Pooled. Reported for continuity with earlier runs, but it averages the
+        two classes above and so is the least interpretable of the three.
+
+    Y and its base rate follow the selected class; the nuisance block keeps the
+    *pooled* recent-arousal history, since all arousals are observable to the
+    baseline regardless of which class is being predicted. That makes B stronger
+    and the residual test more conservative.
+    """
+    if arousal_class not in _AROUSAL_MASK_KEY:
+        raise ValueError(
+            f"arousal_class must be one of {sorted(_AROUSAL_MASK_KEY)}, got {arousal_class!r}"
+        )
+    if target not in {"arousal", "rem"}:
+        raise ValueError(f"target must be 'arousal' or 'rem', got {target!r}")
+    import wfdb
+
+    from neurotwin.adapters.slpdb import load_slpdb_record, subject_id_from_record
+
+    if data_dir is not None:
+        # Only records whose signal and annotation files are both present locally.
+        local = Path(data_dir)
+        available = {p.stem for p in local.glob("*.dat")} & {p.stem for p in local.glob("*.st")}
+        names = sorted(available) if records is None else [r for r in records if r in available]
+    else:
+        names = list(records) if records is not None else list(wfdb.get_record_list("slpdb"))
+    if max_records is not None:
+        names = names[:max_records]
+    subject_codes: dict[str, int] = {}
+    for name in names:
+        subject_codes.setdefault(subject_id_from_record(name), len(subject_codes))
+
+    eeg_epochs: list[np.ndarray] = []
+    autonomic_epochs: list[np.ndarray] = []
+    y_maps: dict[int, list[int]] = {h: [] for h in horizons}
+    subjects: list[int] = []
+    datasets: list[int] = []
+    nuisance: list[list[float]] = []
+    base_rates: list[float] = []
+    channels_used: dict[str, list[str]] = {}
+    skipped: list[str] = []
+    max_h = max(horizons)
+
+    for name in names:
+        try:
+            rec = load_slpdb_record(name, data_dir=data_dir)
+        except Exception as exc:  # noqa: BLE001 - skip a bad record, keep the cohort
+            skipped.append(f"{name}:{exc}")
+            continue
+        # Y is the requested class; the pooled mask still feeds the nuisance block
+        # so B sees all observable arousal history regardless of class. That makes
+        # B stronger and the residual test correspondingly more conservative.
+        pooled_mask = rec["arousal"]
+        n_epochs = rec["n_epochs"]
+        if target == "rem":
+            # Positive control. slpdb staging is R&K-scored from EEG (C4-A1) only,
+            # so Z (ECG / BP / Resp) is disjoint from the scorer's input and a
+            # certification here cannot be the model re-reading the scorer's own
+            # evidence. Wake and movement-time epochs are dropped so the contrast
+            # is REM vs NREM rather than REM vs everything.
+            stages = rec["stages"]
+            arousal_mask = np.asarray([int(s == "R") for s in stages], dtype=np.int64)
+            sleep = np.asarray([s not in {"W", "MT", ""} for s in stages], dtype=bool)
+        else:
+            arousal_mask = rec[_AROUSAL_MASK_KEY[arousal_class]]
+            sleep = np.ones(n_epochs, dtype=bool)
+        if n_epochs < max_h + 4:
+            skipped.append(f"{name}:too_few_epochs")
+            continue
+        channels_used.setdefault("slpdb", [])
+        for label in rec["channels"]:
+            if label not in channels_used["slpdb"]:
+                channels_used["slpdb"].append(label)
+        subj = subject_codes[rec["subject"]]
+        recent_changes = [0]
+        for epoch in range(n_epochs - max_h):
+            if not sleep[epoch]:
+                continue
+            for h in horizons:
+                y_maps[h].append(
+                    int(arousal_mask[epoch])
+                    if h == 0
+                    else int(np.any(arousal_mask[epoch + 1 : epoch + h + 1]))
+                )
+            eeg_epochs.append(_resample_epoch(rec["eeg_epochs"][epoch], target_len=128))
+            autonomic_epochs.append(_resample_epoch(rec["autonomic_epochs"][epoch], target_len=128))
+            subjects.append(subj)
+            datasets.append(dataset_code)
+            recent = float(np.mean(recent_changes[-12:]))
+            nuisance.append(
+                [
+                    1.0,
+                    np.sin(2.0 * np.pi * epoch / max(1, n_epochs)),
+                    np.cos(2.0 * np.pi * epoch / max(1, n_epochs)),
+                    recent,
+                    float(pooled_mask[epoch]),
+                ]
+            )
+            base_rates.append(float(np.mean(arousal_mask[max(0, epoch - 10) : epoch + 1])))
+            recent_changes.append(int(pooled_mask[epoch] != pooled_mask[max(0, epoch - 1)]))
+
+    if not eeg_epochs:
+        raise ValueError(f"no usable slpdb windows parsed (skipped: {skipped})")
+    if len(set(subjects)) < 3:
+        raise ValueError(f"need at least 3 slpdb subjects, got {len(set(subjects))}")
+    if skipped:
+        channels_used["skipped_records"] = skipped
+    return AutonomicRfsFixture(
+        eeg_epochs=np.asarray(eeg_epochs, dtype=np.float32),
+        autonomic_epochs=np.asarray(autonomic_epochs, dtype=np.float32),
+        y_by_horizon={h: np.asarray(y_maps[h], dtype=np.int64) for h in horizons},
+        subject=np.asarray(subjects, dtype=np.int64),
+        dataset=np.asarray(datasets, dtype=np.int64),
+        nuisance=np.asarray(nuisance, dtype=np.float32),
+        base_rate=np.asarray(base_rates, dtype=np.float32),
+        channels_used=channels_used,
     )
 
 

@@ -1,0 +1,201 @@
+{
+  "criteria_divergence": {
+    "_rfs_eval": {
+      "anchor": "_rfs_eval.py:147,186,188",
+      "control_ratio": 0.4,
+      "effect_floor": 0.02
+    },
+    "m1": {
+      "anchor": "m1.py:444,446",
+      "control_ratio": 0.4,
+      "effect_floor": 0.03
+    },
+    "m2": {
+      "anchor": "m2.py:574,595",
+      "control_ratio": "0.40 synthetic / 0.50 real",
+      "effect_floor": null
+    },
+    "m3": {
+      "anchor": "m3.py:406,409",
+      "control_ratio": 0.5,
+      "effect_floor": null
+    },
+    "m4": {
+      "anchor": "m4.py:408",
+      "control_ratio": 0.4,
+      "effect_floor": 0.03
+    },
+    "m5": {
+      "anchor": "m5.py:345,347",
+      "control_ratio": 0.5,
+      "effect_floor": 0.001
+    },
+    "passive_pci": {
+      "anchor": "passive_pci.py:367,402,404",
+      "control_ratio": 0.4,
+      "effect_floor": 0.02
+    }
+  },
+  "n_reports": 13,
+  "purpose": "Frozen record of what every archived gate report decides, with the per-module criteria that produced it. Replay after any gate refactor and diff: a flipped verdict is a hard failure, not a merge conflict.",
+  "reports": {
+    "artifacts/autonomic_rfs_arousal/autonomic_rfs_report.json": {
+      "criteria": null,
+      "criteria_module": null,
+      "schema": "kahlus.forecastability.autonomic_rfs.v1",
+      "verdict": {
+        "claim_scope": "autonomic_residual_forecastability_micro_arousal_beyond_cortical_spectral_subject_held_out_nsrr_mesa_shhs_not_gastric_egg_not_coleman_data_not_clinical",
+        "gate_passed": true,
+        "stop_reason": "Synthetic fixture validated; MESA real cohort not available \u2014 obtain NSRR credentialed access before claim-grade autonomic RFS."
+      }
+    },
+    "artifacts/forecastability_trial0_m0/m0_gate_report.json": {
+      "criteria": null,
+      "criteria_module": null,
+      "schema": null,
+      "verdict": {
+        "gate_passed": true,
+        "stop_reason": "M0 gate reached; do not proceed to M1 until this report is reviewed."
+      }
+    },
+    "artifacts/forecastability_trial0_m1/m1_gate_report.json": {
+      "criteria": {
+        "anchor": "m1.py:444,446",
+        "control_ratio": 0.4,
+        "effect_floor": 0.03
+      },
+      "criteria_module": "m1",
+      "schema": null,
+      "verdict": {
+        "gate_passed": true,
+        "stop_reason": "M1 gate reached; do not proceed to M2 until this report is reviewed."
+      }
+    },
+    "artifacts/forecastability_trial0_m2/m2_gate_report.json": {
+      "criteria": {
+        "anchor": "m2.py:574,595",
+        "control_ratio": "0.40 synthetic / 0.50 real",
+        "effect_floor": null
+      },
+      "criteria_module": "m2",
+      "schema": null,
+      "verdict": {
+        "gate_passed": true,
+        "stop_reason": "M2 gate reached; real Sleep-EDF validation must pass before M3.",
+        "synthetic_sleep_machinery_passed": true
+      }
+    },
+    "artifacts/forecastability_trial0_m3/m3_gate_report.json": {
+      "criteria": {
+        "anchor": "m3.py:406,409",
+        "control_ratio": 0.5,
+        "effect_floor": null
+      },
+      "criteria_module": "m3",
+      "schema": null,
+      "verdict": {
+        "gate_passed": false,
+        "stop_reason": "M3 gate reached; do not proceed to M4 until this report is reviewed."
+      }
+    },
+    "artifacts/forecastability_trial0_m4/m4_gate_report.json": {
+      "criteria": {
+        "anchor": "m4.py:408",
+        "control_ratio": 0.4,
+        "effect_floor": 0.03
+      },
+      "criteria_module": "m4",
+      "schema": null,
+      "verdict": {
+        "claim_scope": "benchmark_method_only_not_clinical_or_foundation_model_claim",
+        "gate_passed": false,
+        "stop_reason": "M4 gate reached; full claim requires powered public-data and external-dataset validation.",
+        "synthetic_gate_passed": true
+      }
+    },
+    "artifacts/forecastability_trial0_m5/m5_gate_report.json": {
+      "criteria": {
+        "anchor": "m5.py:345,347",
+        "control_ratio": 0.5,
+        "effect_floor": 0.001
+      },
+      "criteria_module": "m5",
+      "schema": null,
+      "verdict": {
+        "claim_scope": "passive_predictive_complexity_synthetic_method_only",
+        "gate_passed": true,
+        "stop_reason": "M5 is synthetic-only; public-data Passive PIC requires a later gate.",
+        "synthetic_gate_passed": true
+      }
+    },
+    "artifacts/interoception_rfs_scout/scout_report.json": {
+      "criteria": null,
+      "criteria_module": null,
+      "schema": "kahlus.forecastability.interoception_scout.v1",
+      "verdict": {
+        "claim_scope": "peripheral_autonomic_residual_forecastability_sleep_state_transitions_public_sleep_edf_smoke_not_gastric_egg_not_coleman_data_scout_grade",
+        "gate_passed": false,
+        "stop_reason": "Interoception scout gate failed on real Sleep-EDF smoke; do not claim peripheral residual forecastability."
+      }
+    },
+    "artifacts/passive_pci_state/passive_pci_report.json": {
+      "criteria": {
+        "anchor": "passive_pci.py:367,402,404",
+        "control_ratio": 0.4,
+        "effect_floor": 0.02
+      },
+      "criteria_module": "passive_pci",
+      "schema": "kahlus.forecastability.passive_pci.v1",
+      "verdict": {
+        "claim_scope": "passive_pci_sleep_state_discrimination_complexity_beyond_spectral_baseline_subject_held_out_public_sleep_edf_cassette_not_tms_pci_not_clinical",
+        "gate_passed": false,
+        "stop_reason": "Passive PCI gate failed on real Sleep-EDF cassette; do not claim passive complexity beats spectral baseline."
+      }
+    },
+    "artifacts/passive_pci_state_smoke/passive_pci_report.json": {
+      "criteria": {
+        "anchor": "passive_pci.py:367,402,404",
+        "control_ratio": 0.4,
+        "effect_floor": 0.02
+      },
+      "criteria_module": "passive_pci",
+      "schema": "kahlus.forecastability.passive_pci.v1",
+      "verdict": {
+        "claim_scope": "passive_pci_sleep_state_discrimination_complexity_beyond_spectral_baseline_subject_held_out_public_sleep_edf_cassette_not_tms_pci_not_clinical",
+        "gate_passed": false,
+        "stop_reason": "Passive PCI gate failed on real Sleep-EDF cassette; do not claim passive complexity beats spectral baseline."
+      }
+    },
+    "artifacts/propofol_pci_state/propofol_pci_report.json": {
+      "criteria": null,
+      "criteria_module": null,
+      "schema": "kahlus.forecastability.propofol_pci.v1",
+      "verdict": {
+        "claim_scope": "propofol_sedation_state_discrimination_complexity_beyond_spectral_baseline_subject_held_out_openneuro_ds005620_not_tms_pci_not_clinical",
+        "gate_passed": false,
+        "stop_reason": "Propofol PCI gate failed on ds005620; do not claim passive complexity beats spectral baseline under propofol sedation."
+      }
+    },
+    "artifacts/slpdb_autonomic_non_respiratory/slpdb_autonomic_report.json": {
+      "criteria": null,
+      "criteria_module": null,
+      "schema": "kahlus.forecastability.slpdb_autonomic.v1",
+      "verdict": {
+        "claim_scope": "autonomic_residual_forecastability_arousal_beyond_cortical_spectral_subject_held_out_mit_bih_slpdb_open_data_apnea_cohort_not_healthy_sleepers_arousal_class_non_respiratory_not_gastric_egg_not_clinica",
+        "gate_passed": false,
+        "stop_reason": "Autonomic RFS honest negative on slpdb under subject-held-out evaluation; do not claim autonomic residual forecastability beyond cortical spectral baseline."
+      }
+    },
+    "artifacts/slpdb_autonomic_respiratory/slpdb_autonomic_report.json": {
+      "criteria": null,
+      "criteria_module": null,
+      "schema": "kahlus.forecastability.slpdb_autonomic.v1",
+      "verdict": {
+        "claim_scope": "autonomic_residual_forecastability_arousal_beyond_cortical_spectral_subject_held_out_mit_bih_slpdb_open_data_apnea_cohort_not_healthy_sleepers_arousal_class_respiratory_adversarial_case_autonomic_lead",
+        "gate_passed": false,
+        "stop_reason": "Autonomic RFS honest negative on slpdb under subject-held-out evaluation; do not claim autonomic residual forecastability beyond cortical spectral baseline."
+      }
+    }
+  },
+  "schema": "kahlus.verdict_oracle.v1"
+}

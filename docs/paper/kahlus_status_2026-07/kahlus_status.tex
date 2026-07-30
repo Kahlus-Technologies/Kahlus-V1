@@ -1,0 +1,535 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.15in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage[table]{xcolor}
+\usepackage{caption}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+\captionsetup{font=small,labelfont=bf}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\setlist{itemsep=2pt,parsep=0pt,topsep=3pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small Kahlus / Neural-CASP --- status, 25 July 2026}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newcommand{\bits}{\,\mathrm{bits}}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries A leakage-controlled test for incremental\\[2pt]
+predictive information in neurophysiological signals}\\[10pt]
+{\large Current state, validated apparatus, and complete findings inventory}\\[16pt]
+
+{\normalsize Kahlus / Neural-CASP}\\[6pt]
+{\small Prepared 25 July 2026 for Todd P.\ Coleman and Amrith Lolitkar}\\[4pt]
+{\small Repository \texttt{Kahlus-V1}, branch \texttt{fix/forecast-overlap-guard}}
+\end{center}
+
+\vspace{4pt}
+\hrule
+\vspace{10pt}
+
+\begin{quote}
+\small
+\textbf{Statement of scope.} This document reports what the Kahlus evaluation
+apparatus has been demonstrated to do, with every statistic traceable to a named
+artifact in the repository. \textbf{It reports no positive biological finding,
+because none exists.} Every real-data result obtained to date is a negative or an
+underpowered null, and each is labelled as such below. The results we consider
+substantive are methodological: a calibrated detection floor
+(Section~\ref{sec:calib}), a quantified evaluation-leakage failure mode
+(Section~\ref{sec:leak}), and one instance in which the control battery rejected a
+result that the bootstrap confidence interval alone would have certified
+(Section~\ref{sec:caught}). We regard the last of these as the most useful single
+result the project has produced.
+\end{quote}
+
+\vspace{6pt}
+\hrule
+\vspace{12pt}
+
+\section{The estimand}
+
+For an outcome $Y$ at horizon $h$, a nuisance block $B$, and a candidate block
+$Z$, we define the \emph{residual forecastability score}
+\begin{equation}
+\mathrm{RFS}_{\text{bits}}
+= \frac{\mathrm{NLL}(Y \mid B) - \mathrm{NLL}(Y \mid B, Z)}{\ln 2},
+\label{eq:rfs}
+\end{equation}
+where $\mathrm{NLL}$ is the mean out-of-fold binary cross-entropy of a calibrated
+probability forecast, with probabilities clipped to $[10^{-5}, 1-10^{-5}]$.
+Implementation: \texttt{forecastability/m1.py::\_rfs\_bits}.
+
+Equation~\eqref{eq:rfs} is the out-of-sample log-likelihood gain from adding $Z$
+to $B$, in bits per anchor. Methodologically it is a cross-fitted,
+subject-held-out analogue of nested $\Delta R^2$ / $\Delta \mathrm{CV}R^2$ model
+comparison --- the same incremental-value question posed in
+Rao et al.~(2025, \S2.5.2), evaluated out-of-sample under a mandatory control
+battery rather than in-sample.
+
+\paragraph{What RFS is not.} RFS is \emph{not} a mutual-information estimate, and
+we do not interpret it as one. McAllester and Stratos (2018) prove that no
+distribution-free high-confidence lower bound on mutual information from $N$
+samples can exceed $O(\log N)$; any estimator read as a certified MI bound
+inherits that limitation. RFS is a difference of out-of-fold mean log-losses
+between two nested models with bounded predictions --- a bounded functional of
+held-out forecasts. Concentration and conformal arguments apply to \emph{that}
+quantity. Reading RFS as a bound on $I(Y; Z \mid B)$ is not licensed by our
+procedure.
+
+\medskip
+The blocks are fixed across all findings below:
+\begin{itemize}
+  \item $B$ (nuisance) always contains the event base rate, recent event history,
+        and cortical spectral features. A positive RFS therefore means $Z$ carries
+        information the cortex's own recent state does not already supply.
+  \item $Z$ (candidate) is the block under test.
+  \item $Y$ is a future event indicator at horizon $h$.
+\end{itemize}
+
+\section{Evaluation protocol}
+
+\subsection{Cross-fitting and clustering}
+Nuisance and residual models are fit out-of-fold with \texttt{GroupKFold} at the
+\emph{subject} level. All resampling is at the cluster (subject) level, never
+per-anchor, since anchors within a recording are strongly dependent.
+
+\subsection{Baseline ladder}
+The residual is scored against the \emph{minimum-NLL} member of a candidate
+baseline set (moving average, persistence, base rate, cross-fitted nuisance-only
+model). Reporting a gain over a weak baseline is a standard route to inflated
+incremental-value claims; selecting the strongest baseline removes that degree of
+freedom.
+
+\subsection{Control battery}
+Every candidate result must survive all of:
+
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Control & What it breaks \\
+\midrule
+Label shuffle & Any association at all \\
+Time shift & Temporal alignment \\
+Within-subject circular shift of $Z$ & Alignment, preserving $Z$'s autocorrelation \\
+Subject-identity probe & $Z$ acting as a subject fingerprint \\
+Cluster permutation & Supplies the $p$-value \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Certification rule}
+\label{sec:cert}
+Implemented in \texttt{\_rfs\_eval.py::horizon\_real\_passes}. An edge is
+certified only if \emph{all} of the following hold:
+\begin{align*}
+\mathrm{RFS}_{\text{bits}} &> 0.02 \\
+\mathrm{LCB} &> 0 \quad \text{(one-sided 95\% subject-cluster bootstrap)} \\
+\text{every control} &< 0.40 \times \mathrm{RFS}_{\text{bits}} \\
+\text{nuisance probe failures} &= \varnothing
+\end{align*}
+plus minimum subject and minimum positive-event counts. The $0.02\bits$ floor is a
+detection threshold, not a claim of clinical utility.
+
+\section{Validated apparatus: calibration}
+\label{sec:calib}
+
+Detection power is a rate over seeds; a single run per condition cannot estimate
+it. We inject the candidate coupling at graded strengths into a synthetic fixture
+with known ground truth and run the complete gate at each strength across
+24 independent seeds.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Detection-power sweep, 24 seeds per point, synthetic ground truth.
+Detection $=$ fraction of seeds whose one-sided 95\% bootstrap lower bound clears
+zero. Source: \texttt{runs/autonomic\_calibration/detection\_power\_sweep.csv}.}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Injected coupling & Detection power & Detections & Median RFS (bits) \\
+\midrule
+0.0 (null anchor) & \textbf{0.042} & 1 / 24 & $-0.0005$ \\
+0.5 & 0.583 & 14 / 24 & $+0.0084$ \\
+1.0 & \textbf{0.792} & 19 / 24 & $+0.0211$ \\
+2.0 & 0.667 & 16 / 24 & $+0.0145$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{False-positive rate.} The null anchor fires on 1 of 24 seeds,
+$= 4.2\%$, against a nominal $5\%$ for a one-sided 95\% lower bound. The single
+false positive (seed 2) has $\mathrm{RFS} = 0.0022\bits$ with
+$\mathrm{LCB} = 0.00023$ --- barely clearing zero, which is the expected
+appearance of a correctly calibrated borderline detection rather than a
+malfunction. Per-seed values are retained in
+\texttt{detection\_power\_per\_draw.csv} so individual detections can be audited.
+
+\paragraph{Non-monotonicity is real and is explained.} Power declines from 0.792
+at strength 1.0 to 0.667 at strength 2.0, and median bits from $+0.0211$ to
+$+0.0145$. This persists across all 24 seeds in both panels and is not seed noise.
+RFS is a \emph{residual}: once the outcome becomes highly predictable from base
+rate and recent history alone, $B$ absorbs the signal and the residual
+attributable to $Z$ shrinks. Detection power is therefore the calibration
+quantity we report; median recovered bits is shown alongside it and is explicitly
+not a calibration curve.
+
+\paragraph{Scope.} These figures are synthetic by construction. They establish
+that the estimator is calibrated before it is pointed at real data. They are not
+evidence about any cohort.
+
+\section{Validated apparatus: a quantified leakage failure mode}
+\label{sec:leak}
+
+The project's original headline result was an artifact, and the mechanism is
+worth reporting because it survives an otherwise correct subject-held-out split.
+
+The historical forecasting task took a 128-sample window, used
+$X = \mathrm{seq}[0{:}127]$ as input and $Y = \mathrm{seq}[1{:}128]$ as target,
+and scored mean squared error over the \emph{full} 127-length target. Input and
+target therefore shared \textbf{126 of 127 samples}. A model that copies its input
+shifted by one is exact on 126 positions; the single genuinely future sample is
+averaged away.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Identical ridge model, identical real Sleep-EDF data, two scoring rules.
+Source: \texttt{docs/paper/ieee\_figure\_source/data/amrith\_overlap\_headline.json}.}
+\begin{tabular}{@{}lc@{}}
+\toprule
+Scoring rule & Ridge MSE \\
+\midrule
+Full 127-sample target (126/127 shared with input) & $0.00180$ \\
+Isolated strictly-future sample & $0.22694$ \\
+\midrule
+\textbf{Inflation factor} & $\mathbf{126\times}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Distinction from the existing leakage literature.} Brookshire et
+al.~(2024) and Del Pup et al.~(2025) document \emph{train/test} dependence:
+related windows crossing folds. Reported inflation in that literature is of order
+8--13\% F1 (Dehghani et al., 2019) up to 28\% accuracy (Kattenborn et al., 2022).
+The failure above is different in kind --- it is \emph{within-window} input/target
+overlap, which survives a perfectly correct subject-held-out split and is
+invisible to any split-level audit. That is why its magnitude is two orders larger.
+
+\paragraph{Remediation, and how it was verified.} Forecasting tasks now carry a
+boolean \texttt{metric\_mask} true only on target positions absent from the input
+window, applied to both the training loss and the evaluation metric. The
+regression test constructs a predictor that exploits the overlap: it scores
+$0.059$ unmasked and $0.470$ masked, an \textbf{8$\times$ discriminating gap}. It
+is that gap, not agreement between two metrics, that demonstrates the mask
+functions.
+
+A guard (\texttt{data/forecast\_contract.py}) makes the unsafe configuration
+unconstructible: a forecasting task is valid only if
+$\text{horizon} \geq \text{window length}$ or a non-empty strictly-future mask is
+attached. The historical claim is marked invalid in place, not deleted.
+
+\paragraph{Person-level split auditing.} A separate audit addresses a distinct
+failure: declared-\texttt{subject\_id} checks trust their labels, so when two
+nights of one person are labelled as two subjects the check passes while the
+person sits on both sides of the split. The regression test constructs exactly
+that manifest and asserts that the conventional check \emph{passes} while the
+person-level check \emph{fails}. Where person identity cannot be established the
+audit fails closed.
+
+\section{Result: the control battery rejects a bootstrap-certifiable effect}
+\label{sec:caught}
+
+This is, in our assessment, the most substantive result the project has produced.
+
+We ran the gate on MIT-BIH Polysomnographic Database (slpdb) --- 11 records,
+9 subjects, 6152 windows, claim-grade bootstrap, subject-held-out --- with
+$Z$ an autonomic block (QRS-derived heart rate, blood-pressure and respiration
+log-power envelopes), $B$ cortical spectral features plus event history, and
+$Y$ a future arousal indicator. Arousals were stratified into respiratory
+(hypopnea/apnea-terminating) and non-respiratory (bare and leg-movement) classes,
+because the precedence literature diverges sharply between them.
+
+\begin{table}[h]
+\centering
+\small
+\caption{slpdb autonomic gate, by arousal class and horizon. ``Worst control''
+is the largest of the time-shift and circular-shift surrogates, expressed as a
+multiple of the real effect; the certification rule requires $< 0.40$.}
+\begin{tabular}{@{}llrrrcc@{}}
+\toprule
+Class & $h$ & Pos.\ events & RFS (bits) & LCB & Worst ctrl / real & Subj.\ probe \\
+\midrule
+Non-respiratory & 1 & 190 & $-0.0265$ & $-0.1186$ & --- & fail \\
+Non-respiratory & 2 & 288 & $-0.0139$ & $-0.0519$ & --- & fail \\
+Non-respiratory & 4 & 408 & $-0.0236$ & $-0.0502$ & --- & fail \\
+\midrule
+Respiratory & 1 & 1360 & $+0.0058$ & $-0.0022$ & $1.42$ & fail \\
+Respiratory & 2 & 1795 & $+0.0087$ & $\mathbf{+0.0008}$ & $\mathbf{1.05}$ & fail \\
+Respiratory & 4 & 2170 & $+0.0111$ & $\mathbf{+0.0015}$ & $\mathbf{1.57}$ & fail \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The respiratory rows would have been reported as positive.} At $h=2$
+and $h=4$ the subject-cluster bootstrap lower bound clears zero, and the cluster
+permutation test returns $p = 0.031$ at $h=2$ (512 permutations, patient-cluster
+sign-flip, exact mode). On the confidence interval and $p$-value alone, these are
+findings.
+
+\paragraph{They are rejected, on two independent grounds.}
+\begin{enumerate}
+  \item \textbf{The time-shift control scores at or above the real effect at every
+  horizon} --- $1.42\times$, $1.05\times$, $1.57\times$, against a required
+  $<0.40\times$. Destroying temporal alignment does not reduce the score. Whatever
+  is being measured is therefore not predictive in time.
+  \item \textbf{The subject-identity probe fails at every horizon in both
+  classes.} The autonomic block identifies which subject a window came from. With
+  9 subjects of differing apnea severity and correspondingly different arousal
+  base rates, a subject fingerprint alone manufactures an apparent residual.
+\end{enumerate}
+
+The effect is static, subject-level structure --- not forecasting. \textbf{The
+bootstrap confidence interval would have certified it; the control battery
+rejected it.} We report this as direct real-data evidence that the controls are
+load-bearing rather than ceremonial, and as a concrete instance of what a
+CI-only pipeline would have shipped as a finding.
+
+\paragraph{The non-respiratory arm is underpowered, not null.} That class has 190
+positive events at $h=1$, and \textbf{73\% of all non-respiratory arousals in the
+cohort (139 of 191) come from a single subject}; only 4 of 9 subjects have
+$\geq 10$ such events. The $h=1$ interval spans $[-0.119, +0.043]$ --- consistent
+with anything from a large negative to a moderate positive. This is the class for
+which autonomic precedence is actually supported in the literature, and slpdb
+cannot test it. We report it as underpowered and draw no inference.
+
+\section{Complete findings inventory}
+
+Every real-data finding, with its status stated exactly.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\caption{All findings. No entry is a positive biological result.}
+\begin{tabular}{@{}llp{6.6cm}@{}}
+\toprule
+ID & Status & Result \\
+\midrule
+F1 & Invalidated artifact &
+Overlap-inflated forecasting MSE; $126\times$, marked invalid in place
+(Section~\ref{sec:leak}). \\
+\addlinespace
+F2 & Negative (architecture) &
+Isolated strictly-future forecasting; learned models separate clearly from
+trivial baselines, but the GRU does not meaningfully beat a 127-tap ridge and
+loses at $h=64$. See Table~\ref{tab:f2}. \\
+\addlinespace
+F3 & Scout-grade negative &
+Peripheral channels $\to$ future stage transition, Sleep-EDF. Does not survive
+controls at scout thresholds. Design-limited: Sleep-EDF cassette carries no clean
+ECG. \\
+\addlinespace
+F4 & \textbf{Powered negative} &
+Complexity beyond spectral, 78 subjects, 413{,}828 windows, $n_{\text{boot}}=2000$.
+Wake $-0.330$ $[-0.349,-0.313]$; NREM $-0.284$ $[-0.297,-0.271]$;
+REM $-0.161$ $[-0.177,-0.146]$. All CIs exclude zero on the negative side: the
+complexity block actively hurts. \\
+\addlinespace
+F5 & \textbf{Powered negative} &
+Propofol sedation, OpenNeuro ds005620, full 21/21 cohort, 2527 windows.
+RFS $-0.2072$ $[-0.3084,-0.1208]$. Same conclusion as F4 under a different
+etiology. Not TMS-evoked PCI; no consciousness or clinical claim. \\
+\addlinespace
+F6 & Built, unrun &
+NSRR MESA/SHHS. Synthetic known $+0.021$ / null $-0.000$ passes; real cohort
+blocked on credentialed access. \\
+\addlinespace
+F7 & Negative $+$ underpowered &
+slpdb, Section~\ref{sec:caught}. Respiratory: caught false positive.
+Non-respiratory: underpowered. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\caption{F2 --- isolated single-future-sample forecasting MSE, subject-held-out
+Sleep-EDF, every model trained directly per horizon. Lower is better; best per
+row in bold. Source: \texttt{runs/amrith\_isolated\_check/sweep.csv}.}
+\label{tab:f2}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+$h$ (samples @100\,Hz) & Random & Mean-of-trace & Persistence & Ridge-AR & GRU \\
+\midrule
+1  & 1.855 & 1.037 & 0.281 & 0.227 & \textbf{0.211} \\
+2  & 1.865 & 1.081 & 0.338 & 0.310 & \textbf{0.277} \\
+4  & 1.981 & 1.155 & 0.488 & 0.430 & \textbf{0.400} \\
+8  & 2.070 & 1.232 & 0.853 & 0.675 & \textbf{0.583} \\
+16 & 2.054 & 1.264 & 1.334 & 0.822 & \textbf{0.690} \\
+32 & 2.254 & 1.432 & 1.855 & 0.956 & \textbf{0.883} \\
+64 & 2.208 & 1.395 & 2.084 & \textbf{0.884} & 0.913 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reading F2 correctly.} Both learned models separate decisively from
+random and mean-of-trace at every horizon, and the margin over persistence widens
+with $h$ --- at $h=64$ persistence has degraded to 2.084 while ridge holds 0.884.
+That is a real effect. But the GRU's advantage over a regularised linear
+autoregression is small and reverses at $h=64$. At single-channel millisecond
+scale the signal is close to linear, and a ridge captures nearly all of it. This
+is consistent with the finding that well-regularised linear and Riemannian
+methods remain competitive on EEG (Lotte et al., 2018), and with recent
+foundation-model evaluations reporting no consistent advantage for larger
+architectures in low-data or transfer regimes.
+
+\section{What the negatives do and do not establish}
+
+We state the limitations plainly, because several materially weaken the
+interpretation of the results above.
+
+\begin{enumerate}
+  \item \textbf{No positive real-data finding exists.} F2--F5 are negative; F6 is
+  unrun; F7 is negative in one class and underpowered in the other.
+  \item \textbf{The powered negatives are on targets where a null was the expected
+  outcome.} Sleep-stage discrimination is well served by spectral features, so
+  complexity adding nothing is unsurprising. This weakens the rhetorical force of
+  F4 and F5 even though it does not weaken their validity.
+  \item \textbf{F4 and F5 test one specific complexity block}, not ``complexity''
+  in general.
+  \item \textbf{There is a published null against the broad autonomic
+  hypothesis.} Rao et al.~(2025) tested cardiac autonomic predictors in a nested
+  design and found $\Delta R^2 < 0.03$, $p > 0.25$ (HRV RMSSD partial
+  $r = 0.16$, $p = 0.29$) for subjective sleep quality. Our defence is timescale
+  and outcome specificity --- a within-night, event-locked arousal at a fixed
+  horizon rather than a night-level subjective rating --- and that is a defence,
+  not a refutation.
+  \item \textbf{slpdb is an apnea cohort}, so for the respiratory class it is the
+  sub-population where autonomic precedence is \emph{least} supported. It is an
+  adversarial case, not a small version of MESA.
+  \item \textbf{Calibration evidence is synthetic.} It bounds the estimator's
+  operating characteristic under a generative model we wrote. It is not external
+  validation.
+  \item \textbf{RFS is not monotone in effect size} (Section~\ref{sec:calib}), so
+  detection power, not recovered bits, is the calibration quantity.
+\end{enumerate}
+
+\section{On the relationship to Rao et al.\ (2025)}
+
+We wish to be precise about this, since we cite the work as methodological
+grounding and do not wish to misrepresent it.
+
+The positive result in Rao et al.\ is \emph{intrinsic} infraslow rhythmicity ---
+EGG ISO amplitude variance predicting subjective sleep quality
+($\Delta R^2 = 0.13$, $p = 0.014$, $n = 49$ nights). The \emph{coupling} measures
+added essentially nothing ($\kappa$: $\Delta R^2 = 0.0005$, $p = 0.84$; parietal
+MI: $\Delta R^2 = 0.046$, $p = 0.17$), and the paper's own conclusion attributes
+the effect to consistency of infraslow modulation within each organ rather than
+to stomach--brain coupling. Citing that paper as motivation for a \emph{coupling}
+claim would misread it, and we do not.
+
+What we take from it is the nested-model design of \S2.5.2: a baseline model of
+macro-architectural and covariate features, then the candidate block added and
+partial $R^2$ reported. Our difference is cross-fitting and subject-held-out
+evaluation in place of in-sample fit, plus a mandatory control battery. We note
+that the paper already reports a cross-validated $\Delta \mathrm{CV}R^2$
+($-0.015$ for the phase-coupling measure), so the CV-shrinkage concern is
+acknowledged in that work.
+
+\section{Immediate requirements}
+
+\begin{enumerate}
+  \item \textbf{NSRR credentialed access (MESA, then SHHS).} slpdb has settled
+  nothing about the F6/F7 question, for the concrete reason given in
+  Section~\ref{sec:caught}: the arousal class the hypothesis concerns has 190
+  events, 73\% from one subject. MESA is required, not preferable. SHHS would then
+  provide a dataset-held-out replication --- an axis almost nobody evaluates, and
+  where the published cross-cohort drop is 0.12--0.32 absolute F1
+  (Ehrlich et al., 2024).
+  \item \textbf{Separation from arousal \emph{detection}.} ECG-only arousal
+  detection already reaches AUROC 0.93 on MESA (Li et al., 2020) and AUC 0.91 from
+  five post-onset beats (Basner et al., 2007). Our estimand is strictly-future
+  forecasting conditioned on a cortical baseline. Any presentation that does not
+  make this explicit will be read as a weaker version of existing detection work.
+\end{enumerate}
+
+\section{Reproduction}
+
+\small
+\begin{verbatim}
+python3.11 -m venv .venv && .venv/bin/pip install -e '.[figures,moabb]' pytest edfio
+
+PYTHONPATH=src python -m pytest -q            # 893 passed, 4 skipped, 114 subtests
+uvx ruff@0.16.0 check .                       # clean
+
+# calibration (Section 3)
+PYTHONPATH=src python3 scripts/autonomic_rfs_calibration_sweep.py \
+    --out runs/autonomic_calibration --seeds 24 --strengths 0 0.5 1 2
+
+# slpdb gate (Section 5)
+PYTHONPATH=src python3 scripts/run_slpdb_autonomic_gate.py \
+    --out artifacts/slpdb_autonomic_non_respiratory --bootstrap-mode claim \
+    --arousal-class non_respiratory --data-dir <local slpdb>
+\end{verbatim}
+\normalsize
+
+Every gate emits \texttt{claim\_scope} and \texttt{stop\_reason} into its JSON and
+Markdown artifacts, so a run's permitted interpretation travels with its numbers.
+
+\section*{References}
+\small
+\begin{itemize}[leftmargin=1.2em,label={}]
+\item Basner, M., et al. (2007). An ECG-based algorithm for the automatic
+identification of autonomic activations associated with cortical arousal.
+\emph{Sleep}, 30(10), 1349--1361.
+\item Bonnet, M.~H., \& Arand, D.~L. (1997). Heart rate variability: sleep stage,
+time of night, and arousal influences. \emph{Electroencephalography and Clinical
+Neurophysiology}, 102(5), 390--396.
+\item Brookshire, G., et al. (2024). Data leakage in deep learning studies of
+translational EEG. \emph{Frontiers in Neuroscience}, 18, 1373515.
+\item Dehghani, A., et al. (2019). A quantitative comparison of overlapping and
+non-overlapping sliding windows for human activity recognition using inertial
+sensors. \emph{Sensors}, 19(22), 5026.
+\item Del Pup, F., et al. (2025). The role of data partitioning on the performance
+of EEG-based deep learning models in supervised cross-subject analysis.
+\emph{Computers in Biology and Medicine}, 196.
+\item Ehrlich, F., et al. (2024). State-of-the-art sleep arousal detection
+evaluated on a comprehensive clinical dataset. \emph{Scientific Reports}, 14.
+\item Kattenborn, T., et al. (2022). Spatially autocorrelated training and
+validation samples inflate performance assessment of convolutional neural
+networks. \emph{ISPRS Open Journal of Photogrammetry and Remote Sensing}.
+\item Li, A., et al. (2020). A deep learning-based algorithm for detection of
+cortical arousal during sleep. \emph{Sleep}, 43(12).
+\item Lotte, F., et al. (2018). A review of classification algorithms for
+EEG-based brain-computer interfaces: a 10 year update. \emph{Journal of Neural
+Engineering}, 15(3).
+\item McAllester, D., \& Stratos, K. (2018). Formal limitations on the measurement
+of mutual information. \emph{arXiv:1811.04251}.
+\item Oliveira, R., et al. (2022). Split conformal prediction and non-exchangeable
+data. \emph{Journal of Machine Learning Research}, 25.
+\item Quinn, C.~J., Kiyavash, N., \& Coleman, T.~P. (2015). Directed information
+graphs. \emph{IEEE Transactions on Information Theory}, 61(12), 6887--6909.
+\item Rao, A.~A., Fredericks, M., Dresler, M., Rebollo, I., Zeitzer, J.~M.,
+Schoch, S.~F., \& Coleman, T.~P. (2025). Simultaneous stomach-brain
+electrophysiology reveals dynamic coupling in human sleep. \emph{bioRxiv}
+2025.11.13.686572.
+\item Togo, F., Cherniack, N., \& Natelson, B. (2006). Electroencephalogram
+characteristics of autonomic arousals during sleep in healthy men.
+\emph{Clinical Neurophysiology}, 117(12), 2597--2603.
+\end{itemize}
+
+\end{document}

@@ -155,6 +155,39 @@ class WindowExampleProvenance:
             raise ForecastProtocolError("claim-eligible forecast provenance cannot overlap its input")
 
 
+def assert_forecast_scoring_is_leakage_safe(
+    *,
+    window_length: int,
+    forecast_horizon: int,
+    metric_mask: np.ndarray | None,
+    context: str = "forecast task",
+) -> None:
+    """Fail construction of a forecast task whose score could be inflated by copying.
+
+    A shifted-window task with ``forecast_horizon < window_length`` leaves
+    ``window_length - forecast_horizon`` target positions already present in the
+    input, so a model that copies the input scores near-zero on them. That is
+    only admissible when a strictly-future ``metric_mask`` restricts scoring (and
+    training) to the positions the input does not contain.
+
+    Passes when the windows are disjoint by construction
+    (``forecast_horizon >= window_length``) or when a non-empty mask is attached.
+    """
+
+    if forecast_horizon >= window_length:
+        return
+    if metric_mask is not None and bool(np.asarray(metric_mask).any()):
+        return
+    raise ForecastProtocolError(
+        f"{context}: forecast_horizon={forecast_horizon} < window_length={window_length} "
+        f"leaves {window_length - forecast_horizon} of {window_length} target positions "
+        "inside the input window, and no strictly-future metric_mask was attached. "
+        "Scores from this task would reward copying rather than forecasting. Either set "
+        "forecast_horizon >= window_length for disjoint windows, or attach a "
+        "strictly_future_metric_mask()."
+    )
+
+
 def strictly_future_metric_mask(
     y: np.ndarray,
     *,
