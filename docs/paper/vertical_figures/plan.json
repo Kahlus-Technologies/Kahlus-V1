@@ -1,0 +1,41 @@
+[
+  {
+    "figure": "fig1_acquisition.png",
+    "n_art": 1,
+    "n_data": 3,
+    "dropped": [
+      "image1(a)"
+    ],
+    "reason": "circle-with-dots schematic replaced by the figurelabs EEG windowing band, which shows the cap and the input window in one image"
+  },
+  {
+    "figure": "fig2_protocol.png",
+    "n_art": 0,
+    "n_data": 4,
+    "dropped": [],
+    "reason": "self-contained evidence chain"
+  },
+  {
+    "figure": "fig3_latent.png",
+    "n_art": 1,
+    "n_data": 3,
+    "dropped": [
+      "image4(a)"
+    ],
+    "reason": "opening schematic replaced by the figurelabs latent-field strip"
+  },
+  {
+    "figure": "fig4_gate.png",
+    "n_art": 0,
+    "n_data": 3,
+    "dropped": [],
+    "reason": "compact 3-panel result"
+  },
+  {
+    "figure": "fig5_sweep.png",
+    "n_art": 0,
+    "n_data": 3,
+    "dropped": [],
+    "reason": "compact 3-panel result"
+  }
+]
