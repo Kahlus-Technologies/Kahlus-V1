@@ -95,6 +95,7 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier
+from scipy.stats import wilcoxon
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     average_precision_score,
@@ -119,7 +120,9 @@ from envelope_horizon_sleepedf import (  # noqa: E402
 from envelope_stage_decomposition import stage_series  # noqa: E402
 
 HORIZONS = (100, 300, 600)              # 10, 30, 60 s at ENV_FS
-STRIDE = 16
+#: 32 at 10 Hz is one window per 3.2 s. Stride 16 oversampled: adjacent windows
+#: share 95%+ of their context, so it doubled memory for near-duplicate rows.
+STRIDE = 32
 CLASSES = ("W", "N1", "N2", "N3", "REM")
 CVALS = (1e-4, 1e-3, 1e-2, 1e-1, 1.0)   # inverse L2 strength for LogisticRegression
 #: Learning rates swept for the boosted-tree variant. Sleep staging classically
@@ -157,7 +160,7 @@ def featurise(stack: np.ndarray) -> np.ndarray:
         t = np.arange(len(idx), dtype=float)
         t = (t - t.mean()) / (t.std() + 1e-9)
         feats.append((seg * t).mean(axis=2))          # slope, up to a constant
-    return np.concatenate(feats, axis=1).reshape(n, -1)
+    return np.concatenate(feats, axis=1).reshape(n, -1).astype(np.float32)
 
 
 def onehot(stages: np.ndarray) -> np.ndarray:
@@ -181,7 +184,7 @@ def build(env_stack: np.ndarray, stage: np.ndarray, horizon: int):
 
 def make_model(kind: str, hp: float, seed: int = SEED):
     if kind == "logreg":
-        return LogisticRegression(C=hp, max_iter=400, class_weight="balanced", n_jobs=-1)
+        return LogisticRegression(C=hp, max_iter=400, class_weight="balanced")
     return HistGradientBoostingClassifier(
         learning_rate=hp, max_iter=300, early_stopping=True, validation_fraction=0.1,
         class_weight="balanced", random_state=seed)
@@ -340,11 +343,12 @@ def main() -> int:
                 now = np.concatenate([p[1] for p in parts])
                 then = np.concatenate([p[2] for p in parts])
                 cols = ([feats] if use_eeg else []) + ([onehot(now)] if use_stage else [])
-                return np.hstack(cols), (now != then).astype(int), now, then
+                subj = np.concatenate([np.full(len(p[1]), s) for s, p in zip(ss, parts)])
+                return np.hstack(cols), (now != then).astype(int), now, then, subj
 
-            xf, yf, _, _ = stack(fit_s)
-            xs, ys, _, _ = stack(sel_s)
-            xt, yt, now_t, then_t = stack(test_s)
+            xf, yf, _, _, _ = stack(fit_s)
+            xs, ys, _, _, _ = stack(sel_s)
+            xt, yt, now_t, then_t, subj_t = stack(test_s)
             if yt.sum() < 50 or ys.sum() < 20:
                 continue
             best, best_auc = None, -np.inf
@@ -374,9 +378,25 @@ def main() -> int:
                     "base_rate": float(yt[reliable].mean()),
                     "n_positive": int(yt[reliable].sum()),
                 }
+            # Per-subject AUC. A pooled AUC can be carried by one subject, and a
+            # per-subject reversal hiding inside a pooled win is exactly what the
+            # BNCI 4 ms result turned out to be. Store both maskings.
+            per_subject = []
+            for s_id in sorted(set(subj_t.tolist())):
+                m = subj_t == s_id
+                if m.sum() < 100 or yt[m].sum() < 20 or yt[m].sum() == m.sum():
+                    continue
+                entry = {"subject": int(s_id), "n": int(m.sum()),
+                         "roc_auc": float(roc_auc_score(yt[m], prob[m]))}
+                mr = m & reliable
+                if mr.sum() > 100 and 0 < yt[mr].sum() < mr.sum():
+                    entry["roc_auc_excl_n1"] = float(roc_auc_score(yt[mr], prob[mr]))
+                per_subject.append(entry)
+
             rows.append({
                 "n1_share_of_transitions": n1_share,
                 "excluding_n1_transitions": rel,
+                "per_subject": per_subject,
                 "horizon_s": h / ENV_FS, "model": args.model, "selected_hp": best,
                 "hp_at_grid_edge": bool(best in (hparams(args.model)[0], hparams(args.model)[-1])),
                 "roc_auc": float(roc_auc_score(yt, prob)),
@@ -393,6 +413,42 @@ def main() -> int:
                      f" (N1 was {r['n1_share_of_transitions']:.0%} of positives)" if ex else ""),
                   flush=True)
         trans_out[inputs] = rows
+
+    # Paired per-subject comparison of each input set against stage_only. This is
+    # the statistic a reviewer will ask for: not "is the pooled AUC higher" but
+    # "is it higher in the same subjects, and could that be chance".
+    paired: dict = {}
+    ref = {r["horizon_s"]: {d["subject"]: d for d in r["per_subject"]}
+           for r in trans_out.get("stage_only", [])}
+    for inputs, rows in trans_out.items():
+        if inputs == "stage_only":
+            continue
+        out_rows = []
+        for r in rows:
+            base = ref.get(r["horizon_s"], {})
+            for key, lab in (("roc_auc", "all"), ("roc_auc_excl_n1", "excl_n1")):
+                d = np.array([d[key] - base[d["subject"]][key]
+                              for d in r["per_subject"]
+                              if d["subject"] in base and key in d and key in base[d["subject"]]])
+                if len(d) < 6:
+                    continue
+                rng = np.random.default_rng(SEED)
+                boot = np.array([rng.choice(d, len(d), replace=True).mean() for _ in range(10_000)])
+                lo95, hi95 = np.percentile(boot, [2.5, 97.5])
+                out_rows.append({
+                    "horizon_s": r["horizon_s"], "subset": lab, "n_subjects": len(d),
+                    "mean_auc_gain": float(d.mean()),
+                    "n_subjects_improved": int((d > 0).sum()),
+                    "wilcoxon_p": float(wilcoxon(d).pvalue) if np.any(d != 0) else 1.0,
+                    "ci95": [float(lo95), float(hi95)],
+                    "ci_excludes_zero": bool(lo95 > 0 or hi95 < 0),
+                })
+                q = out_rows[-1]
+                print(f"  paired {inputs:>14} vs stage_only {q['horizon_s']:>3.0f}s {lab:>7}: "
+                      f"dAUC {q['mean_auc_gain']:+.4f}  {q['n_subjects_improved']}/{q['n_subjects']} up  "
+                      f"CI[{q['ci95'][0]:+.4f},{q['ci95'][1]:+.4f}] p={q['wilcoxon_p']:.2e} "
+                      f"{'EXCLUDES 0' if q['ci_excludes_zero'] else 'spans 0'}", flush=True)
+        paired[inputs] = out_rows
 
     payload = {
         "schema": "kahlus.stage_forecast_sleepedf.v1",
@@ -437,6 +493,7 @@ def main() -> int:
                                "against these labels is bounded well below 1",
             },
             "by_input": trans_out,
+            "paired_vs_stage_only": paired,
         },
     }
     args.out.mkdir(parents=True, exist_ok=True)
