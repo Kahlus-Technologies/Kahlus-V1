@@ -11,6 +11,7 @@ Read §1 and §3 and you understand the project. Read the rest when you need it.
 
 ---
 
+<!--TOC-START-->
 ## Contents
 
 1. [What Kahlus is, in one page](#1-what-kahlus-is-in-one-page)
@@ -24,6 +25,7 @@ Read §1 and §3 and you understand the project. Read the rest when you need it.
 
 ---
 
+<!--TOC-END-->
 ## 1. What Kahlus is, in one page
 
 **The original goal.** Predict what the brain is about to do, from EEG, far enough
@@ -164,6 +166,14 @@ the **metric**, not the signal or model.
 
 *(Finding F9 · `docs/results/overlap_inflation_law_2026-07-28.md`)*
 
+![**F9 — the overlap inflation law.** *Left:* predicted bound `W/H`, computable from a
+methods section alone, against observed MSE inflation. Points lie on the identity and
+never above it; the region where a counterexample would appear is empty. The star is
+this project's own invalidated result (W=127, H=1): predicted 127×, measured 126.1×.
+*Right:* every departure from the bound is explained by one term, monotonically, across
+five decades.](figures/f9_overlap_law.png)
+
+
 ### 3.2 Mechanism two — correlation is worse
 
 Most papers report **correlation**, not MSE. Does `W/H` apply?
@@ -184,6 +194,13 @@ typically 1.2×, up to 10.8×. Verified to 7×10⁻¹⁶ — machine precision.
 forecast correlation is **0.014**.
 
 *(Finding F10)*
+
+![**F10 — the correlation law, and a falsification.** *Left:* the exact bound is violated
+by none of the 286 cells; the `W/H` shortcut carried over from F9 is violated by 223, all
+in the shaded region where a reported number looks better than it is. *Right:* the
+departure is not noise — rearranging the exact bound forces a relationship with no fitted
+parameter, and every cell lies on that curve across three decades.](figures/f10_correlation_law.png)
+
 
 ### 3.3 Mechanism three — the labels are unreliable
 
@@ -250,6 +267,12 @@ non-overlapping windows it became a tie (p = 0.58). Narrowed and reported.
 
 **Does not show:** clinical utility. 160 ms is ~400× shorter than the ~1-minute
 timescale that matters.
+
+![**F8 — the forecast crossover.** A small recurrent model beats a per-horizon-tuned
+linear baseline below ~160 ms; the advantage is gone by 320 ms. Both models tuned on the
+same validation subjects, paired Wilcoxon across 27 held-out
+subjects.](figures/f8_forecast_crossover.png)
+
 
 ### 4.3 F9 — the overlap law
 See §3.1. 286 cells, zero violations, machine precision.
@@ -330,6 +353,13 @@ residualising both costs about a third of the effect. During sleep that is physi
 not contamination: REM is *scored by* eye movement and muscle atonia, so removing them
 is conservative.
 
+![**F11 — envelope horizon on Sleep-EDF.** *Left:* correlation with the true future value
+decays but survives to 60 s in both bands; dashed lines are the same models after removing
+eye and muscle artifact. *Middle:* MSE against the persistence baseline (dotted) and the
+predict-the-mean line at 1.0 — the model beats both at every horizon. *Right:* the effect
+is not carried by a few subjects; all 15 held-out subjects improve on persistence at 60 s.](figures/f11_envelope_horizon.png)
+
+
 **F12 — predict the stage, not the amplitude.** Nobody cares about the gamma envelope
 value in 60 seconds; they care about the state.
 
@@ -360,6 +390,13 @@ skill was N1's instability, i.e. a lookup table of which stages are unstable.
 
 > **On transitions experts actually agree on, EEG roughly doubles the above-chance
 > signal (+0.105 vs +0.052).**
+
+![**F12 — the label-reliability collapse.** *Left:* excluding N1 transitions lowers every
+AUC — EEG-only falls all the way to chance. *Right:* the same numbers as margin above
+chance, which is what the argument is about. Removing unreliable labels costs the baseline
+two-thirds of its margin (0.157 → 0.052) but costs the model far less (0.190 → 0.105). If
+the claim were false these two drops would be equal.](figures/f12_label_reliability.png)
+
 
 **Reported alongside, because it matters:** `eeg_only` excluding N1 is **0.506 —
 chance**. EEG *alone* predicts nothing here. It is the *combination* with the current
@@ -532,6 +569,27 @@ null; and seven errors are documented in §7 rather than removed.
 **"What's the actual contribution?"**
 Three measurement corrections that apply to other people's work, each derived and
 verified — one of which we found by breaking our own result.
+
+---
+
+## Figures
+
+Every figure regenerates from a committed artifact:
+
+```bash
+python3 scripts/plot_sleepedf_figures.py --layout ieee --out docs/figures/ieee   # paper
+python3 scripts/plot_sleepedf_figures.py --layout wide --out docs/figures        # slides
+```
+
+**Two layouts, and the difference matters.** `docs/figures/ieee/` is 3.5 in wide with
+panels stacked vertically, for a two-column IEEE paper. Its fonts are set in absolute
+points *at that width* — 8 pt in the file is 8 pt on the page. The common failure is
+drawing a 13-inch-wide figure and letting the journal shrink it into a column, which
+divides every font by ~3.7 and makes the axes unreadable. Place them with
+`\includegraphics[width=\columnwidth]{...}` and do not rescale. Both render at 301 dpi
+at final size, above the 300 dpi most venues require.
+
+`docs/figures/` holds the wide side-by-side versions, for slides and this handbook.
 
 ---
 
