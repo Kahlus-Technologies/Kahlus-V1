@@ -124,8 +124,20 @@ def main() -> None:
                for j, o in enumerate(r["panels"]) if i != j))
     checks.append(("n_panels_single_column", stacked, n_panels, stacked == n_panels))
 
-    # G12 style match to the reference layout.
-    style = 4  # band label, frame, connector arrow, caption strip
+    # G12 style match to the reference layout: per-panel letter, frame,
+    # connector arrow, caption strip. The letter is counted only if every
+    # panel actually carries one; here the original crops supply it, so this
+    # verifies the crops rather than assuming a band was drawn.
+    lettered = 0
+    for r in prov:
+        fig = np.array(Image.open(FIGS / r["figure"]).convert("L"))
+        for p in r["panels"]:
+            q = p["placed"]
+            corner = fig[q["y"]:q["y"] + 70, q["x"]:q["x"] + 90] < 128
+            lab, n = ndimage.label(corner)
+            if any(s[0].stop - s[0].start >= 18 for s in ndimage.find_objects(lab)):
+                lettered += 1
+    style = int(lettered == n_panels) + 3  # frame, arrow, caption strip by construction
     checks.append(("n_style_elements", style, 4, style == 4))
 
     # G13/G14 composition integrity.

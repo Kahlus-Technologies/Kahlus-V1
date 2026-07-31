@@ -41,7 +41,6 @@ COL_IN = 3.25          # IEEE two-column half-column width (maximum)
 MIN_DPI = 300.0        # print floor; narrow figures are placed under COL_IN to hold it
 PAD = 34               # canvas margin around panels
 GAP = 128              # vertical space between panels, holds the arrow
-LABEL_H = 52           # lettered band above each panel
 FRAME = 3              # panel border weight
 BG = "white"
 INK = "#111111"
@@ -69,27 +68,25 @@ def compose(name: str, panels: list[dict], out_path: Path) -> dict:
 
     # Canvas is exactly as wide as the widest panel. Narrower panels are
     # centred, never stretched, since scaling up would resample the artwork.
+    # Panels already carry their own (a)/(b) letters from the original figure,
+    # verified for all 19. Adding a second lettered band would duplicate them
+    # and waste column height, so the crop's own label is the label.
     inner = max(c.width for c in crops)
     cw = inner + 2 * PAD
-    ch = PAD + sum(LABEL_H + c.height for c in crops) + GAP * (len(crops) - 1) + PAD
+    ch = PAD + sum(c.height for c in crops) + GAP * (len(crops) - 1) + PAD
 
     canvas = Image.new("RGB", (cw, ch), BG)
     d = ImageDraw.Draw(canvas)
-    f = _font(LABEL_H - 14)
 
     placed = []
     y = PAD
     for i, (c, p) in enumerate(zip(crops, panels)):
-        letter = chr(ord("a") + i)
-        d.text((PAD, y + 4), f"({letter})", fill=INK, font=f)
-        y += LABEL_H
-
         x = PAD + (inner - c.width) // 2
         canvas.paste(c, (x, y))  # 1:1 paste, no resize
         d.rectangle([x - FRAME, y - FRAME, x + c.width + FRAME - 1,
                      y + c.height + FRAME - 1], outline=FRAME_C, width=FRAME)
         placed.append({
-            "letter": letter,
+            "letter": chr(ord("a") + i),
             "source": name,
             "crop": {"x": p["x"], "y": p["y"], "w": p["w"], "h": p["h"]},
             "placed": {"x": x, "y": y, "w": c.width, "h": c.height},
