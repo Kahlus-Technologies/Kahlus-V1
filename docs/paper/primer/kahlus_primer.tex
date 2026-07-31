@@ -30,7 +30,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{\small Kahlus --- primer}
-\rhead{\small 28 July 2026}
+\rhead{\small 31 July 2026}
 \cfoot{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -48,13 +48,21 @@
 \textbf{How to use this.} Part I is what we are actually researching and why.
 Part II is the vocabulary --- if a word in a meeting confuses you, it is defined
 there. Part III is the statistics. Part IV explains what ``F9'' means and lists
-every finding. Part V works through the two real results in full, equation by
-equation. Part VI is every paper we rely on and what each one is for. Part VII is
-a glossary, Part VIII is the questions you will get asked.
+every finding. Part V works through the real results in full, equation by
+equation. Part VI is the cross-dataset problem --- the one open weakness in how
+the paper is framed, and the thing most likely to be attacked. Part VII is a tour
+of the code: which script produced which number and which figure, so any claim
+here can be traced to a file. Part VIII is every paper we rely on and what each
+one is for. Part IX is a glossary, Part X is the questions you will get asked.
 
 \textbf{Where I am uncertain I say so.} Anything marked \textbf{[ours]} is a claim
 this project makes; anything marked \textbf{[established]} is standard published
 background you can assert freely.
+
+\textbf{Every number in this document was read back out of a committed artifact
+file} rather than copied from an earlier draft. Where a number has changed since
+a previous version of this primer, the change is flagged rather than silently
+overwritten.
 \end{keybox}
 
 \section{Part I --- What are we actually researching?}
@@ -116,6 +124,22 @@ We also use \textbf{slpdb} (MIT-BIH Polysomnographic Database) for signal
 diversity: it carries ECG (heart), blood pressure, respiration and EEG together.
 And \textbf{ds005620}, an OpenNeuro propofol-anaesthesia dataset (21 subjects),
 used to test whether complexity measures track loss of consciousness.
+
+\textbf{BNCI2014\_001} (also called BCI Competition IV-2a). \textbf{9 subjects},
+22 EEG channels, sampled at \textbf{250\,Hz}, recorded while people imagined
+moving their hands or feet. It is a motor-imagery brain-computer-interface
+corpus, not a sleep corpus, and it is the standard benchmark in the BCI
+literature.
+
+\begin{keybox}
+\textbf{Two sampling rates, and a trap that follows from it.} Sleep-EDF is
+100\,Hz, BNCI is 250\,Hz. So ``a horizon of 16'' means 160\,ms on Sleep-EDF but
+64\,ms on BNCI. \textbf{Comparing the two datasets at the same \emph{sample}
+count compares different physical lead times and is not a comparison at all.}
+Whenever the two corpora appear together in this project, horizons are specified
+in milliseconds and converted per dataset. This sounds pedantic; it is exactly
+how one earlier cross-dataset claim went wrong (Part VI).
+\end{keybox}
 
 \section{Part II --- The vocabulary}
 
@@ -239,8 +263,11 @@ have} --- it shows the apparatus cannot manufacture a win for our own model.
 
 \textbf{F-numbers are just our internal IDs for findings}, F0 through F9, recorded
 in \fp{docs/results/findings-ledger.md}. There is nothing standard about them;
-they exist so every claim has an address. \textbf{F9 is the overlap inflation law}
---- the newest result, Part V.
+they exist so every claim has an address. \textbf{F9 is the overlap inflation
+law}, the result the paper is built around; F10 extends it to a second metric,
+and F11--F12 are the newest work, on whether anything is predictable at
+\emph{useful} lead times rather than milliseconds. All are worked through in
+Part V.
 
 \begin{center}\small
 \begin{longtable}{p{0.05\textwidth}p{0.42\textwidth}p{0.45\textwidth}}
@@ -256,19 +283,25 @@ F5 & Same question under propofol anaesthesia & \textbf{Powered negative.} All 2
 F6 & Autonomic signals for micro-arousal prediction & \textbf{Incomplete.} Works on synthetic data; real test needs NSRR data access. \\
 F8 & Corrected forecasting benchmark & \textbf{Positive, bounded.} The GRU genuinely beats a tuned ridge out to 160\,ms; the advantage ends by 320\,ms. \\
 F9 & The overlap inflation law & \textbf{Exact bound, verified.} 286 configurations, zero violations. \\
+F10 & Does the $W/H$ bound also apply to reported \emph{correlation}? & \textbf{Falsified, and in the dangerous direction.} It does not transfer: $W/H$ \emph{understates} correlation inflation. Anyone applying F9's bound to a reported $r$ would conclude a paper is cleaner than it is. \\
+F11 & Forecasting the band \emph{envelope} (how strong a rhythm is) at 1--60\,s & \textbf{Positive, and survives its control.} Every horizon in every band beats persistence on 15/15 held-out subjects, with muscle and eye artifact regressed out. \\
+F12 & Forecasting the scored sleep \emph{stage} 10--60\,s ahead & \textbf{Negative as posed; weakly positive when re-posed.} Predicting the stage itself, EEG adds nothing over ``assume no change''. Re-posed as \emph{will the stage change}, EEG does add --- but most of that effect lives in the single least reliably-scored stage. \\
 \bottomrule
 \end{longtable}
 \end{center}
 
 \begin{keybox}
-\textbf{Seven of nine are negative or incomplete, and that is deliberately on the
-record.} The honest summary of this project is: \emph{we built a referee that
-bites, pointed it at our own work, and most of what we hoped for did not survive.}
-Two things did --- F8 and F9. A reviewer who sees the negatives reported plainly
-will trust the positives far more.
+\textbf{Eight of twelve are negative, falsified, or incomplete, and that is
+deliberately on the record.} The honest summary of this project is: \emph{we
+built a referee that bites, pointed it at our own work, and most of what we hoped
+for did not survive.} What did survive: F9 (an exact bound), F8 (a bounded
+positive benchmark), and F11 (envelopes are forecastable at seconds). Note that
+F10 falsified an extension of \emph{our own} headline result, and F12 returned a
+negative on the question we most wanted a positive on. A reviewer who sees the
+negatives reported plainly will trust the positives far more.
 \end{keybox}
 
-\section{Part V --- The two real results, worked through}
+\section{Part V --- The results, worked through}
 
 \subsection{F9: the overlap inflation law} \textbf{[ours]}
 
@@ -375,7 +408,269 @@ way these results inflate}, and we caught ourselves doing it twice.
 ($p = 0.58$). We narrowed the claim rather than removing the test. Say this out
 loud when asked --- it is the most credible thing in the project.
 
-\section{Part VI --- Every paper, and what each is for}
+\subsection{F10: the same trick does not work on correlation} \textbf{[ours]}
+
+\textbf{Why we tried.} F9 bounds how much overlap inflates \emph{MSE}. But most
+biosignal forecasting papers do not lead with MSE --- they lead with a
+correlation, $r$, or its square $R^2$. If $W/H$ transferred to correlation, one
+division would audit both metrics and F9's reach would roughly double.
+
+\textbf{What happened.} It does not transfer, and the failure points the
+\emph{inconvenient} way. The exact bound for correlation involves how much the
+model's predictions vary relative to the truth. Write $s_{\text{pred}}$ for that
+ratio. Then the correct factor is
+\begin{equation}
+1 + \frac{W-H}{H}\cdot\bigl(s_{\text{pred}}\, s_{\text{targ}}\bigr)^{-1/2},
+\end{equation}
+and $W/H$ is only the special case $s_{\text{pred}} = s_{\text{targ}} = 1$.
+
+\textbf{Why that matters.} Any regularised model --- ridge, and any neural net
+with weight decay --- \emph{shrinks its predictions toward the mean} exactly where
+the signal is unpredictable. So in practice $s_{\text{pred}} < 1$ (median 0.700 in
+our runs), which makes the true inflation \emph{larger} than $W/H$: median
+$1.21\times$ larger, up to $10.8\times$. Violations in 223 of 286 cells.
+
+\begin{keybox}
+\textbf{Say it like this.} ``Our own bound does not extend to correlation, and we
+checked rather than assumed. Worse, it fails in the direction that would make a
+paper look cleaner than it is --- so we tell people explicitly \emph{not} to apply
+the MSE bound to a reported $r$.'' \textbf{Killing our own extension is the point,
+not an embarrassment.}
+\end{keybox}
+
+\textbf{What you \emph{can} still do with no data.} There is a threshold,
+$r \geq 1 - H/W$, below which a reported correlation is weaker than trivial
+copy-and-persist already achieves --- so it constrains genuine forecast skill not
+at all. For our own historical bug ($W=127$, $H=1$) that threshold is $0.99213$,
+and the number originally reported was $0.972$ --- \emph{below} it. That number
+never bounded forecast skill in the first place.
+
+\textbf{One process note worth repeating.} The first version of this derivation
+asserted the result without a sign condition. A self-test on adversarial inputs
+failed it, which is how the condition ended up in the theorem instead of in a
+referee's report.
+
+\subsection{F11: envelopes are forecastable at seconds, not milliseconds} \textbf{[ours]}
+
+\textbf{The move.} F8 forecasts \emph{voltage}, and voltage skill dies within
+about half a second. That is far too short to be useful for anything clinical.
+But nobody actually needs the voltage. What matters is \emph{how strong a rhythm
+is} --- the \textbf{envelope}, the slowly-varying amplitude of a frequency band.
+That changes over seconds to minutes, so it is a fairer target for a question
+about state.
+
+\textbf{The result.} Forecasting the causal band envelope at leads from 1 to
+60\,seconds, subject-disjoint across 60 subjects: \textbf{at every horizon, in
+every band, 15 of 15 held-out test subjects beat persistence}
+($p = 6.1\times10^{-5}$, bootstrap CI excluding zero). At the hardest setting we
+ran --- 60\,s ahead --- low-gamma envelope correlation is $r = 0.294$.
+
+\textbf{The control that makes it believable.} Scalp gamma is the band most
+contaminated by \emph{muscle} activity, so ``we predicted brain gamma'' is a claim
+a reviewer should immediately doubt. Sleep-EDF carries EMG (chin muscle) and EOG
+(eye movement) channels, so we regressed both out and re-ran. The effect
+shrinks --- 60\,s low-gamma falls from $r = 0.294$ to $r = 0.181$ --- but it
+\textbf{survives}. Report both numbers; the drop is the honest part.
+
+\begin{keybox}
+This is why F11 matters for the story: it moves the useful-horizon claim from
+\textbf{160\,milliseconds} to \textbf{tens of seconds}, by changing \emph{what} is
+predicted rather than by claiming a better model. \textbf{But note the target
+changed too} --- an envelope is not a state, which is what F12 goes after.
+\end{keybox}
+
+\subsection{F12: predicting the actual sleep stage --- mostly a negative} \textbf{[ours]}
+
+\begin{keybox}
+\textbf{Provisional, and here is why.} Every F12 number below comes from a run on
+\textbf{10 subjects} (6 fit / 1 select / \textbf{3 test}), not the 60 used for F11.
+Three test subjects is thin, and it is the same under-powering we caught in the
+BNCI sweep --- so the direction of these results should be trusted more than
+their third decimal place. A full 60-subject re-run
+(36 / 9 / \textbf{15}, matching F11) is in flight; this box goes away when it
+lands. \textbf{Volunteering the weakness before a reader finds it is the whole
+practice.}
+\end{keybox}
+
+\textbf{The honest version of the question.} An envelope amplitude is not
+something anyone wants to know. The question the project actually cares about is:
+\emph{can you predict the scored sleep stage before it happens?}
+
+\textbf{Asked directly, the answer is no.} At 60\,s lead, balanced accuracy is
+\textbf{0.732} using the current stage alone, and \textbf{0.713} when EEG features
+are added. \textbf{Adding brain data made it worse.} The model
+correctly learns to assume nothing changes, because transitions are only 4--19\,\%
+of windows and persisting is the loss-minimising answer; the extra EEG features
+buy nothing on the 81\,\% of windows where nothing happens, and cost accuracy
+there. Using EEG \emph{alone}, without the current stage, it falls further to
+\textbf{0.633}.
+
+\begin{keybox}
+\textbf{A harness self-check hides in that number.} The ``stage only'' model
+reproduces persistence \emph{exactly}. That is the pipeline proving it is wired
+correctly --- if it had beaten persistence with no information, something would be
+leaking.
+\end{keybox}
+
+\textbf{Re-posed, there is a weak signal.} Ask instead the binary question ``will
+the stage change within 60\,s'', which is what the application cares about, and
+EEG does add. Area under the ROC curve rises \textbf{0.657} (stage alone)
+$\rightarrow$ \textbf{0.690} (with EEG) $\rightarrow$ \textbf{0.697} (all
+polysomnography channels), with average precision \textbf{0.332} $\rightarrow$
+\textbf{0.393} $\rightarrow$ \textbf{0.425} against a base rate of \textbf{0.194}.
+
+\textbf{Now the caveat you must volunteer before anyone finds it.} Just over half
+of all transitions in this data --- \textbf{55\,\%} at the 60\,s horizon, 52\,\% at
+10\,s --- involve stage N1. N1 is by
+a wide margin the least reliably scored stage: published inter-rater agreement for
+N1 is $\kappa = 0.24$, against $0.76$ overall. If N1 transitions are excluded, the
+effect largely collapses: AUC \textbf{0.552} $\rightarrow$ \textbf{0.605}, and
+average precision \textbf{0.108} $\rightarrow$ \textbf{0.115}.
+
+\begin{keybox}
+\textbf{Say this out loud:} ``the transition result is real but concentrated in
+the stage that human scorers themselves agree on least, so part of what we are
+predicting may be scorer behaviour rather than physiology. We report it with N1
+included and excluded.'' \textbf{At roughly 0.82 per-epoch human agreement, and a
+transition being defined by \emph{two} labels, an AUC near 1.0 is not achievable
+here even in principle.} A ceiling like that should be stated before someone asks
+why the number is not higher.
+\end{keybox}
+
+\section{Part VI --- The cross-dataset problem}
+
+\textbf{This is the weakest joint in the project. Know it cold, because it is
+what a sharp reviewer will go for first.}
+
+\subsection{The framing gap, stated plainly}
+
+The paper is framed around \textbf{BNCI2014\_001}. Almost every result in it ---
+F8's crossover, F9's law, F11's envelopes, F12's stages --- was measured on
+\textbf{Sleep-EDF}. Those are different corpora, different sampling rates,
+different populations, and different brain states (imagined movement in awake
+volunteers versus overnight sleep).
+
+A finding measured on one and framed on the other is not wrong, but it is
+\emph{unsupported} until someone runs it on both. There are only two honest
+resolutions: re-frame the paper around Sleep-EDF, or run the same protocol on
+BNCI and report what comes back. We are doing the second.
+
+\subsection{The retraction --- our own, on the record}
+
+\textbf{We previously claimed the BNCI data replicated F8's crossover. That claim
+was withdrawn. It was wrong for two independent reasons, and both are worth
+understanding because each is a mistake anyone can make.}
+
+\textbf{Reason one: an under-tuned baseline.} The BNCI run had fixed the ridge
+penalty at $\alpha = 1.0$ across 2{,}816 features instead of tuning it. Under
+that setting, skill appeared to die between 64 and 256\,ms. When $\alpha$ was
+instead \emph{selected} on a held-out subject, skill survived to about 512\,ms.
+\textbf{The ``finding'' had been a property of the hyper-parameter, not of the
+brain.} This is the same failure mode described in F8, and we walked into it a
+third time.
+
+\textbf{Reason two, and the subtler one: the two numbers were never the same
+quantity.} F8 measures \emph{a GRU beating a tuned ridge} --- that is a question
+about \textbf{architecture}, whether nonlinearity buys anything. The BNCI number
+measured \emph{a linear model beating the mean of the trace} --- a question about
+whether \textbf{any} forecastable structure exists at all. Those are different
+comparisons. Two different questions returning answers of the same order of
+magnitude is a coincidence worth checking, not a replication.
+
+\begin{keybox}
+\textbf{The transferable lesson.} Before calling anything a replication, ask
+\emph{``is it the same estimand?''} --- literally, is the quantity being estimated
+the same quantity. Same dataset, same metric, and same direction are not enough
+if the two comparisons are between different pairs of models.
+\end{keybox}
+
+\subsection{What is running now, and what it can return}
+
+The open test is a genuine like-for-like run: the F8 protocol, on BNCI, with
+\textbf{the same tuning budget given to both models} --- ridge $\alpha$ and the
+GRU's size and training length both selected on validation subjects, seeds
+pooled. Horizons are set in milliseconds, so 160\,ms means 160\,ms on both
+corpora.
+
+Two design points matter, and both were fixed after a first pass went wrong:
+
+\begin{itemize}
+\item \textbf{The penalty grid has to be wide enough that validation, not the
+grid, chooses.} The first pass selected the smallest $\alpha$ offered at every
+horizon --- a baseline pinned against its own grid edge, i.e.\ under-tuned again.
+The grid now extends further down and the run \emph{records} whenever a selection
+lands on an edge.
+\item \textbf{Nine subjects is not 78.} A single train/validation/test split
+leaves three test subjects, and a paired test on three subjects cannot reach
+significance no matter how large the effect. So every subject is rotated through
+the test position in turn (\emph{leave-one-subject-out}), giving nine paired
+differences, with tuning kept strictly inside each fold.
+\end{itemize}
+
+\textbf{Both outcomes are publishable, and you should be comfortable saying so:}
+
+\begin{itemize}
+\item \textbf{If the GRU's short-horizon advantage replicates on BNCI}, the
+headline generalises across corpus, sampling rate and brain state.
+\item \textbf{If ridge wins at every horizon on BNCI} --- which the earlier,
+weaker run suggested --- then the honest claim narrows to ``the nonlinear
+advantage is present in sleep EEG and absent in awake motor-imagery EEG.''
+\textbf{That is a more interesting result than a clean replication}, because it
+says the advantage depends on brain state. What it must \emph{not} become is a
+quiet reframing of the paper onto Sleep-EDF with BNCI dropped.
+\end{itemize}
+
+\section{Part VII --- A tour of the code}
+
+\textbf{Purpose of this part: every number in this document can be traced to a
+file.} If someone asks ``where does that come from'', this is the answer.
+
+\begin{center}\small
+\begin{longtable}{p{0.29\textwidth}p{0.29\textwidth}p{0.33\textwidth}}
+\toprule
+\textbf{Script} & \textbf{Artifact it writes} & \textbf{What it establishes} \\
+\midrule
+\fp{scripts/forecast_scaleup_paired.py} & \fp{artifacts/forecast_crossover/} & F8: the corrected benchmark. Also the source of the split logic and tuning grids everything else reuses. \\
+\fp{scripts/overlap_inflation_law.py} & \fp{artifacts/overlap_law/} & F9: 286 configurations, zero violations of the $W/H$ bound. \\
+\fp{scripts/correlation_inflation_law.py} & \fp{artifacts/correlation_law/} & F10: the falsification of the correlation extension. \\
+\fp{scripts/envelope_horizon_sleepedf.py} & \fp{artifacts/envelope_sleepedf/} & F11: envelope forecasting at 1--60\,s, with EMG/EOG residualisation. \\
+\fp{scripts/stage_forecast_sleepedf.py} & \fp{artifacts/stage_forecast/} & F12: stage prediction and transition detection, including the N1-excluded numbers. \\
+\fp{scripts/bnci_crossover_sweep.py} & \fp{runs/bnci_crossover/} & The open cross-dataset test (Part VI). \\
+\fp{scripts/_forecast_common.py} & --- & Shared ridge solver and data loaders, so scripts cannot drift apart. \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\subsection{The four paper figures, and what each one is for}
+
+Sources live in \fp{docs/paper/results_figures/src/}, output in
+\fp{.../figures/}.
+
+\begin{itemize}
+\item \textbf{\fp{fig_crossover.pdf}} --- F8. Where the GRU's advantage begins and
+ends, against horizon.
+\item \textbf{\fp{fig_overlap_law.pdf}} --- F9. Predicted versus observed
+inflation across 286 configurations, on an identity line. \textbf{The retracted
+$126\times$ result is drawn on this figure deliberately}, as a labelled point,
+rather than deleted.
+\item \textbf{\fp{fig_envelope.pdf}} --- F11. Envelope forecast skill against
+lead time, before and after artifact residualisation.
+\item \textbf{\fp{fig_falsification.pdf}} --- F10 and F12. The negative results,
+given the same visual weight as the positive ones.
+\end{itemize}
+
+\begin{keybox}
+\textbf{Figures are verified, not eyeballed.}
+\fp{docs/paper/results_figures/src/verify_figures.py} runs eight automated checks
+over the built PDFs: that every plotted number still matches the artifact it came
+from, that no text is below the legibility floor once printed at column width,
+that the width and resolution are right, that no retracted number appears outside
+its declared context, and that previously-approved figures have not silently
+changed. It currently passes 29/29. The verifier has its own self-test with 13
+planted faults --- which caught two real holes in the verifier itself.
+\end{keybox}
+
+\section{Part VIII --- Every paper, and what each is for}
 
 \subsection{Establishing that our overlap axis is new}
 
@@ -478,7 +773,7 @@ than the baseline. Dividing by $\ln 2$ converts to bits. \textbf{Positive means
 the extra information helped; zero or negative means it did not.} Our real-data
 values came out negative, which is why F3--F5 are negatives.
 
-\section{Part VII --- Glossary}
+\section{Part IX --- Glossary}
 
 \begin{center}\small
 \begin{longtable}{p{0.22\textwidth}p{0.71\textwidth}}
@@ -503,11 +798,23 @@ Control & A deliberately broken run that must fail; proves the pipeline is hones
 RFS & Residual Forecastability Score, in bits. Positive means extra signal helped. \\
 PCI & Perturbational Complexity Index --- a TMS-based consciousness measure. \textbf{We do not measure it.} \\
 Gate & Our pass/fail rule for whether a result may be claimed. \\
+Envelope & The slowly-varying strength of a frequency band, as opposed to the raw voltage. Changes over seconds, not milliseconds. F11's target. \\
+Residualisation & Regressing a nuisance signal (muscle, eye movement) out before testing, so an effect cannot be explained by it. \\
+EMG / EOG & Muscle and eye-movement channels. Used as artifact controls; in Sleep-EDF they are recorded at 1\,Hz while EEG is at 100\,Hz. \\
+N1 & The lightest sleep stage, and the one human scorers agree on least ($\kappa = 0.24$). Load-bearing caveat in F12. \\
+$\kappa$ (kappa) & Agreement between raters, corrected for chance. 1.0 is perfect; 0.76 is Sleep-EDF's overall stage-scoring agreement. \\
+Estimand & The quantity you are actually estimating. Two studies can share a dataset and a metric and still estimate different things --- the mistake behind our retraction. \\
+AUC & Area under the ROC curve. 0.5 is chance, 1.0 is perfect. Used for rare events where accuracy would be misleading. \\
+Average precision & A summary of precision across thresholds. Compare it against the \emph{base rate}, not against 0.5. \\
+Base rate & How often the event happens at all. F12's transitions are 19\,\% of windows, so a model scoring 0.19 average precision has learned nothing. \\
+LOSO & Leave-one-subject-out: rotate every subject through the test position. Used on BNCI because 9 subjects cannot support a single split. \\
+Grid edge & When tuning selects the smallest or largest value offered, meaning the grid --- not the data --- chose. A warning sign of an under-tuned model. \\
+BNCI2014\_001 & Motor-imagery EEG, 9 subjects, 250\,Hz. The corpus the paper is framed on. \\
 \bottomrule
 \end{longtable}
 \end{center}
 
-\section{Part VIII --- Questions you will be asked}
+\section{Part X --- Questions you will be asked}
 
 \textbf{``What's the contribution?''} A closed-form bound letting anyone compute
 how inflated a published forecasting number is from two numbers in its methods
@@ -527,6 +834,32 @@ nothing is predictable, it still holds exactly.
 held-out people against a properly tuned baseline. Past 320\,ms, no. We also had a
 long-horizon claim that failed our own check and we reported that.
 
+\textbf{``160 milliseconds is useless. Why should I care?''} Agreed, for raw
+voltage --- and we say so. That is why F11 changes the target from voltage to band
+\emph{envelope}, where skill survives to 60\,s and beyond, on 15 of 15 held-out
+subjects, with muscle and eye artifact regressed out. The trade is honest: a
+longer horizon for a coarser quantity.
+
+\textbf{``So can you predict sleep stage transitions?''} Weakly, and we lead with
+the negative. Predicting the \emph{stage} itself, EEG adds nothing over assuming
+no change (0.713 versus 0.732). Re-posed as \emph{will the stage change within
+60\,s}, EEG does add: AUC 0.657 $\rightarrow$ 0.690. But over half of those
+transitions involve N1, the stage scorers agree on least, and excluding N1 the
+effect largely collapses. We report it both ways.
+
+\textbf{``Your paper says BNCI but your results say Sleep-EDF.''} \textbf{Correct,
+and it is the open weakness.} We are closing it by running the same protocol on
+BNCI with a symmetric tuning budget, not by arguing that it should transfer. We
+previously claimed a BNCI replication and retracted it --- the baseline had been
+under-tuned, and the two numbers were not the same estimand. If ridge wins on
+BNCI, the claim narrows to being about brain state, which is a more interesting
+result than a clean replication.
+
+\textbf{``Doesn't F10 undermine F9?''} No --- it bounds it. F9 is exact for MSE and
+unaffected. F10 says the bound does not \emph{extend} to correlation, and fails in
+the direction that would flatter a paper, so we tell people not to make that
+substitution. We found that by testing our own extension rather than assuming it.
+
 \textbf{``Is this clinically useful?''} Not yet, and we don't claim it. The
 timescale that matters for predicting state changes is around a minute --- hundreds
 of times longer than what we demonstrate.
@@ -545,6 +878,12 @@ look next.
 \textbf{Source documents.} \fp{docs/results/findings-ledger.md} (all findings)
 $\cdot$ \fp{docs/results/overlap_inflation_law_2026-07-28.md} (F9) $\cdot$
 \fp{docs/results/forecast_crossover_2026-07-27.md} (F8) $\cdot$
+\fp{docs/results/correlation_inflation_law_2026-07-30.md} (F10) $\cdot$
+\fp{artifacts/envelope_sleepedf/results.json} (F11) $\cdot$
+\fp{artifacts/stage_forecast/transition_detection_n1_stratified.json} (F12)
+$\cdot$ \fp{docs/research/program/REGISTER.md} (hypotheses, kills, and the
+retraction) $\cdot$ \fp{docs/paper/results_figures/README.md} (figures and their
+verifier) $\cdot$
 \fp{docs/research/baseline_fairness_literature_2026-07-27.md} (citations)
 $\cdot$ \fp{docs/research/eval_leakage_audit_2026-07-21.md} (the original
 bug audit).

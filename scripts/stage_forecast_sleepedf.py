@@ -124,7 +124,12 @@ HORIZONS = (100, 300, 600)              # 10, 30, 60 s at ENV_FS
 #: share 95%+ of their context, so it doubled memory for near-duplicate rows.
 STRIDE = 32
 CLASSES = ("W", "N1", "N2", "N3", "REM")
-CVALS = (1e-4, 1e-3, 1e-2, 1e-1, 1.0)   # inverse L2 strength for LogisticRegression
+#: Inverse L2 strength for LogisticRegression. Extended down to 1e-7 and up to
+#: 1e2 after the first run selected the bottom of a (1e-4 .. 1.0) grid in 11 of
+#: 24 fits -- a selection at a grid edge means the grid chose, not the data, and
+#: this project has been caught by exactly that twice (see REGISTER cycle 4).
+#: The extra values are cheap here: logreg on ~50k x few-hundred features.
+CVALS = (1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1.0, 1e1, 1e2)
 #: Learning rates swept for the boosted-tree variant. Sleep staging classically
 #: rests on nonlinear band-ratio boundaries (delta/beta and friends), which a
 #: linear model in envelope features cannot express, so a tree model is the
@@ -192,6 +197,52 @@ def make_model(kind: str, hp: float, seed: int = SEED):
 
 def hparams(kind: str) -> tuple:
     return CVALS if kind == "logreg" else LRATES
+
+
+def at_grid_edge(kind: str, best, label: str, scores=None) -> str:
+    """Classify a hyper-parameter selection that landed on a grid edge.
+
+    A selection at an edge usually means the grid, not the data, chose the
+    hyper-parameter: the optimum may well lie outside what was searched. This
+    project has twice mistaken an under-tuned baseline for a finding, so the
+    condition is printed the moment it happens rather than left in the JSON for
+    someone to notice later.
+
+    But there are two ways to land on an edge and only one of them is a bug.
+    The selection loop keeps the first strict improvement, so when *every* grid
+    value scores the same the argmax falls on index 0 by default --- an edge by
+    tie-break, not by optimum. That is what the stage-only model does: its
+    one-hot features reproduce persistence exactly, so regularisation strength
+    genuinely cannot matter. Extending the grid would not move it.
+
+    Reporting both as the same warning would be crying wolf, and a warning that
+    fires on healthy runs stops being read. So this returns one of:
+
+      ``"no"``     not on an edge
+      ``"tied"``   on an edge, but the validation curve is flat: harmless
+      ``"edge"``   on an edge and strictly better than its neighbour: a bug
+
+    Only ``"edge"`` blocks quoting the number.
+    """
+    grid = hparams(kind)
+    if best not in (grid[0], grid[-1]):
+        return "no"
+    side = "bottom" if best == grid[0] else "top"
+
+    # A flat curve means the tie-break chose it, not the data.
+    if scores is not None and len(scores) > 1:
+        span = float(np.max(scores) - np.min(scores))
+        if span <= 1e-12:
+            print(f"  note: {label} selected hp={best:g} at the {side} of the "
+                  f"grid, but all {len(scores)} values score identically "
+                  f"({float(np.max(scores)):.4f}) -- the tie-break chose it, "
+                  f"not the grid edge; nothing to extend", flush=True)
+            return "tied"
+
+    print(f"  WARNING: {label} selected hp={best:g} at the {side} of the grid "
+          f"[{grid[0]:g} .. {grid[-1]:g}] -- extend the grid before "
+          f"quoting this number", flush=True)
+    return "edge"
 
 
 def evaluate(y_true, y_pred) -> dict:
@@ -286,10 +337,12 @@ def main() -> int:
             xt, now_t, yt = stack(test_s)
 
             best, best_score = None, -np.inf
+            hp_scores = []
             for hp in hparams(args.model):
                 m = make_model(args.model, hp)
                 m.fit(xf, yf)
                 sc = balanced_accuracy_score(ys, m.predict(xs))
+                hp_scores.append(sc)
                 if sc > best_score:
                     best, best_score = hp, sc
             clf = make_model(args.model, best)
@@ -301,7 +354,9 @@ def main() -> int:
             row = {
                 "horizon_env_samples": h, "horizon_s": h / ENV_FS,
                 "model": args.model, "selected_hp": best,
-                "hp_at_grid_edge": bool(best in (hparams(args.model)[0], hparams(args.model)[-1])),
+                "hp_at_grid_edge": at_grid_edge(
+                    args.model, best, f"{inputs} staging h={h / ENV_FS:.0f}s",
+                    scores=hp_scores),
                 "transition_rate": float(trans.mean()),
                 "all": {
                     "model": evaluate(yt, pred),
@@ -398,7 +453,8 @@ def main() -> int:
                 "excluding_n1_transitions": rel,
                 "per_subject": per_subject,
                 "horizon_s": h / ENV_FS, "model": args.model, "selected_hp": best,
-                "hp_at_grid_edge": bool(best in (hparams(args.model)[0], hparams(args.model)[-1])),
+                "hp_at_grid_edge": at_grid_edge(
+                    args.model, best, f"{inputs} transition h={h / ENV_FS:.0f}s"),
                 "roc_auc": float(roc_auc_score(yt, prob)),
                 "average_precision": float(average_precision_score(yt, prob)),
                 "base_rate": base, "lift_over_base": float(average_precision_score(yt, prob) / base),
