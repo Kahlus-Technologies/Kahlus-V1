@@ -23,6 +23,26 @@ BNCI is 250 Hz against Sleep-EDF's 100 Hz, so horizons are chosen in
 milliseconds and converted to samples per dataset. Comparing h=1 across the two
 would otherwise compare 4 ms against 10 ms and call it replication.
 
+A note on cost, because the first attempt at this run was misread as a crash.
+The GRU grid is 4 configs x 3 seeds for tuning plus 3 seeds for the final fit,
+and the largest config (hidden=64, steps=900) takes ~92 s on 3200 training rows.
+That is ~10 min per fold, ~94 min per horizon, and ~14 h for all 9 horizons. The
+first run therefore sat silent for 4 minutes and was recorded as "exited 0 with
+no output" when in fact it had not yet reached its first print statement, and
+the process was later reaped. Two things made a slow run indistinguishable from
+a dead one, and both are fixed here:
+
+  * the results file was written once, after all 81 fold-horizons, so an
+    interrupted run left nothing behind no matter how much work it had done.
+    The artifact is now rewritten after every horizon, and carries a `complete`
+    flag plus the list of horizons actually finished, so a partial file is
+    obviously partial rather than quietly short.
+  * the only progress print was per horizon, i.e. every ~94 minutes. Each fold
+    now reports as it lands, with a running ETA.
+
+`--resume` reloads a partial artifact and skips the horizons already in it, so
+this can be run in chunks without repeating work.
+
   PYTHONPATH=src python3 scripts/bnci_crossover_sweep.py --out runs/bnci_crossover
 """
 from __future__ import annotations
@@ -30,6 +50,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -147,6 +168,10 @@ def main() -> None:
     ap.add_argument("--subjects", type=int, default=9)
     ap.add_argument("--stride", type=int, default=256)
     ap.add_argument("--max-windows", type=int, default=400)
+    ap.add_argument("--horizons-ms", type=float, nargs="*", default=None,
+                    help="subset of HORIZONS_MS to run; default is all nine")
+    ap.add_argument("--resume", action="store_true",
+                    help="reload a partial artifact and skip finished horizons")
     args = ap.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -186,10 +211,91 @@ def main() -> None:
     chosen: dict[str, dict] = {}
     alpha_edge_hits: list[str] = []
 
-    for h, ms in zip(hs, HORIZONS_MS):
+    path = args.out / "bnci_crossover_results.json"
+
+    # Horizon selection, and resume. Both exist so that a 14-hour run can be
+    # done in pieces without either repeating finished work or pretending an
+    # unfinished run is a finished one.
+    wanted = list(zip(hs, HORIZONS_MS))
+    if args.horizons_ms is not None:
+        keep = set(args.horizons_ms)
+        wanted = [(h, ms) for h, ms in wanted if ms in keep]
+        missing = keep - {ms for _, ms in zip(hs, HORIZONS_MS)}
+        if missing:
+            raise SystemExit(f"--horizons-ms values not in the grid: {sorted(missing)}")
+    # What this invocation set out to measure, fixed before any resume filtering
+    # so that "planned" keeps meaning the goal rather than the remaining work.
+    planned_h = [h for h, _ in wanted]
+    if args.resume and path.exists():
+        prior = json.loads(path.read_text())
+        comparisons = prior.get("comparisons", {})
+        per_subject = prior.get("per_subject_mse", per_subject)
+        chosen = prior.get("chosen", {})
+        alpha_edge_hits = prior.get("ridge_alpha_grid_edge_selections", [])
+        done = set(comparisons)
+        wanted = [(h, ms) for h, ms in wanted if str(h) not in done]
+        print(f"resuming: {len(done)} horizons already in {path}, "
+              f"{len(wanted)} to go", flush=True)
+
+    def snapshot(complete: bool) -> dict:
+        """Build the artifact from whatever is finished so far.
+
+        Written after every horizon rather than once at the end. The earlier
+        version wrote only after all 81 fold-horizons, so an interrupted run
+        left an empty directory that was indistinguishable from a crash --
+        which is exactly how the first attempt at this run was misdiagnosed.
+        """
+        done_h = [h for h in hs if str(h) in comparisons]
+        gru = [comparisons[str(h)]["mean_mse"]["kahlus_gru"] for h in done_h]
+        ridge = [comparisons[str(h)]["mean_mse"]["ridge_ar"] for h in done_h]
+        wins = [i for i in range(len(done_h)) if gru[i] < ridge[i]]
+        ms_of = dict(zip(hs, HORIZONS_MS))
+        # The crossover is a claim about the *shape* of the curve: the GRU wins
+        # at the shortest horizon and loses at the long ones. A subset run
+        # cannot answer that no matter how many folds it finished, so the flag
+        # stays None unless the full nine-horizon sweep is complete. Reporting
+        # True off two horizons would be answering a question nobody asked.
+        full_sweep = complete and len(done_h) == len(hs)
+        return {
+            "schema": "bnci_crossover_v1",
+            "created_utc": datetime.now(timezone.utc).isoformat(),
+            "dataset": "BNCI2014_001 (BCI Competition IV-2a) via MOABB local cache",
+            "source_dir": str(args.cache_dir),
+            "channel": CHANNEL,
+            "sampling_rate_hz": fs,
+            "context_samples": L,
+            "complete": complete,
+            "full_sweep": full_sweep,
+            # What this run set out to do, not what the module could do: a
+            # subset run that finished must not look like a truncated full one.
+            "horizons_planned": planned_h,
+            "horizons_planned_ms": [ms_of[h] for h in planned_h],
+            "horizons": done_h,
+            "horizons_ms": [ms_of[h] for h in done_h],
+            "ridge_alpha_grid": list(BNCI_RIDGE_ALPHAS),
+            "ridge_alpha_grid_edge_selections": alpha_edge_hits,
+            "gru_config_grid": [list(c) for c in GRU_CONFIGS],
+            "gru_seeds": list(GRU_SEEDS),
+            "chosen": chosen,
+            "evaluation": (f"leave-one-subject-out; {len(folds)} folds, "
+                           "tuning inside each fold"),
+            "folds": folds,
+            "comparisons": comparisons,
+            "per_subject_mse": per_subject,
+            "gru_wins_at_horizons_ms": [ms_of[done_h[i]] for i in wins],
+            "replicates_sleepedf_crossover": (
+                bool(wins and wins[0] == 0) if full_sweep else None),
+        }
+
+    total_folds = len(wanted) * len(folds)
+    done_folds = 0
+    t_start = time.time()
+
+    for h, ms in wanted:
         subj_mse: dict[str, dict[str, float]] = {}
         fold_choices: list[dict] = []
         for fold in folds:
+            t_fold = time.time()
             tr_ctx, tr_y = stack(fold["train"], h)
             va_ctx, va_y = stack(fold["val"], h)
 
@@ -217,6 +323,17 @@ def main() -> None:
                 "persistence": _mse(y, ctx[:, -1]),
                 "mean_of_trace": _mse(y, ctx.mean(axis=1)),
             }
+            # A fold takes ~10 minutes. Reporting only per horizon meant ~94
+            # minutes of silence, during which a live run and a dead one look
+            # identical from outside.
+            done_folds += 1
+            eta = (time.time() - t_start) / done_folds * (total_folds - done_folds)
+            print(f"  h={h:>3} ({ms:>6.0f} ms) fold {fold['test'][0]}  "
+                  f"gru {subj_mse[s]['kahlus_gru']:.4f}  "
+                  f"ridge {subj_mse[s]['ridge_ar']:.4f}  "
+                  f"alpha={alpha:g} gru=({hidden},{steps})  "
+                  f"[{done_folds}/{total_folds}, {time.time()-t_fold:.0f}s, "
+                  f"eta {eta/60:.0f} min]", flush=True)
         chosen[str(h)] = {"horizon_ms": ms, "folds": fold_choices}
         test = subjects
         for m in per_subject:
@@ -240,40 +357,22 @@ def main() -> None:
               f"ridge {mean_mse['ridge_ar']:.4f}  "
               f"persist {mean_mse['persistence']:.4f}  "
               f"favouring gru {int((delta > 0).sum())}/{len(test)}", flush=True)
+        path.write_text(json.dumps(snapshot(complete=False), indent=1) + "\n")
 
-    gru = [comparisons[str(h)]["mean_mse"]["kahlus_gru"] for h in hs]
-    ridge = [comparisons[str(h)]["mean_mse"]["ridge_ar"] for h in hs]
-    gru_wins = [i for i in range(len(hs)) if gru[i] < ridge[i]]
+    # Complete means this invocation finished its own plan; a deliberate
+    # subset run is not a truncated one. full_sweep, computed inside the
+    # snapshot, is the separate question of whether all nine are present.
+    result = snapshot(complete=all(str(h) in comparisons for h in planned_h))
+    gru_wins = result["gru_wins_at_horizons_ms"]
     if alpha_edge_hits:
         print(f"\nWARNING ridge alpha at a grid edge in {len(alpha_edge_hits)} "
               f"fold-horizons -- baseline may be under-tuned:\n  "
               + "\n  ".join(alpha_edge_hits[:10]), flush=True)
-    result = {
-        "schema": "bnci_crossover_v1",
-        "created_utc": datetime.now(timezone.utc).isoformat(),
-        "dataset": "BNCI2014_001 (BCI Competition IV-2a) via MOABB local cache",
-        "source_dir": str(args.cache_dir),
-        "channel": CHANNEL,
-        "sampling_rate_hz": fs,
-        "context_samples": L,
-        "horizons": hs,
-        "horizons_ms": list(HORIZONS_MS),
-        "ridge_alpha_grid": list(BNCI_RIDGE_ALPHAS),
-        "ridge_alpha_grid_edge_selections": alpha_edge_hits,
-        "gru_config_grid": [list(c) for c in GRU_CONFIGS],
-        "gru_seeds": list(GRU_SEEDS),
-        "chosen": chosen,
-        "evaluation": "leave-one-subject-out; 9 folds, tuning inside each fold",
-        "folds": folds,
-        "comparisons": comparisons,
-        "per_subject_mse": per_subject,
-        "gru_wins_at_horizons_ms": [HORIZONS_MS[i] for i in gru_wins],
-        "replicates_sleepedf_crossover": bool(gru_wins and gru_wins[0] == 0),
-    }
-    path = args.out / "bnci_crossover_results.json"
     path.write_text(json.dumps(result, indent=1) + "\n")
-    print(f"\nwrote {path}")
-    print(f"GRU wins at: {result['gru_wins_at_horizons_ms']} ms")
+    print(f"\nwrote {path} (complete={result['complete']}, "
+          f"{len(result['horizons'])}/{len(planned_h)} planned, "
+          f"{len(result['horizons'])}/{len(hs)} of the full grid)")
+    print(f"GRU wins at: {gru_wins} ms")
     print(f"replicates Sleep-EDF crossover: "
           f"{result['replicates_sleepedf_crossover']}")
 
