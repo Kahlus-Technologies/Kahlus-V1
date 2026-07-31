@@ -64,6 +64,25 @@ rate. The reference is stage_only: transition probability genuinely depends on
 the current stage (N1 is unstable, N3 is not), so "does EEG beat chance" is too
 easy a bar and "does EEG add over the current stage" is the honest one.
 
+PART THREE: THE LABEL-NOISE CEILING, which decides how to read any of the above.
+
+A model cannot predict a label more reliably than the label is defined. Manual
+sleep staging has a meta-analytic inter-scorer Cohen's kappa of 0.76 overall,
+and per stage: W 0.70, N1 0.24, N2 0.57, N3 0.57, REM 0.69 (Lee et al., J Clin
+Sleep Med 2022; corroborated by Danker-Hopfe et al., J Sleep Res 2009, which
+reports 82.0% raw epoch agreement under AASM).
+
+N1's kappa of 0.24 is barely above chance -- experts essentially do not agree on
+it. And a transition is defined by TWO labels, so its reliability is worse than
+either. If two scorers agree ~82% per epoch, both endpoints being reproducible
+is roughly 0.82^2 ~ 0.67, meaning about a third of scored transitions may be
+disagreement rather than physiology.
+
+So the analysis stratifies transitions by whether either endpoint is N1. If AUC
+rises materially once N1 transitions are excluded, the bottleneck is the label,
+not the model -- and the honest headline is the reliable-subset number with the
+ceiling stated, not a single pooled figure that silently averages in coin flips.
+
   PYTHONPATH=src python3 scripts/stage_forecast_sleepedf.py --out runs/stage_forecast
 """
 from __future__ import annotations
@@ -75,6 +94,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     average_precision_score,
@@ -102,6 +122,11 @@ HORIZONS = (100, 300, 600)              # 10, 30, 60 s at ENV_FS
 STRIDE = 16
 CLASSES = ("W", "N1", "N2", "N3", "REM")
 CVALS = (1e-4, 1e-3, 1e-2, 1e-1, 1.0)   # inverse L2 strength for LogisticRegression
+#: Learning rates swept for the boosted-tree variant. Sleep staging classically
+#: rests on nonlinear band-ratio boundaries (delta/beta and friends), which a
+#: linear model in envelope features cannot express, so a tree model is the
+#: honest comparison rather than an upgrade smuggled in later.
+LRATES = (0.05, 0.1, 0.2)
 #: 128 envelope samples x 5 bands x 2 channels is 1280 raw features per window,
 #: which is slow and mostly redundant because envelopes are smooth. Summarise each
 #: (band, channel) trace over a few sub-windows instead.
@@ -154,6 +179,18 @@ def build(env_stack: np.ndarray, stage: np.ndarray, horizon: int):
     return featurise(x[keep]), y_now[keep], y_then[keep]
 
 
+def make_model(kind: str, hp: float, seed: int = SEED):
+    if kind == "logreg":
+        return LogisticRegression(C=hp, max_iter=400, class_weight="balanced", n_jobs=-1)
+    return HistGradientBoostingClassifier(
+        learning_rate=hp, max_iter=300, early_stopping=True, validation_fraction=0.1,
+        class_weight="balanced", random_state=seed)
+
+
+def hparams(kind: str) -> tuple:
+    return CVALS if kind == "logreg" else LRATES
+
+
 def evaluate(y_true, y_pred) -> dict:
     return {
         "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)),
@@ -170,6 +207,7 @@ def main() -> int:
                     default=Path("/Users/aayu/datasets/kahlus_multidataset_public/sleep-edfx/sleep-cassette"))
     ap.add_argument("--n-subjects", type=int, default=60)
     ap.add_argument("--hours", type=float, default=8.0)
+    ap.add_argument("--model", choices=("logreg", "hgb"), default="logreg")
     ap.add_argument("--context-s", type=float, default=L / ENV_FS,
                     help="Context window in seconds. The default 12.8 s is short "
                          "relative to a 60 s horizon -- sleep transitions build "
@@ -245,15 +283,13 @@ def main() -> int:
             xt, now_t, yt = stack(test_s)
 
             best, best_score = None, -np.inf
-            for c in CVALS:
-                # multinomial is the default in current sklearn; the explicit
-                # multi_class kwarg was removed.
-                m = LogisticRegression(C=c, max_iter=400, class_weight="balanced", n_jobs=-1)
+            for hp in hparams(args.model):
+                m = make_model(args.model, hp)
                 m.fit(xf, yf)
                 sc = balanced_accuracy_score(ys, m.predict(xs))
                 if sc > best_score:
-                    best, best_score = c, sc
-            clf = LogisticRegression(C=best, max_iter=400, class_weight="balanced", n_jobs=-1)
+                    best, best_score = hp, sc
+            clf = make_model(args.model, best)
             clf.fit(np.vstack([xf, xs]), np.concatenate([yf, ys]))
             pred = clf.predict(xt)                     # ONE model, then masked
 
@@ -261,7 +297,8 @@ def main() -> int:
             trans = now_t != yt
             row = {
                 "horizon_env_samples": h, "horizon_s": h / ENV_FS,
-                "selected_C": best, "C_at_grid_edge": bool(best in (CVALS[0], CVALS[-1])),
+                "model": args.model, "selected_hp": best,
+                "hp_at_grid_edge": bool(best in (hparams(args.model)[0], hparams(args.model)[-1])),
                 "transition_rate": float(trans.mean()),
                 "all": {
                     "model": evaluate(yt, pred),
@@ -303,36 +340,58 @@ def main() -> int:
                 now = np.concatenate([p[1] for p in parts])
                 then = np.concatenate([p[2] for p in parts])
                 cols = ([feats] if use_eeg else []) + ([onehot(now)] if use_stage else [])
-                return np.hstack(cols), (now != then).astype(int)
+                return np.hstack(cols), (now != then).astype(int), now, then
 
-            xf, yf = stack(fit_s)
-            xs, ys = stack(sel_s)
-            xt, yt = stack(test_s)
+            xf, yf, _, _ = stack(fit_s)
+            xs, ys, _, _ = stack(sel_s)
+            xt, yt, now_t, then_t = stack(test_s)
             if yt.sum() < 50 or ys.sum() < 20:
                 continue
             best, best_auc = None, -np.inf
-            for c in CVALS:
-                m = LogisticRegression(C=c, max_iter=400, class_weight="balanced", n_jobs=-1)
+            for hp in hparams(args.model):
+                m = make_model(args.model, hp)
                 m.fit(xf, yf)
                 auc = roc_auc_score(ys, m.predict_proba(xs)[:, 1])
                 if auc > best_auc:
-                    best, best_auc = c, auc
-            clf = LogisticRegression(C=best, max_iter=400, class_weight="balanced", n_jobs=-1)
+                    best, best_auc = hp, auc
+            clf = make_model(args.model, best)
             clf.fit(np.vstack([xf, xs]), np.concatenate([yf, ys]))
             prob = clf.predict_proba(xt)[:, 1]
             base = float(yt.mean())
+
+            # Label-noise stratification. N1 has inter-scorer kappa 0.24, so
+            # transitions touching it are the least trustworthy labels in the set.
+            # Negatives are kept as-is; only the POSITIVE class is filtered, so the
+            # comparison is "same detector, more reliable positives".
+            touches_n1 = (now_t == "N1") | (then_t == "N1")
+            reliable = ~(yt.astype(bool) & touches_n1)
+            n1_share = float((yt.astype(bool) & touches_n1).sum() / max(yt.sum(), 1))
+            rel = {}
+            if reliable.sum() > 100 and yt[reliable].sum() >= 50:
+                rel = {
+                    "roc_auc": float(roc_auc_score(yt[reliable], prob[reliable])),
+                    "average_precision": float(average_precision_score(yt[reliable], prob[reliable])),
+                    "base_rate": float(yt[reliable].mean()),
+                    "n_positive": int(yt[reliable].sum()),
+                }
             rows.append({
-                "horizon_s": h / ENV_FS, "selected_C": best,
-                "C_at_grid_edge": bool(best in (CVALS[0], CVALS[-1])),
+                "n1_share_of_transitions": n1_share,
+                "excluding_n1_transitions": rel,
+                "horizon_s": h / ENV_FS, "model": args.model, "selected_hp": best,
+                "hp_at_grid_edge": bool(best in (hparams(args.model)[0], hparams(args.model)[-1])),
                 "roc_auc": float(roc_auc_score(yt, prob)),
                 "average_precision": float(average_precision_score(yt, prob)),
                 "base_rate": base, "lift_over_base": float(average_precision_score(yt, prob) / base),
                 "n": int(len(yt)), "n_positive": int(yt.sum()),
             })
             r = rows[-1]
+            ex = r.get("excluding_n1_transitions") or {}
             print(f"  {inputs:>14} {r['horizon_s']:>3.0f}s  AUC {r['roc_auc']:.3f}  "
                   f"AP {r['average_precision']:.3f} (base {base:.3f}, "
-                  f"{r['lift_over_base']:.2f}x)  n+={r['n_positive']}", flush=True)
+                  f"{r['lift_over_base']:.2f}x)  n+={r['n_positive']}"
+                  + (f"   | excl-N1 AUC {ex['roc_auc']:.3f} AP {ex['average_precision']:.3f}"
+                     f" (N1 was {r['n1_share_of_transitions']:.0%} of positives)" if ex else ""),
+                  flush=True)
         trans_out[inputs] = rows
 
     payload = {
@@ -344,8 +403,9 @@ def main() -> int:
         "envelope_rate_hz": ENV_FS, "context_s": args.context_s,
         "context_env_samples": CTX_L, "stride": STRIDE,
         "features": f"per-(band,channel) chunk mean and slope, {N_CHUNKS} chunks",
-        "model": "multinomial logistic regression, class_weight=balanced, C selected "
-                 "on held-out selection subjects",
+        "model": args.model,
+        "model_selection": "hyper-parameter chosen on held-out selection subjects, "
+                           "never on the test subjects",
         "baselines": "persistence (stage now) and majority class from the fit split; "
                      "stage_only is persistence expressed as a fitted model and is the "
                      "reference every other input set must beat",
@@ -360,6 +420,22 @@ def main() -> int:
                       "by the base rate since transitions are rare",
             "reference": "stage_only -- transition probability depends on the current "
                          "stage, so beating chance is too easy a bar",
+            "label_noise_ceiling": {
+                "overall_kappa": 0.76,
+                "per_stage_kappa": {"W": 0.70, "N1": 0.24, "N2": 0.57, "N3": 0.57, "REM": 0.69},
+                "raw_epoch_agreement": 0.82,
+                "sources": [
+                    "Lee YJ, Lee JY, Cho JH, Choi JH. Interrater reliability of sleep "
+                    "stage scoring: a meta-analysis. J Clin Sleep Med. 2022;18(1):193-202.",
+                    "Danker-Hopfe H, et al. Interrater reliability for sleep scoring "
+                    "according to the Rechtschaffen & Kales and the new AASM standard. "
+                    "J Sleep Res. 2009;18(1):74-84.",
+                ],
+                "implication": "a transition is defined by two labels, so at ~0.82 "
+                               "per-epoch agreement roughly a third of scored transitions "
+                               "may be scorer disagreement rather than physiology; AUC "
+                               "against these labels is bounded well below 1",
+            },
             "by_input": trans_out,
         },
     }

@@ -1,0 +1,890 @@
+{
+  "schema": "kahlus.stage_forecast_sleepedf.v1",
+  "created_utc": "2026-07-31T21:21:36.976677+00:00",
+  "question": "can scored sleep stage be predicted 10-60 s before it occurs",
+  "dataset": "Sleep-EDF sleep-cassette, sliced to the scored sleep period",
+  "classes": [
+    "W",
+    "N1",
+    "N2",
+    "N3",
+    "REM"
+  ],
+  "horizons_s": [
+    10.0,
+    30.0,
+    60.0
+  ],
+  "envelope_rate_hz": 10.0,
+  "context_s": 60.0,
+  "context_env_samples": 600,
+  "stride": 16,
+  "features": "per-(band,channel) chunk mean and slope, 8 chunks",
+  "model": "logreg",
+  "model_selection": "hyper-parameter chosen on held-out selection subjects, never on the test subjects",
+  "baselines": "persistence (stage now) and majority class from the fit split; stage_only is persistence expressed as a fitted model and is the reference every other input set must beat",
+  "note": "persistence is the baseline that matters -- stages last minutes, so raw accuracy against a majority class would measure stage duration. The transition subset is where persistence is wrong by construction.",
+  "n_subjects": 10,
+  "fit": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "select": [
+    6
+  ],
+  "test": [
+    7,
+    8,
+    9
+  ],
+  "seed": 0,
+  "results": {
+    "stage_only": [
+      {
+        "horizon_env_samples": 100,
+        "horizon_s": 10.0,
+        "model": "logreg",
+        "selected_hp": 0.0001,
+        "hp_at_grid_edge": true,
+        "transition_rate": 0.042920879848812515,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.9401922938315653,
+            "macro_f1": 0.9402517531837633,
+            "accuracy": 0.9570791201511875,
+            "n": 51327
+          },
+          "persistence": {
+            "balanced_accuracy": 0.9401922938315653,
+            "macro_f1": 0.9402517531837633,
+            "accuracy": 0.9570791201511875,
+            "n": 51327
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.13500438845577983,
+            "accuracy": 0.5094589592222417,
+            "n": 51327
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 2203
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 2203
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.09759780370624571,
+            "accuracy": 0.3227417158420336,
+            "n": 2203
+          }
+        }
+      },
+      {
+        "horizon_env_samples": 300,
+        "horizon_s": 30.0,
+        "model": "logreg",
+        "selected_hp": 0.0001,
+        "hp_at_grid_edge": true,
+        "transition_rate": 0.12919472913616398,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.8199352699860245,
+            "macro_f1": 0.819804861815113,
+            "accuracy": 0.870805270863836,
+            "n": 51225
+          },
+          "persistence": {
+            "balanced_accuracy": 0.8199352699860245,
+            "macro_f1": 0.819804861815113,
+            "accuracy": 0.870805270863836,
+            "n": 51225
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.1351378601620972,
+            "accuracy": 0.5102196193265007,
+            "n": 51225
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 6618
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 6618
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.0976010966415353,
+            "accuracy": 0.3227561196736174,
+            "n": 6618
+          }
+        }
+      },
+      {
+        "horizon_env_samples": 600,
+        "horizon_s": 60.0,
+        "model": "logreg",
+        "selected_hp": 0.0001,
+        "hp_at_grid_edge": true,
+        "transition_rate": 0.19378542114520228,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.7316676050812061,
+            "macro_f1": 0.7312388267188805,
+            "accuracy": 0.8062145788547977,
+            "n": 51170
+          },
+          "persistence": {
+            "balanced_accuracy": 0.7316676050812061,
+            "macro_f1": 0.7312388267188805,
+            "accuracy": 0.8062145788547977,
+            "n": 51170
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.1352374299869352,
+            "accuracy": 0.5107875708422904,
+            "n": 51170
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 9916
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 9916
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.09685111586670743,
+            "accuracy": 0.3194836627672449,
+            "n": 9916
+          }
+        }
+      }
+    ],
+    "eeg_only": [
+      {
+        "horizon_env_samples": 100,
+        "horizon_s": 10.0,
+        "model": "logreg",
+        "selected_hp": 0.001,
+        "hp_at_grid_edge": false,
+        "transition_rate": 0.042920879848812515,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.717933321499335,
+            "macro_f1": 0.6869294171779122,
+            "accuracy": 0.7560153525434956,
+            "n": 51327
+          },
+          "persistence": {
+            "balanced_accuracy": 0.9401922938315653,
+            "macro_f1": 0.9402517531837633,
+            "accuracy": 0.9570791201511875,
+            "n": 51327
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.13500438845577983,
+            "accuracy": 0.5094589592222417,
+            "n": 51327
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.27636710921331403,
+            "macro_f1": 0.23990733017885502,
+            "accuracy": 0.25102133454380393,
+            "n": 2203
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 2203
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.09759780370624571,
+            "accuracy": 0.3227417158420336,
+            "n": 2203
+          }
+        }
+      },
+      {
+        "horizon_env_samples": 300,
+        "horizon_s": 30.0,
+        "model": "logreg",
+        "selected_hp": 0.01,
+        "hp_at_grid_edge": false,
+        "transition_rate": 0.12919472913616398,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.6814430574256773,
+            "macro_f1": 0.6556143821642479,
+            "accuracy": 0.7342313323572475,
+            "n": 51225
+          },
+          "persistence": {
+            "balanced_accuracy": 0.8199352699860245,
+            "macro_f1": 0.819804861815113,
+            "accuracy": 0.870805270863836,
+            "n": 51225
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.1351378601620972,
+            "accuracy": 0.5102196193265007,
+            "n": 51225
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.2936124810757659,
+            "macro_f1": 0.26385400569036865,
+            "accuracy": 0.27440314294348744,
+            "n": 6618
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 6618
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.0976010966415353,
+            "accuracy": 0.3227561196736174,
+            "n": 6618
+          }
+        }
+      },
+      {
+        "horizon_env_samples": 600,
+        "horizon_s": 60.0,
+        "model": "logreg",
+        "selected_hp": 0.001,
+        "hp_at_grid_edge": false,
+        "transition_rate": 0.19378542114520228,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.6326559295121368,
+            "macro_f1": 0.593755776049514,
+            "accuracy": 0.6725815907758452,
+            "n": 51170
+          },
+          "persistence": {
+            "balanced_accuracy": 0.7316676050812061,
+            "macro_f1": 0.7312388267188805,
+            "accuracy": 0.8062145788547977,
+            "n": 51170
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.1352374299869352,
+            "accuracy": 0.5107875708422904,
+            "n": 51170
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.2693898776828129,
+            "macro_f1": 0.2298420873193699,
+            "accuracy": 0.23305768455022186,
+            "n": 9916
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 9916
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.09685111586670743,
+            "accuracy": 0.3194836627672449,
+            "n": 9916
+          }
+        }
+      }
+    ],
+    "eeg_plus_stage": [
+      {
+        "horizon_env_samples": 100,
+        "horizon_s": 10.0,
+        "model": "logreg",
+        "selected_hp": 0.01,
+        "hp_at_grid_edge": false,
+        "transition_rate": 0.042920879848812515,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.9371759643591702,
+            "macro_f1": 0.9325749294094919,
+            "accuracy": 0.9520914918074308,
+            "n": 51327
+          },
+          "persistence": {
+            "balanced_accuracy": 0.9401922938315653,
+            "macro_f1": 0.9402517531837633,
+            "accuracy": 0.9570791201511875,
+            "n": 51327
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.13500438845577983,
+            "accuracy": 0.5094589592222417,
+            "n": 51327
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.01871995926901678,
+            "macro_f1": 0.018204052021928003,
+            "accuracy": 0.01407172038129823,
+            "n": 2203
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 2203
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.09759780370624571,
+            "accuracy": 0.3227417158420336,
+            "n": 2203
+          }
+        }
+      },
+      {
+        "horizon_env_samples": 300,
+        "horizon_s": 30.0,
+        "model": "logreg",
+        "selected_hp": 0.001,
+        "hp_at_grid_edge": false,
+        "transition_rate": 0.12919472913616398,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.8003675286389992,
+            "macro_f1": 0.7880520770699075,
+            "accuracy": 0.8509907271839922,
+            "n": 51225
+          },
+          "persistence": {
+            "balanced_accuracy": 0.8199352699860245,
+            "macro_f1": 0.819804861815113,
+            "accuracy": 0.870805270863836,
+            "n": 51225
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.1351378601620972,
+            "accuracy": 0.5102196193265007,
+            "n": 51225
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.12249173337256176,
+            "macro_f1": 0.10303541212377718,
+            "accuracy": 0.10078573587186461,
+            "n": 6618
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 6618
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.0976010966415353,
+            "accuracy": 0.3227561196736174,
+            "n": 6618
+          }
+        }
+      },
+      {
+        "horizon_env_samples": 600,
+        "horizon_s": 60.0,
+        "model": "logreg",
+        "selected_hp": 0.001,
+        "hp_at_grid_edge": false,
+        "transition_rate": 0.19378542114520228,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.7127262636067515,
+            "macro_f1": 0.696329798214922,
+            "accuracy": 0.7781512605042017,
+            "n": 51170
+          },
+          "persistence": {
+            "balanced_accuracy": 0.7316676050812061,
+            "macro_f1": 0.7312388267188805,
+            "accuracy": 0.8062145788547977,
+            "n": 51170
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.1352374299869352,
+            "accuracy": 0.5107875708422904,
+            "n": 51170
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.13771088522235647,
+            "macro_f1": 0.11277927906846537,
+            "accuracy": 0.1072004840661557,
+            "n": 9916
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 9916
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.09685111586670743,
+            "accuracy": 0.3194836627672449,
+            "n": 9916
+          }
+        }
+      }
+    ],
+    "all_plus_stage": [
+      {
+        "horizon_env_samples": 100,
+        "horizon_s": 10.0,
+        "model": "logreg",
+        "selected_hp": 0.01,
+        "hp_at_grid_edge": false,
+        "transition_rate": 0.042920879848812515,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.9364732697273979,
+            "macro_f1": 0.9279648927596748,
+            "accuracy": 0.9481949071638709,
+            "n": 51327
+          },
+          "persistence": {
+            "balanced_accuracy": 0.9401922938315653,
+            "macro_f1": 0.9402517531837633,
+            "accuracy": 0.9570791201511875,
+            "n": 51327
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.13500438845577983,
+            "accuracy": 0.5094589592222417,
+            "n": 51327
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.04745583567943425,
+            "macro_f1": 0.044638450782119345,
+            "accuracy": 0.03631411711302769,
+            "n": 2203
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 2203
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.09759780370624571,
+            "accuracy": 0.3227417158420336,
+            "n": 2203
+          }
+        }
+      },
+      {
+        "horizon_env_samples": 300,
+        "horizon_s": 30.0,
+        "model": "logreg",
+        "selected_hp": 0.001,
+        "hp_at_grid_edge": false,
+        "transition_rate": 0.12919472913616398,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.785316704708786,
+            "macro_f1": 0.7651798604893608,
+            "accuracy": 0.8314885309907272,
+            "n": 51225
+          },
+          "persistence": {
+            "balanced_accuracy": 0.8199352699860245,
+            "macro_f1": 0.819804861815113,
+            "accuracy": 0.870805270863836,
+            "n": 51225
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.1351378601620972,
+            "accuracy": 0.5102196193265007,
+            "n": 51225
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.1542124967442669,
+            "macro_f1": 0.1266284157737639,
+            "accuracy": 0.12450891508008462,
+            "n": 6618
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 6618
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.0976010966415353,
+            "accuracy": 0.3227561196736174,
+            "n": 6618
+          }
+        }
+      },
+      {
+        "horizon_env_samples": 600,
+        "horizon_s": 60.0,
+        "model": "logreg",
+        "selected_hp": 0.0001,
+        "hp_at_grid_edge": true,
+        "transition_rate": 0.19378542114520228,
+        "all": {
+          "model": {
+            "balanced_accuracy": 0.6798360361408954,
+            "macro_f1": 0.6448527092679183,
+            "accuracy": 0.7274184092241548,
+            "n": 51170
+          },
+          "persistence": {
+            "balanced_accuracy": 0.7316676050812061,
+            "macro_f1": 0.7312388267188805,
+            "accuracy": 0.8062145788547977,
+            "n": 51170
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.1352374299869352,
+            "accuracy": 0.5107875708422904,
+            "n": 51170
+          }
+        },
+        "transition": {
+          "model": {
+            "balanced_accuracy": 0.23240574466624203,
+            "macro_f1": 0.19358950471643213,
+            "accuracy": 0.19402985074626866,
+            "n": 9916
+          },
+          "persistence": {
+            "balanced_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "accuracy": 0.0,
+            "n": 9916
+          },
+          "majority": {
+            "balanced_accuracy": 0.2,
+            "macro_f1": 0.09685111586670743,
+            "accuracy": 0.3194836627672449,
+            "n": 9916
+          }
+        }
+      }
+    ]
+  },
+  "transition_detection": {
+    "task": "binary: does the scored stage change within h seconds",
+    "metric": "ROC AUC and average precision; accuracy would be dominated by the base rate since transitions are rare",
+    "reference": "stage_only -- transition probability depends on the current stage, so beating chance is too easy a bar",
+    "label_noise_ceiling": {
+      "overall_kappa": 0.76,
+      "per_stage_kappa": {
+        "W": 0.7,
+        "N1": 0.24,
+        "N2": 0.57,
+        "N3": 0.57,
+        "REM": 0.69
+      },
+      "raw_epoch_agreement": 0.82,
+      "sources": [
+        "Lee YJ, Lee JY, Cho JH, Choi JH. Interrater reliability of sleep stage scoring: a meta-analysis. J Clin Sleep Med. 2022;18(1):193-202.",
+        "Danker-Hopfe H, et al. Interrater reliability for sleep scoring according to the Rechtschaffen & Kales and the new AASM standard. J Sleep Res. 2009;18(1):74-84."
+      ],
+      "implication": "a transition is defined by two labels, so at ~0.82 per-epoch agreement roughly a third of scored transitions may be scorer disagreement rather than physiology; AUC against these labels is bounded well below 1"
+    },
+    "by_input": {
+      "stage_only": [
+        {
+          "n1_share_of_transitions": 0.5215615070358602,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.5251036875740391,
+            "average_precision": 0.022660192197690953,
+            "base_rate": 0.021005221411774085,
+            "n_positive": 1054
+          },
+          "horizon_s": 10.0,
+          "model": "logreg",
+          "selected_hp": 0.0001,
+          "hp_at_grid_edge": true,
+          "roc_auc": 0.6369287465187174,
+          "average_precision": 0.07142945201842978,
+          "base_rate": 0.042920879848812515,
+          "lift_over_base": 1.6642122032455493,
+          "n": 51327,
+          "n_positive": 2203
+        },
+        {
+          "n1_share_of_transitions": 0.5222121486854034,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.5429317650201031,
+            "average_precision": 0.07380476078653078,
+            "base_rate": 0.06619355649061107,
+            "n_positive": 3162
+          },
+          "horizon_s": 30.0,
+          "model": "logreg",
+          "selected_hp": 0.0001,
+          "hp_at_grid_edge": true,
+          "roc_auc": 0.6523103455819317,
+          "average_precision": 0.216493379522467,
+          "base_rate": 0.12919472913616398,
+          "lift_over_base": 1.6757137150254415,
+          "n": 51225,
+          "n_positive": 6618
+        },
+        {
+          "n1_share_of_transitions": 0.5537515127067366,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.55199600709837,
+            "average_precision": 0.1082149345533013,
+            "base_rate": 0.09687164780314805,
+            "n_positive": 4425
+          },
+          "horizon_s": 60.0,
+          "model": "logreg",
+          "selected_hp": 0.001,
+          "hp_at_grid_edge": false,
+          "roc_auc": 0.6566420904033304,
+          "average_precision": 0.332380273678454,
+          "base_rate": 0.19378542114520228,
+          "lift_over_base": 1.7151975195770968,
+          "n": 51170,
+          "n_positive": 9916
+        }
+      ],
+      "eeg_only": [
+        {
+          "n1_share_of_transitions": 0.5215615070358602,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.589063446613125,
+            "average_precision": 0.025844597489479235,
+            "base_rate": 0.021005221411774085,
+            "n_positive": 1054
+          },
+          "horizon_s": 10.0,
+          "model": "logreg",
+          "selected_hp": 0.0001,
+          "hp_at_grid_edge": true,
+          "roc_auc": 0.6240607250189919,
+          "average_precision": 0.06862462151970047,
+          "base_rate": 0.042920879848812515,
+          "lift_over_base": 1.5988633448668481,
+          "n": 51327,
+          "n_positive": 2203
+        },
+        {
+          "n1_share_of_transitions": 0.5222121486854034,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.5955272008189818,
+            "average_precision": 0.08368630026072146,
+            "base_rate": 0.06619355649061107,
+            "n_positive": 3162
+          },
+          "horizon_s": 30.0,
+          "model": "logreg",
+          "selected_hp": 0.0001,
+          "hp_at_grid_edge": true,
+          "roc_auc": 0.6235546830622032,
+          "average_precision": 0.20100479395888243,
+          "base_rate": 0.12919472913616398,
+          "lift_over_base": 1.555828130937406,
+          "n": 51225,
+          "n_positive": 6618
+        },
+        {
+          "n1_share_of_transitions": 0.5537515127067366,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.5064616202941731,
+            "average_precision": 0.10334391759959959,
+            "base_rate": 0.09687164780314805,
+            "n_positive": 4425
+          },
+          "horizon_s": 60.0,
+          "model": "logreg",
+          "selected_hp": 1.0,
+          "hp_at_grid_edge": true,
+          "roc_auc": 0.6095322002146777,
+          "average_precision": 0.30822615360864286,
+          "base_rate": 0.19378542114520228,
+          "lift_over_base": 1.590553880612571,
+          "n": 51170,
+          "n_positive": 9916
+        }
+      ],
+      "eeg_plus_stage": [
+        {
+          "n1_share_of_transitions": 0.5215615070358602,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.5968443216229943,
+            "average_precision": 0.023995195566246984,
+            "base_rate": 0.021005221411774085,
+            "n_positive": 1054
+          },
+          "horizon_s": 10.0,
+          "model": "logreg",
+          "selected_hp": 0.01,
+          "hp_at_grid_edge": false,
+          "roc_auc": 0.6782950779268767,
+          "average_precision": 0.07981141312935193,
+          "base_rate": 0.042920879848812515,
+          "lift_over_base": 1.8595008632275292,
+          "n": 51327,
+          "n_positive": 2203
+        },
+        {
+          "n1_share_of_transitions": 0.5222121486854034,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.6147435158185974,
+            "average_precision": 0.07909521281825131,
+            "base_rate": 0.06619355649061107,
+            "n_positive": 3162
+          },
+          "horizon_s": 30.0,
+          "model": "logreg",
+          "selected_hp": 0.01,
+          "hp_at_grid_edge": false,
+          "roc_auc": 0.6893953644237949,
+          "average_precision": 0.2535743493255104,
+          "base_rate": 0.12919472913616398,
+          "lift_over_base": 1.962729834421165,
+          "n": 51225,
+          "n_positive": 6618
+        },
+        {
+          "n1_share_of_transitions": 0.5537515127067366,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.6050931818561542,
+            "average_precision": 0.1153494434819833,
+            "base_rate": 0.09687164780314805,
+            "n_positive": 4425
+          },
+          "horizon_s": 60.0,
+          "model": "logreg",
+          "selected_hp": 0.01,
+          "hp_at_grid_edge": false,
+          "roc_auc": 0.6900841358388307,
+          "average_precision": 0.39297220287881707,
+          "base_rate": 0.19378542114520228,
+          "lift_over_base": 2.0278728944442386,
+          "n": 51170,
+          "n_positive": 9916
+        }
+      ],
+      "all_plus_stage": [
+        {
+          "n1_share_of_transitions": 0.5215615070358602,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.5580459595181585,
+            "average_precision": 0.022771102000696777,
+            "base_rate": 0.021005221411774085,
+            "n_positive": 1054
+          },
+          "horizon_s": 10.0,
+          "model": "logreg",
+          "selected_hp": 0.0001,
+          "hp_at_grid_edge": true,
+          "roc_auc": 0.6595793434887537,
+          "average_precision": 0.08549720103403693,
+          "base_rate": 0.042920879848812515,
+          "lift_over_base": 1.9919722367108552,
+          "n": 51327,
+          "n_positive": 2203
+        },
+        {
+          "n1_share_of_transitions": 0.5222121486854034,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.5783164607705382,
+            "average_precision": 0.07495704686326095,
+            "base_rate": 0.06619355649061107,
+            "n_positive": 3162
+          },
+          "horizon_s": 30.0,
+          "model": "logreg",
+          "selected_hp": 0.0001,
+          "hp_at_grid_edge": true,
+          "roc_auc": 0.6674531464179736,
+          "average_precision": 0.25632095995035875,
+          "base_rate": 0.12919472913616398,
+          "lift_over_base": 1.9839892978931895,
+          "n": 51225,
+          "n_positive": 6618
+        },
+        {
+          "n1_share_of_transitions": 0.5537515127067366,
+          "excluding_n1_transitions": {
+            "roc_auc": 0.6063731289607527,
+            "average_precision": 0.11990230239751384,
+            "base_rate": 0.09687164780314805,
+            "n_positive": 4425
+          },
+          "horizon_s": 60.0,
+          "model": "logreg",
+          "selected_hp": 0.001,
+          "hp_at_grid_edge": false,
+          "roc_auc": 0.6965186726890522,
+          "average_precision": 0.42480705515510153,
+          "base_rate": 0.19378542114520228,
+          "lift_over_base": 2.1921517761483003,
+          "n": 51170,
+          "n_positive": 9916
+        }
+      ]
+    }
+  }
+}
