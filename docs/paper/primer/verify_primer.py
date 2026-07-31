@@ -124,12 +124,12 @@ def build(tex: str) -> Checker:
     c.anchored("F12 AUC + EEG (results)",
                r"\\textbf\{" + NUM + r"\} \(with EEG\)", ep["roc_auc"])
     c.anchored("F12 AUC + all PSG (results)",
-               r"\\textbf\{" + NUM + r"\} \(all\s*\n?polysomnography", ap["roc_auc"])
+               r"\\textbf\{" + NUM + r"\} \(all channels\)", ap["roc_auc"])
     # Same pair restated in the Q&A; disagreement between the two is the bug.
     c.anchored("F12 AUC stage only (summary)",
                r"EEG does add: AUC " + NUM, so["roc_auc"])
     c.anchored("F12 AUC + EEG (summary)",
-               r"EEG does add: AUC [0-9.]+ \$\\rightarrow\$ " + NUM, ep["roc_auc"])
+               r"EEG does add: AUC [0-9.]+\s*\n?\$\\rightarrow\$ " + NUM, ep["roc_auc"])
 
     c.anchored("F12 average precision, stage only",
                r"average precision \\textbf\{" + NUM, so["average_precision"])
@@ -143,27 +143,56 @@ def build(tex: str) -> Checker:
 
     # The N1 share is horizon-dependent. Quoting the 10 s value in a sentence
     # about 60 s is the exact error this file was written to catch.
-    c.anchored("F12 N1 share at 60 s",
-               r"\\textbf\{" + NUM + r"\\,\\%\} at the 60\\,s horizon",
-               so["n1_share_of_transitions"] * 100, tol=0.55)
-    c.anchored("F12 N1 share at 10 s",
-               r"at the 60\\,s horizon, " + NUM + r"\\,\\% at",
-               at("stage_only", 10.0)["n1_share_of_transitions"] * 100, tol=0.55)
+    # The primer now makes one rounded claim ("just under 58 %") that has to
+    # hold at *every* horizon, not just the one that happened to be quoted.
+    # Checking the max keeps it falsifiable: if any horizon exceeded 58 %, the
+    # word "under" would be wrong.
+    n1_shares = [r["n1_share_of_transitions"] * 100 for r in by["stage_only"]]
+    c.anchored("F12 N1 share (primer states about 58 %)",
+               r"\\textbf\{" + NUM + r"\\,\\%\} of transitions involve stage N1",
+               58.0, tol=0.01)
+    # "About 58" has to be true at every horizon the sentence covers, not just
+    # the one that happened to get quoted. The first draft said "just under 58"
+    # and this check failed it: the 60 s horizon is 58.07 %.
+    c.check("F12 N1 share rounds to 58 % at every horizon",
+            all(57.5 <= v_ < 58.5 for v_ in n1_shares),
+            " ".join(f"{v_:.2f}" for v_ in n1_shares))
 
-    c.anchored("F12 AUC excluding N1, stage only",
-               r"collapses: AUC \\textbf\{" + NUM, so["excluding_n1_transitions"]["roc_auc"])
-    c.anchored("F12 AUC excluding N1, + EEG",
-               r"collapses: AUC \\textbf\{[0-9.]+\} \$\\rightarrow\$ \\textbf\{" + NUM,
-               ep["excluding_n1_transitions"]["roc_auc"])
+    # The 10-subject run said the effect "largely collapses" without N1; at 60
+    # subjects it is the reverse, so these anchors moved to the new sentence.
+    # All three horizons are quoted, so all three are checked.
+    eo = at("eeg_only")
+    for i, h in enumerate((10.0, 30.0, 60.0)):
+        pre = r"chance\} --- AUC \\textbf\{" + (r"[0-9.]+ / " * i)
+        c.anchored(f"F12 AUC excluding N1, stage only, h={h:.0f}s",
+                   pre + NUM,
+                   at("stage_only", h)["excluding_n1_transitions"]["roc_auc"])
+    for i, h in enumerate((10.0, 30.0, 60.0)):
+        pre = r"EEG alone holds " + (r"[0-9.]+ / " * i)
+        c.anchored(f"F12 AUC excluding N1, EEG alone, h={h:.0f}s",
+                   pre + NUM,
+                   at("eeg_only", h)["excluding_n1_transitions"]["roc_auc"])
+    # The claim is that the baseline is at chance. Assert it, do not just quote
+    # it: 0.5 within 0.02 across every horizon.
+    so_ex = [at("stage_only", h)["excluding_n1_transitions"]["roc_auc"]
+             for h in (10.0, 30.0, 60.0)]
+    c.check("F12 stage-only baseline really is at chance without N1",
+            all(abs(v - 0.5) < 0.02 for v in so_ex),
+            " ".join(f"{v:.3f}" for v in so_ex))
+    c.check("F12 EEG really does beat that baseline without N1",
+            all(at("eeg_only", h)["excluding_n1_transitions"]["roc_auc"]
+                > at("stage_only", h)["excluding_n1_transitions"]["roc_auc"] + 0.05
+                for h in (10.0, 30.0, 60.0)),
+            "EEG > stage-only by >0.05 at all three horizons")
 
     ceiling = st["transition_detection"]["label_noise_ceiling"]
     kappa_n1 = ceiling["per_stage_kappa"]["N1"]
     c.anchored("F12 N1 kappa (results)",
-               r"N1 is \$\\kappa = " + NUM, kappa_n1)
+               r"scored stage\s*\n?\(\$\\kappa = " + NUM, kappa_n1)
     c.anchored("F12 N1 kappa (glossary)",
                r"agree on least \(\$\\kappa = " + NUM, kappa_n1)
     c.anchored("F12 overall kappa (results)",
-               r"N1 is \$\\kappa = [0-9.]+\$, against \$" + NUM, ceiling["overall_kappa"])
+               r"\(\$\\kappa = [0-9.]+\$, against \$" + NUM, ceiling["overall_kappa"])
     c.anchored("F12 overall kappa (glossary)",
                NUM + r" is Sleep-EDF's overall stage-scoring agreement", ceiling["overall_kappa"])
     c.anchored("F12 raw per-epoch scorer agreement",
@@ -178,11 +207,14 @@ def build(tex: str) -> Checker:
         return row["all"]["model"]["balanced_accuracy"]
 
     c.anchored("F12 balanced accuracy, stage only (results)",
-               r"balanced accuracy is\s*\n?\\textbf\{" + NUM, ba("stage_only"))
+               r"balanced accuracy\s*\n?is \\textbf\{" + NUM, ba("stage_only"))
     c.anchored("F12 balanced accuracy, + EEG (results)",
-               r"\\textbf\{" + NUM + r"\} when EEG features", ba("eeg_plus_stage"))
+               r"\\textbf\{" + NUM + r"\} with EEG features", ba("eeg_plus_stage"))
+    c.anchored("F12 balanced accuracy, + all PSG (results)",
+               r"and \\textbf\{" + NUM + r"\} using all polysomnography",
+               ba("all_plus_stage"))
     c.anchored("F12 balanced accuracy, EEG alone (results)",
-               r"it falls further to\s*\n?\\textbf\{" + NUM, ba("eeg_only"))
+               r"balanced accuracy falls to \\textbf\{" + NUM, ba("eeg_only"))
     c.anchored("F12 balanced accuracy, + EEG (summary)",
                r"no change \(" + NUM, ba("eeg_plus_stage"))
     c.anchored("F12 balanced accuracy, stage only (summary)",
@@ -224,13 +256,25 @@ def build(tex: str) -> Checker:
     # 60, which reads as though they were comparably powered. A number's sample
     # size is part of the number.
     c.anchored("F12 subject count stated in primer matches artifact",
-               r"comes from a run on \\textbf\{" + NUM + r" subjects\}",
+               r"re-run on \\textbf\{" + NUM + r" subjects\}",
                float(st["n_subjects"]), tol=0.5)
     c.anchored("F12 test-subject count stated in primer matches artifact",
                r"select / \\textbf\{" + NUM + r" test\}", float(len(st["test"])), tol=0.5)
-    c.check("F12 provisional caveat present while n_subjects < 60",
-            st["n_subjects"] >= 60 or "Provisional" in c.tex,
-            f"n_subjects={st['n_subjects']}")
+    # While F12 was under-powered the primer carried a "Provisional" box. That
+    # box is gone now that the run is at full size, so this check would be
+    # vacuously true forever. It is replaced by the obligation that outlives it:
+    # the 10-subject conclusion was *published* and then reversed, so the
+    # retraction has to stay visible where a reader of the old number will meet
+    # it. Both halves are required -- the sample size that caused it, and the
+    # direction it moved.
+    if st["n_subjects"] < 60:
+        c.check("F12 provisional caveat present while n_subjects < 60",
+                "Provisional" in c.tex, f"n_subjects={st['n_subjects']}")
+    else:
+        c.check("F12 retraction of the 10-subject caveat stays visible",
+                "10 subjects" in c.tex.replace("\\textbf{", "").replace("}", "")
+                and "reversed it: excluding N1 is where the effect is" in c.tex,
+                "retraction narrative present at full sample size")
 
     n_f11 = {h["eeg"]["paired_vs_persistence"]["n"]
              for bd in env["bands"].values() for h in bd["horizons"]}
@@ -291,23 +335,39 @@ def self_test() -> int:
         ("stale F11 correlation (result site)", "correlation is $r = 0.294", "correlation is $r = 0.394"),
         ("stale F11 correlation (control site)", "falls from $r = 0.294", "falls from $r = 0.291"),
         ("stale residualised r", "to $r = 0.181$", "to $r = 0.281$"),
-        ("stale F12 AUC (results)", "\\textbf{0.690} (with EEG)", "\\textbf{0.790} (with EEG)"),
-        ("F12 results/summary disagree", "AUC 0.657 $\\rightarrow$ 0.690",
-         "AUC 0.657 $\\rightarrow$ 0.660"),
-        ("N1 share wrong row", "\\textbf{55\\,\\%} at the 60\\,s", "\\textbf{52\\,\\%} at the 60\\,s"),
-        ("kappa altered (results)", "N1 is $\\kappa = 0.24$", "N1 is $\\kappa = 0.94$"),
+        ("stale F12 AUC (results)", "\\textbf{0.669} (with EEG)", "\\textbf{0.769} (with EEG)"),
+        ("F12 results/summary disagree", "AUC 0.625\n$\\rightarrow$ 0.669",
+         "AUC 0.625\n$\\rightarrow$ 0.665"),
+        ("N1 share altered", "\\textbf{58\\,\\%} of transitions involve stage N1",
+         "\\textbf{52\\,\\%} of transitions involve stage N1"),
+        ("kappa altered (results)", "scored stage\n($\\kappa = 0.24$", "scored stage\n($\\kappa = 0.94$"),
         ("kappa altered (glossary only)", "agree on least ($\\kappa = 0.24$)",
          "agree on least ($\\kappa = 0.44$)"),
-        ("base rate altered", "base rate of \\textbf{0.194}", "base rate of \\textbf{0.094}"),
-        ("excluding-N1 AUC altered", "collapses: AUC \\textbf{0.552}", "collapses: AUC \\textbf{0.652}"),
+        ("base rate altered", "base rate of \\textbf{0.155}", "base rate of \\textbf{0.095}"),
+        # The reversal itself: the N1-excluded numbers are the whole new claim,
+        # so each of the three quoted horizons must be individually load-bearing.
+        ("excluding-N1 baseline AUC altered (h=10)",
+         "chance} --- AUC \\textbf{0.501", "chance} --- AUC \\textbf{0.601"),
+        ("excluding-N1 baseline AUC altered (h=60)",
+         "0.511 / 0.486}", "0.511 / 0.586}"),
+        ("excluding-N1 EEG AUC altered (h=10)",
+         "EEG alone holds 0.691", "EEG alone holds 0.791"),
+        ("excluding-N1 EEG AUC altered (h=60)",
+         "0.691 / 0.691 / 0.599", "0.691 / 0.691 / 0.699"),
+        ("F12 all-PSG balanced accuracy altered",
+         "and \\textbf{0.821} using all polysomnography",
+         "and \\textbf{0.921} using all polysomnography"),
         ("retraction subsection removed", "\\subsection{The retraction", "\\subsection{The omission"),
         ("estimand admission removed", "same estimand", "same thing"),
         ("part renumbered", "\\section{Part IX --- Glossary}", "\\section{Part XI --- Glossary}"),
         ("F10 count altered", "Violations in 223 of 286", "Violations in 23 of 286"),
-        ("F12 subject count misstated", "\\textbf{10 subjects}", "\\textbf{60 subjects}"),
-        ("F12 test-subject count misstated", "\\textbf{3 test}", "\\textbf{15 test}"),
-        ("F12 provisional caveat removed", "\\textbf{Provisional, and here is why.}",
-         "\\textbf{Note.}"),
+        ("F12 subject count misstated", "re-run on \\textbf{60 subjects}",
+         "re-run on \\textbf{10 subjects}"),
+        ("F12 test-subject count misstated", "\\textbf{15\ntest}", "\\textbf{3\ntest}"),
+        # The retraction is the claim most convenient to quietly delete, so it
+        # gets its own fault: overwrite the reversal rather than disclosing it.
+        ("F12 retraction quietly overwritten", "reversed it: excluding N1",
+         "confirmed it: excluding N1"),
     ]
     missed, vacuous = [], []
     try:

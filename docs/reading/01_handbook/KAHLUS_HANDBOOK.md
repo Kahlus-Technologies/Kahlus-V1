@@ -374,28 +374,41 @@ value in 60 seconds; they care about the state.
 Given the current stage, EEG adds nothing. The model correctly learns to persist,
 because transitions are 19% of windows and persistence minimises loss.
 
-**Binary transition detection: a POSITIVE.** Asking "will the stage change within
-60 s?" — and stratifying by label reliability (§3.3):
+**Binary transition detection: the strongest result in the project.** Asking "will
+the stage change within 60 s?", 60 subjects, subject-disjoint, n = 130,778 test
+windows — and stratifying by label reliability (§3.3):
 
-| input | AUC (all) | AUC excl-N1 | above chance, excl-N1 |
+| input | AUC (all) | **AUC excl-N1** | $z$ vs chance |
 | --- | --- | --- | --- |
-| stage_only (baseline) | 0.657 | 0.552 | +0.052 |
-| eeg_only | 0.610 | **0.506** | +0.006 — **chance** |
-| **eeg + stage** | **0.690** | **0.605** | **+0.105** |
-| all + stage (full PSG) | 0.697 | 0.606 | +0.106 |
+| current stage only (**the standard baseline**) | 0.625 | **0.486** | **−4.28** |
+| EEG envelopes only | 0.548 | **0.599** | **+29.45** |
+| EEG + current stage | 0.669 | 0.586 | +25.73 |
+| EEG + EOG/EMG + stage (full PSG) | 0.682 | 0.607 | +32.08 |
 
-**N1 was 55% of transitions.** We expected removing noisy labels to *raise* AUC. It
-lowers it — but it guts the **baseline** far more. Most of the baseline's apparent
-skill was N1's instability, i.e. a lookup table of which stages are unstable.
+**Read the second column, not the first.** N1 is **58%** of scored transitions and
+experts agree on it at κ = 0.24. Remove those and the current-stage baseline — the
+thing every paper in this area compares against — drops to **AUC 0.486,
+significantly *below* chance** (z = −4.28 on n = 119,030). Its apparent skill on
+all transitions was a lookup table for "N1 is unstable, N3 is not." Not prediction.
 
-> **On transitions experts actually agree on, EEG roughly doubles the above-chance
-> signal (+0.105 vs +0.052).**
+**EEG-only is the only input that improves when the noisy labels go** (0.548 →
+0.599). That is what a real signal does when its labels are cleaned, and it is the
+opposite of what an artifact does.
 
-![**F12 — the label-reliability collapse.** *Left:* excluding N1 transitions lowers every
-AUC — EEG-only falls all the way to chance. *Right:* the same numbers as margin above
-chance, which is what the argument is about. Removing unreliable labels costs the baseline
-two-thirds of its margin (0.157 → 0.052) but costs the model far less (0.190 → 0.105). If
-the claim were false these two drops would be equal.](figures/f12_label_reliability.png)
+> **On the transitions experts actually agree on, the standard baseline has no
+> predictive value at all, and the EEG envelope carries the entire signal.**
+
+**A correction of record.** An earlier version of this table read 0.657 / 0.552 /
+0.605. Those came from a 10-subject pilot whose figure was generated an hour
+before the 60-subject run finished and overwrote its own artifact. The numbers
+above are re-read from `artifacts/stage_forecast/results.json`. The direction of
+the finding did not change; its strength did.
+
+![**F12 — the label-reliability collapse.** *Left:* excluding N1 transitions moves every
+input, but not in the same direction — the baseline crosses below the chance line while
+EEG-only rises. *Right:* the same numbers as margin above chance. The baseline's entire
+apparent advantage (+0.125) is gone and turns negative (−0.014), while EEG-only doubles
+(+0.048 → +0.099). If the claim were false, both would move together.](figures/f12_label_reliability.png)
 
 
 **Reported alongside, because it matters:** `eeg_only` excluding N1 is **0.506 —
@@ -458,7 +471,7 @@ SleepEDF78. **State of the art on our data, and more sophisticated than anything
 minutes ahead at AUC 0.88**, using δ and σ band power in a simple model. Eight
 subjects, ~30 consecutive nights, **sub-scalp implanted** electrodes.
 
-**How we compare, honestly:** they are ahead. AUC 0.88 at 2–4 min beats our 0.690 at
+**How we compare, honestly:** they are ahead on raw number. AUC 0.88 at 2–4 min beats our 0.669 at
 1 min. Our defences are real but partial — implanted electrodes on 8 subjects, and
 they predicted only NREM→REM, a transition between two of the *most reliably scored*
 stages (REM κ = 0.69). We use scalp EEG on 45 subjects across all transitions,
@@ -497,7 +510,7 @@ should be stated carefully rather than overclaimed.
 - **F10** — theorem 0/286; `W/H` extrapolation falsified 223/286.
 - **F8** — 78 subjects, 8 falsification tests, one self-retracted sub-claim.
 - **F11** — 15/15 subjects every horizon, p = 6.1×10⁻⁵, CI excludes zero.
-- **F12** — transition AUC 0.690 vs 0.657; excl-N1 0.605 vs 0.552.
+- **F12** — on reliable (non-N1) transitions the standard baseline is *below* chance (0.486, z=−4.28) while EEG-only reaches 0.599 (z=+29.45), n=119,030.
 
 ### Retracted or corrected — all self-caught
 
@@ -556,7 +569,7 @@ Partly — which is why persistence is the baseline, not the mean. Persistence g
 smoother too. The claim is the quantitative horizon comparison under matched protocol
 with artifact controls, plus the fact that the forecasting literature works on voltage.
 
-**"Leguia et al. get AUC 0.88 at 4 minutes. You get 0.690 at 1."**
+**"Leguia et al. get AUC 0.88 at 4 minutes. You get 0.669 at 1."**
 Correct, and they're ahead. Implanted electrodes, 8 subjects, and only NREM→REM —
 between two of the most reliably scored stages. Our contribution isn't a better
 forecaster; it's that all-transition numbers include transitions nobody can score.

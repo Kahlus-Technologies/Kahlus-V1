@@ -285,7 +285,7 @@ F8 & Corrected forecasting benchmark & \textbf{Positive, bounded.} The GRU genui
 F9 & The overlap inflation law & \textbf{Exact bound, verified.} 286 configurations, zero violations. \\
 F10 & Does the $W/H$ bound also apply to reported \emph{correlation}? & \textbf{Falsified, and in the dangerous direction.} It does not transfer: $W/H$ \emph{understates} correlation inflation. Anyone applying F9's bound to a reported $r$ would conclude a paper is cleaner than it is. \\
 F11 & Forecasting the band \emph{envelope} (how strong a rhythm is) at 1--60\,s & \textbf{Positive, and survives its control.} Every horizon in every band beats persistence on 15/15 held-out subjects, with muscle and eye artifact regressed out. \\
-F12 & Forecasting the scored sleep \emph{stage} 10--60\,s ahead & \textbf{Negative as posed; weakly positive when re-posed.} Predicting the stage itself, EEG adds nothing over ``assume no change''. Re-posed as \emph{will the stage change}, EEG does add --- but most of that effect lives in the single least reliably-scored stage. \\
+F12 & Forecasting the scored sleep \emph{stage} 10--60\,s ahead & \textbf{Negative as posed; positive when re-posed.} Predicting the stage itself, EEG adds nothing over ``assume no change''. Re-posed as \emph{will the stage change}, EEG adds \textbf{+0.064} AUC (14/15 subjects). On the reliably-scored transitions --- N1 excluded --- the stage-only baseline is at \textbf{chance} and EEG carries all of the signal. \\
 \bottomrule
 \end{longtable}
 \end{center}
@@ -297,7 +297,8 @@ built a referee that bites, pointed it at our own work, and most of what we hope
 for did not survive.} What did survive: F9 (an exact bound), F8 (a bounded
 positive benchmark), and F11 (envelopes are forecastable at seconds). Note that
 F10 falsified an extension of \emph{our own} headline result, and F12 returned a
-negative on the question we most wanted a positive on. A reviewer who sees the
+negative on the question as first posed --- and then, re-run at six times the
+sample size, reversed its own published caveat. A reviewer who sees the
 negatives reported plainly will trust the positives far more.
 \end{keybox}
 
@@ -479,62 +480,74 @@ predicted rather than by claiming a better model. \textbf{But note the target
 changed too} --- an envelope is not a state, which is what F12 goes after.
 \end{keybox}
 
-\subsection{F12: predicting the actual sleep stage --- mostly a negative} \textbf{[ours]}
+\subsection{F12: predicting the actual sleep stage --- a negative that re-poses into a positive} \textbf{[ours]}
 
 \begin{keybox}
-\textbf{Provisional, and here is why.} Every F12 number below comes from a run on
-\textbf{10 subjects} (6 fit / 1 select / \textbf{3 test}), not the 60 used for F11.
-Three test subjects is thin, and it is the same under-powering we caught in the
-BNCI sweep --- so the direction of these results should be trusted more than
-their third decimal place. A full 60-subject re-run
-(36 / 9 / \textbf{15}, matching F11) is in flight; this box goes away when it
-lands. \textbf{Volunteering the weakness before a reader finds it is the whole
-practice.}
+\textbf{This section used to say the opposite, and that is worth a paragraph.}
+The first version of F12 ran on \textbf{10 subjects} (3 test) and concluded that
+the transition effect ``largely collapses'' once the ambiguous N1 stage is
+removed. The re-run on \textbf{60 subjects} (36 fit / 9 select / \textbf{15
+test}) reversed it: excluding N1 is where the effect is \emph{strongest}. The
+first result was not a finding, it was \textbf{under-powering} --- the same
+mistake the BNCI sweep made, caught twice now by the same habit of re-running at
+full size before believing a negative. \textbf{The retraction is left visible
+rather than quietly overwritten}, because a reader who saw the earlier number
+needs to find out here that it moved.
 \end{keybox}
 
 \textbf{The honest version of the question.} An envelope amplitude is not
 something anyone wants to know. The question the project actually cares about is:
 \emph{can you predict the scored sleep stage before it happens?}
 
-\textbf{Asked directly, the answer is no.} At 60\,s lead, balanced accuracy is
-\textbf{0.732} using the current stage alone, and \textbf{0.713} when EEG features
-are added. \textbf{Adding brain data made it worse.} The model
-correctly learns to assume nothing changes, because transitions are only 4--19\,\%
-of windows and persisting is the loss-minimising answer; the extra EEG features
-buy nothing on the 81\,\% of windows where nothing happens, and cost accuracy
-there. Using EEG \emph{alone}, without the current stage, it falls further to
-\textbf{0.633}.
+\textbf{Asked directly, the answer is still no.} At 60\,s lead, balanced accuracy
+is \textbf{0.816} using the current stage alone, \textbf{0.820} with EEG features
+added, and \textbf{0.821} using all polysomnography channels. Those last two are
+gains of four and five \emph{thousandths} --- against a baseline that does nothing
+but assume the stage will not change. The model correctly learns to persist,
+because transitions are only \textbf{3.6--15.5\,\%} of windows and persisting is
+the loss-minimising answer. Using EEG \emph{alone}, without the current stage,
+balanced accuracy falls to \textbf{0.575}.
 
 \begin{keybox}
 \textbf{A harness self-check hides in that number.} The ``stage only'' model
-reproduces persistence \emph{exactly}. That is the pipeline proving it is wired
-correctly --- if it had beaten persistence with no information, something would be
-leaking.
+reproduces persistence \emph{exactly} --- \textbf{0.956 / 0.868 / 0.816} against
+persistence's \textbf{0.956 / 0.868 / 0.816} at 10/30/60\,s. That is the pipeline
+proving it is wired correctly: if it had beaten persistence while holding no
+information persistence lacks, something would be leaking. It is also why the
+hyper-parameter search on that model is flat --- every value of $C$ scores
+identically, so the selection lands on the grid edge by tie-break rather than by
+optimum. The artifact records that as \texttt{tied}, not \texttt{edge}.
 \end{keybox}
 
-\textbf{Re-posed, there is a weak signal.} Ask instead the binary question ``will
-the stage change within 60\,s'', which is what the application cares about, and
-EEG does add. Area under the ROC curve rises \textbf{0.657} (stage alone)
-$\rightarrow$ \textbf{0.690} (with EEG) $\rightarrow$ \textbf{0.697} (all
-polysomnography channels), with average precision \textbf{0.332} $\rightarrow$
-\textbf{0.393} $\rightarrow$ \textbf{0.425} against a base rate of \textbf{0.194}.
+\textbf{Re-posed, there is a real signal.} Ask instead the binary question ``will
+the stage change within $h$ seconds'', which is what the application cares about,
+and EEG adds substantially. At 60\,s, area under the ROC curve rises
+\textbf{0.625} (stage alone) $\rightarrow$ \textbf{0.669} (with EEG)
+$\rightarrow$ \textbf{0.682} (all channels), with average precision
+\textbf{0.250} $\rightarrow$ \textbf{0.273} $\rightarrow$ \textbf{0.276} against a
+base rate of \textbf{0.155}. Paired per-subject against the stage-only baseline,
+the all-channel gain is \textbf{+0.064} AUC, improving \textbf{14 of 15} test
+subjects ($p = 2.6\times10^{-3}$, Wilcoxon signed-rank).
 
-\textbf{Now the caveat you must volunteer before anyone finds it.} Just over half
-of all transitions in this data --- \textbf{55\,\%} at the 60\,s horizon, 52\,\% at
-10\,s --- involve stage N1. N1 is by
-a wide margin the least reliably scored stage: published inter-rater agreement for
-N1 is $\kappa = 0.24$, against $0.76$ overall. If N1 transitions are excluded, the
-effect largely collapses: AUC \textbf{0.552} $\rightarrow$ \textbf{0.605}, and
-average precision \textbf{0.108} $\rightarrow$ \textbf{0.115}.
+\textbf{Now the caveat --- and it no longer says what it used to.} About
+\textbf{58\,\%} of transitions involve stage N1, the least reliably scored stage
+($\kappa = 0.24$, against $0.76$ overall). The earlier 10-subject run suggested
+the effect lived mostly in that unreliable stage. At full power the opposite
+holds. \textbf{Excluding N1 transitions entirely, the stage-only baseline falls to
+chance} --- AUC \textbf{0.501 / 0.511 / 0.486} at 10/30/60\,s --- \textbf{while
+EEG alone holds 0.691 / 0.691 / 0.599.} The paired gain for EEG over stage-only on
+the N1-excluded subset is \textbf{+0.204 / +0.197 / +0.128} AUC, improving
+\textbf{15 / 15, 15 / 15, and 14 / 15} subjects ($p = 6.1\times10^{-5}$ at the two
+shorter horizons).
 
 \begin{keybox}
-\textbf{Say this out loud:} ``the transition result is real but concentrated in
-the stage that human scorers themselves agree on least, so part of what we are
-predicting may be scorer behaviour rather than physiology. We report it with N1
-included and excluded.'' \textbf{At roughly 0.82 per-epoch human agreement, and a
-transition being defined by \emph{two} labels, an AUC near 1.0 is not achievable
-here even in principle.} A ceiling like that should be stated before someone asks
-why the number is not higher.
+\textbf{Say this out loud:} ``on the transitions human scorers agree on, knowing
+the current stage tells you nothing about whether it is about to change --- it is
+at chance --- and the EEG is where all of the signal is. The earlier report that
+the effect collapsed without N1 came from three test subjects and did not
+survive.'' \textbf{At roughly 0.82 per-epoch human agreement, and a transition
+being defined by \emph{two} labels, an AUC near 1.0 is not achievable here even in
+principle.} State the ceiling before someone asks why the number is not higher.
 \end{keybox}
 
 \section{Part VI --- The cross-dataset problem}
@@ -806,9 +819,9 @@ $\kappa$ (kappa) & Agreement between raters, corrected for chance. 1.0 is perfec
 Estimand & The quantity you are actually estimating. Two studies can share a dataset and a metric and still estimate different things --- the mistake behind our retraction. \\
 AUC & Area under the ROC curve. 0.5 is chance, 1.0 is perfect. Used for rare events where accuracy would be misleading. \\
 Average precision & A summary of precision across thresholds. Compare it against the \emph{base rate}, not against 0.5. \\
-Base rate & How often the event happens at all. F12's transitions are 19\,\% of windows, so a model scoring 0.19 average precision has learned nothing. \\
+Base rate & How often the event happens at all. F12's transitions are 15.5\,\% of windows at the 60\,s horizon, so a model scoring 0.155 average precision has learned nothing. \\
 LOSO & Leave-one-subject-out: rotate every subject through the test position. Used on BNCI because 9 subjects cannot support a single split. \\
-Grid edge & When tuning selects the smallest or largest value offered, meaning the grid --- not the data --- chose. A warning sign of an under-tuned model. \\
+Grid edge & When tuning selects the smallest or largest value offered, meaning the grid --- not the data --- chose. A warning sign of an under-tuned model. Distinguished in the artifacts from \emph{tied}, where every grid value scores identically and the tie-break picked the end: an edge by arithmetic, not by optimum. \\
 BNCI2014\_001 & Motor-imagery EEG, 9 subjects, 250\,Hz. The corpus the paper is framed on. \\
 \bottomrule
 \end{longtable}
@@ -840,12 +853,15 @@ voltage --- and we say so. That is why F11 changes the target from voltage to ba
 subjects, with muscle and eye artifact regressed out. The trade is honest: a
 longer horizon for a coarser quantity.
 
-\textbf{``So can you predict sleep stage transitions?''} Weakly, and we lead with
-the negative. Predicting the \emph{stage} itself, EEG adds nothing over assuming
-no change (0.713 versus 0.732). Re-posed as \emph{will the stage change within
-60\,s}, EEG does add: AUC 0.657 $\rightarrow$ 0.690. But over half of those
-transitions involve N1, the stage scorers agree on least, and excluding N1 the
-effect largely collapses. We report it both ways.
+\textbf{``So can you predict sleep stage transitions?''} Yes, once the question is
+posed correctly, and we lead with the negative anyway. Predicting the \emph{stage}
+itself, EEG adds nothing over assuming no change (0.820 versus 0.816). Re-posed as
+\emph{will the stage change within 60\,s}, EEG does add: AUC 0.625
+$\rightarrow$ 0.669, and \textbf{+0.064} on 14 of 15 subjects using all channels.
+About 58\,\% of those transitions involve N1, the stage scorers agree on
+least --- so we also report the subset without it, where the stage-only baseline
+sits at \textbf{chance} (0.486) and EEG alone reaches \textbf{0.599}. An earlier
+10-subject run reported the opposite and was retracted.
 
 \textbf{``Your paper says BNCI but your results say Sleep-EDF.''} \textbf{Correct,
 and it is the open weakness.} We are closing it by running the same protocol on

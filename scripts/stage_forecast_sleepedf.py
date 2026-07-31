@@ -129,7 +129,13 @@ CLASSES = ("W", "N1", "N2", "N3", "REM")
 #: 24 fits -- a selection at a grid edge means the grid chose, not the data, and
 #: this project has been caught by exactly that twice (see REGISTER cycle 4).
 #: The extra values are cheap here: logreg on ~50k x few-hundred features.
-CVALS = (1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1.0, 1e1, 1e2)
+#:
+#: Extended again to 1e4 after the 60-subject re-run pinned `all_plus_stage` at
+#: the 1e2 ceiling -- a genuine edge, not the flat tie-break the stage-only
+#: baseline shows. Large C means "barely regularise", which is plausible for the
+#: richest feature set, but the grid must be wide enough that the data can say
+#: so rather than be truncated into saying so.
+CVALS = (1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1.0, 1e1, 1e2, 1e3, 1e4)
 #: Learning rates swept for the boosted-tree variant. Sleep staging classically
 #: rests on nonlinear band-ratio boundaries (delta/beta and friends), which a
 #: linear model in envelope features cannot express, so a tree model is the
@@ -407,10 +413,16 @@ def main() -> int:
             if yt.sum() < 50 or ys.sum() < 20:
                 continue
             best, best_auc = None, -np.inf
+            # Collected so at_grid_edge can tell a genuine boundary optimum from
+            # a flat grid resolved by tie-break. Without the scores it has to
+            # assume the worst and call every index-0 selection an edge, which
+            # is what made the stage_only transition rows fire spuriously.
+            hp_scores = []
             for hp in hparams(args.model):
                 m = make_model(args.model, hp)
                 m.fit(xf, yf)
                 auc = roc_auc_score(ys, m.predict_proba(xs)[:, 1])
+                hp_scores.append(auc)
                 if auc > best_auc:
                     best, best_auc = hp, auc
             clf = make_model(args.model, best)
@@ -454,7 +466,9 @@ def main() -> int:
                 "per_subject": per_subject,
                 "horizon_s": h / ENV_FS, "model": args.model, "selected_hp": best,
                 "hp_at_grid_edge": at_grid_edge(
-                    args.model, best, f"{inputs} transition h={h / ENV_FS:.0f}s"),
+                    args.model, best, f"{inputs} transition h={h / ENV_FS:.0f}s",
+                    scores=hp_scores),
+                "hp_scores": hp_scores,
                 "roc_auc": float(roc_auc_score(yt, prob)),
                 "average_precision": float(average_precision_score(yt, prob)),
                 "base_rate": base, "lift_over_base": float(average_precision_score(yt, prob) / base),

@@ -169,13 +169,15 @@ def fig_label_reliability(res: dict, out: Path, ieee: bool) -> None:
         ax.scatter([b], [i], s=36 if ieee else 90, color=fs.PALETTE[0], zorder=3,
                    label="excluding N1" if i == 0 else None)
     ax.axvline(CHANCE, color="black", lw=1.1, ls="--", zorder=2)
-    ax.annotate("chance", xy=(CHANCE, -0.45), xytext=(3, 0), textcoords="offset points",
-                fontsize=6.5 if ieee else 9, va="center", ha="left", style="italic",
-                annotation_clip=False)
+    # Sits just above the axis line, not below it, where the x-label lives.
+    ax.annotate("chance", xy=(CHANCE, len(present) - 0.35), xytext=(3, 0),
+                textcoords="offset points", fontsize=6.5 if ieee else 9,
+                va="center", ha="left", style="italic", annotation_clip=False)
     ax.set_yticks(y)
     ax.set_yticklabels([nice[k] for k in present])
     ax.set_xlabel("ROC AUC, stage change 60 s ahead")
-    ax.set_title("(a) dropping unreliable labels lowers all")
+    # Do NOT claim "lowers all" -- EEG-only RISES. That asymmetry is the finding.
+    ax.set_title("(a) the baseline falls below chance; EEG rises")
     # Upper-left is the empty region here (low AUC, high rows); lower-right sits
     # on top of the baseline dumbbell.
     ax.legend(frameon=True, framealpha=0.92, loc="upper left")
@@ -189,25 +191,31 @@ def fig_label_reliability(res: dict, out: Path, ieee: bool) -> None:
     ax.bar(y - w / 2, all_m, w, color=fs.PALETTE[7], label="all transitions")
     ax.bar(y + w / 2, rel_m, w, color=fs.PALETTE[0], label="excluding N1")
     for i, v in enumerate(rel_m):
-        ax.annotate(f"{v:+.3f}", xy=(i + w / 2, v), xytext=(0, 2),
-                    textcoords="offset points", ha="center",
-                    fontsize=6 if ieee else 8)
+        ax.annotate(f"{v:+.3f}", xy=(i + w / 2, v),
+                    xytext=(0, 2 if v >= 0 else -8), textcoords="offset points",
+                    ha="center", fontsize=6 if ieee else 8,
+                    color=fs.PALETTE[3] if v < 0 else "black",
+                    fontweight="bold" if v < 0 else "normal")
     ax.axhline(0.0, color="black", lw=1.0)
     ax.set_xticks(y)
     ax.set_xticklabels([nice[k] for k in present])
     ax.set_ylabel("AUC above chance")
-    ax.set_title("(b) but it guts the baseline, not the model")
-    ax.set_ylim(0, max(all_m) * 1.22)
+    ax.set_title("(b) the baseline's apparent skill was label noise")
+    # The baseline goes NEGATIVE on reliable labels. Clipping at zero would hide
+    # the single most important number in the figure.
+    ax.set_ylim(min(0, min(rel_m) * 1.5), max(all_m) * 1.22)
     ax.legend(frameon=True, framealpha=0.92)
     ax.grid(alpha=0.3, axis="y")
 
     n1 = rows[present[0]]["n1_share_of_transitions"]
-    sup = (f"N1 is {n1:.0%} of scored transitions and expert $\\kappa$=0.24.\n"
-           f"On transitions experts agree on, EEG doubles the signal."
+    sup = (f"N1 is {n1:.0%} of scored transitions, expert $\\kappa$=0.24.\n"
+           f"Drop them and the current-stage baseline falls BELOW chance;\n"
+           f"EEG alone is the only input that improves."
            if ieee else
            f"F12 · N1 is {n1:.0%} of scored transitions and experts barely agree on it "
-           f"($\\kappa$=0.24).\nOn the transitions they do agree on, EEG roughly doubles "
-           f"the above-chance signal.")
+           f"($\\kappa$=0.24). Exclude them and the standard current-stage baseline "
+           f"falls below chance (AUC 0.486, $z$=$-$4.28)\nwhile EEG alone rises to 0.599 "
+           f"— its apparent skill on all transitions was N1 instability, not prediction.")
     fig.suptitle(sup)
     fs.assert_no_clip(fig)
     fs.save(fig, str(out / "f12_label_reliability"))
