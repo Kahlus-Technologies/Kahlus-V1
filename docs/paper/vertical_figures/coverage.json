@@ -1,0 +1,13 @@
+{
+  "n_source_figures": 6,
+  "n_multipanel_figures": 5,
+  "sources": {
+    "image1.png": 4,
+    "image2.png": 4,
+    "image3.png": 3,
+    "image4.png": 4,
+    "image5.png": 3,
+    "image6.png": 1
+  },
+  "note": "Denominator fixed before rendering so it cannot shrink to match output."
+}
