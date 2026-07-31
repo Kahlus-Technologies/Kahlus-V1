@@ -1,2 +1,0 @@
-Drop the eight PDFs from README.md tier 1-3 here.
-Naming: Author_Year_short-topic.pdf  (e.g. Lee_2022_interrater_sleep_scoring.pdf)

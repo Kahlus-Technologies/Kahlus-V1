@@ -1,0 +1,151 @@
+% Kahlus handbook — cited core references
+%
+% PROVENANCE WARNING, read before trusting any field here.
+%
+% Fields marked [V] were returned verbatim by a literature-search tool and are
+% reliable. Fields marked [M] are from model memory and were NOT verified against
+% the publisher — DOIs especially. Verify [M] fields on import; Zotero's
+% "Add by identifier" will correct metadata if the DOI resolves, and will fail
+% loudly if the DOI is wrong, which is the outcome you want.
+%
+% There is no single domain to scrape. These are eight papers in eight venues.
+% The most reliable pointers are the Consensus permalinks in the note= fields,
+% which were returned by the search and resolve to the actual papers.
+
+% ---------------------------------------------------------------- TIER 1
+% The label-reliability argument (handbook §3.3) rests entirely on these two.
+
+@article{lee2022interrater,
+  % [V] authors, title, journal, year, volume, pages, citation string
+  % [M] doi
+  author  = {Lee, Yun Ji and Lee, Jae Yong and Cho, Jae Hoon and Choi, Ji Ho},
+  title   = {Interrater reliability of sleep stage scoring: a meta-analysis},
+  journal = {Journal of Clinical Sleep Medicine},
+  year    = {2022},
+  volume  = {18},
+  number  = {1},
+  pages   = {193--202},
+  doi     = {10.5664/jcsm.9538},
+  note    = {[M] DOI unverified. Consensus:
+             https://consensus.app/papers/details/10e1400a92775d99926f6aea3219f891/
+             KEY NUMBERS: overall Cohen's kappa 0.76 (95\% CI 0.71--0.81);
+             per stage W 0.70, N1 0.24, N2 0.57, N3 0.57, REM 0.69.
+             11 of 101 retrieved publications met criteria.},
+}
+
+@article{dankerhopfe2009interrater,
+  % [V] authors (first), title, journal, year
+  % [M] volume, pages, doi
+  author  = {Danker-Hopfe, Heidi and Anderer, Peter and Zeitlhofer, Josef and
+             Boeck, Marion and Dorn, Hans and Gruber, Georg and Heller, Esther
+             and Loretz, Erna and Moser, Doris and Parapatics, Silvia and
+             Saletu, Bernd and Schmidt, Andrea and Dorffner, Georg},
+  title   = {Interrater reliability for sleep scoring according to the
+             {Rechtschaffen} \& {Kales} and the new {AASM} standard},
+  journal = {Journal of Sleep Research},
+  year    = {2009},
+  volume  = {18},
+  number  = {1},
+  pages   = {74--84},
+  doi     = {10.1111/j.1365-2869.2008.00700.x},
+  note    = {[M] volume/pages/DOI unverified. Consensus:
+             https://consensus.app/papers/details/8be56fd4cf6b5c69a83c42bd241ce19b/
+             KEY NUMBERS: AASM overall agreement 82.0\% (kappa 0.76);
+             R\&K 80.6\% (kappa 0.68). SIESTA database, n=72.},
+}
+
+% ---------------------------------------------------------------- TIER 2
+% The competition (handbook §6). Read #3 before writing for any venue.
+
+@article{kweon2026ssfset,
+  % [V] authors (first), title, journal, year, reported metrics
+  % [M] no DOI available from the search
+  author  = {Kweon, Young-Seok and others},
+  title   = {{SSF-SET}: A Discrete {EEG} Token-based Framework for Sleep Stage
+             Forecasting},
+  journal = {IEEE Journal of Biomedical and Health Informatics},
+  year    = {2026},
+  note    = {[M] no DOI retrieved; find via IEEE Xplore. Consensus:
+             https://consensus.app/papers/details/c2aa1a05230a5658959edeeabb953ca6/
+             STATE OF THE ART ON OUR DATASET. SleepEDF20: accuracy 0.596,
+             macro-F1 0.516. SleepEDF78: accuracy 0.611, macro-F1 0.537.
+             Subject-wise cross-validation. Needs institutional access.},
+}
+
+@article{leguia2025variability,
+  % [V] authors (first), title, journal, year, reported AUC
+  % [M] no DOI available from the search
+  author  = {Leguia, Marc G. and others},
+  title   = {Variability and predictability in human sleep},
+  journal = {Brain Communications},
+  year    = {2025},
+  note    = {[M] no DOI retrieved; open access at Oxford, CC-BY. Consensus:
+             https://consensus.app/papers/details/f7ece62572ba5aaea011bf5d35313d8b/
+             THE NUMBER PEOPLE WILL QUOTE: NREM-to-REM transitions predicted
+             2--4 min ahead, AUC 0.88, from delta/sigma power in a GLM.
+             CAVEATS THAT MATTER: sub-scalp IMPLANTED electrodes, 8 subjects,
+             ~30 consecutive nights, and only ONE transition type (both
+             endpoints are among the most reliably scored stages).},
+}
+
+@article{hussain2022quantitative,
+  % [V] authors (first), title, journal, year, sample, accuracies
+  % [M] volume, article number, doi
+  author  = {Hussain, Iqram and others},
+  title   = {Quantitative Evaluation of {EEG}-Biomarkers for Prediction of
+             Sleep Stages},
+  journal = {Sensors},
+  year    = {2022},
+  volume  = {22},
+  number  = {8},
+  pages   = {3079},
+  doi     = {10.3390/s22083079},
+  note    = {[M] volume/number/DOI unverified. Open access (MDPI). Consensus:
+             https://consensus.app/papers/details/a56569cda5185ce9b901dabec2090550/
+             WHY IT MATTERS: establishes delta power ratios (DAR, DTR, DTABR)
+             track sleep depth -- the physiological reason band envelopes carry
+             state information. 154 individuals, HMC PhysioNet dataset.
+             CLASSIFICATION, not forecasting.},
+}
+
+% ---------------------------------------------------------------- TIER 3
+% The leakage literature. The handbook claims all three address leakage BETWEEN
+% examples and none addresses leakage INSIDE a single example -- which is the
+% novelty claim for F9/F10. VERIFY THAT YOURSELF. Better we find a counterexample
+% than a reviewer does.
+
+@article{bernett2024guiding,
+  % [M] ALL FIELDS from memory. Cited in the project's existing brief as
+  % "Bernett et al., Nat. Methods 2024" but never verified against the publisher.
+  author  = {Bernett, Judith and Blumenthal, David B. and List, Markus},
+  title   = {Guiding questions to avoid data leakage in biological machine
+             learning applications},
+  journal = {Nature Methods},
+  year    = {2024},
+  volume  = {21},
+  pages   = {1444--1453},
+  doi     = {10.1038/s41592-024-02362-y},
+  note    = {[M] ENTIRE ENTRY UNVERIFIED -- author list, volume, pages and DOI
+             are all from memory. Confirm before citing.},
+}
+
+@misc{delpup2025preprocessing,
+  % [M] ALL FIELDS from memory, and the least certain of the three.
+  author = {Del Pup, Federico and others},
+  title  = {Evaluating preprocessing and cross-validation choices in {EEG}
+            deep learning},
+  year   = {2025},
+  note   = {[M] ENTIRE ENTRY UNVERIFIED. The handbook cites this as "five CV
+            schemes over ~10^5 trained EEG models" -- that FIGURE came from the
+            project's own earlier brief, not from a read of the paper. Search
+            arXiv and PubMed for "Del Pup EEG cross-validation leakage".},
+}
+
+@misc{apicella2024leakage,
+  % [M] ALL FIELDS from memory.
+  author = {Apicella, Andrea and others},
+  title  = {Machine learning and {EEG} data leakage},
+  year   = {2024},
+  note   = {[M] ENTIRE ENTRY UNVERIFIED. Search arXiv and PubMed for
+            "Apicella EEG data leakage".},
+}
