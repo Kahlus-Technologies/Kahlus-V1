@@ -1,0 +1,22 @@
+{
+ "fig_crossover": {
+  "forecast_crossover/forecast_scaleup_results.json": "a1ae2da4555a2b9272b5135d67f14aa4be13c45d9471e0d7d74c7c6483316cdd"
+ },
+ "fig_envelope": {
+  "envelope_sleepedf/results.json": "0b751f7ecb7854ca498bafda74e8720680caf49e9d2c70b28c80e71f096815e6"
+ },
+ "fig_falsification": {
+  "forecast_crossover/adversarial_validation.json": "e4732b3449d0e6f7a50f6efce2c364c801368730205f79d0867e235494cd659b",
+  "forecast_crossover/forecast_scaleup_results.json": "a1ae2da4555a2b9272b5135d67f14aa4be13c45d9471e0d7d74c7c6483316cdd"
+ },
+ "fig_overlap_law": {
+  "overlap_law/overlap_law_results.json": "7674e67c180ddadc97188d23b649b1f8bfabf859b924f2ad31011c8cf167ce90"
+ },
+ "frozen": {
+  "docs/paper/vertical_figures/figures_final/fig1_acquisition.png": "812d6e51e2ea6027e8ee3afe71d530fbfad8a1bc7aea0671a82f28152851f347",
+  "docs/paper/vertical_figures/figures_final/fig2_protocol.png": "a1549de38f0d8d889f30371078f67434b31e8ffb7987b9e3df65d12b35b10924",
+  "docs/paper/vertical_figures/figures_final/fig3_latent.png": "7ed3bdc141e4c7ecf05488449f6c31b3351f4fb82a7e5a965662fa49c1c3fa72",
+  "docs/paper/vertical_figures/figures_final/fig4_gate.png": "c6a48180878c8f232126aca9ce8f039c52ce7d78a535958d0fc8e76dd9ed2113",
+  "docs/paper/vertical_figures/figures_final/fig5_sweep.png": "16eb435cf09a12b86ef623ab588b9cfee64d01eb26996f94090a39bee4fb5106"
+ }
+}
