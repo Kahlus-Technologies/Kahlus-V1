@@ -1,0 +1,57 @@
+### PASTE EVERYTHING BELOW THIS LINE INTO FIGURELABS
+### then save the result as: head_montage.png   (Figure 1, panel A)
+### into: docs/paper/iecbes2026/art/
+------------------------------------------------------------------------
+
+CONTEXT (you have no other information about this project, so read this first):
+This is a panel for a peer-reviewed biomedical engineering paper submitted to IEEE
+IECBES 2026. The paper asks whether a short window of past EEG (scalp
+electroencephalography) can predict the immediately following window of EEG. The
+model is called Kahlus-V1. It treats measured EEG as an observation of a hidden
+"latent neural field" that it evolves forward in time, then reads out a predicted
+future EEG window. The paper's honest finding is that the model beats trivial
+baselines but does not clearly beat linear ridge regression, and the paper is
+explicit about that limit. Nothing in this panel should imply a stronger result.
+
+AUDIENCE: engineers and clinicians reading a two-column IEEE paper in print.
+The panel will be printed about 1.7 inches wide, so every label must stay legible
+when reduced. Prefer fewer, larger labels over many small ones.
+
+WHAT THIS PANEL MUST COMMUNICATE:
+That the input to the model is ordinary, noninvasive, scalp-surface EEG, recorded
+from many electrodes at once, and that a short slice of it forms one input window.
+
+LAYOUT:
+Portrait, roughly 3 wide by 4 tall.
+
+Upper two thirds: a schematic top-down view of a human head, drawn as a clean
+circular scalp outline in neutral grey, with a small nasion bump at the top edge
+and a small ear shape on the left and right edges, so orientation is obvious.
+Inside the scalp, 22 small circular electrodes in a symmetric 10-20 arrangement,
+laid out in five rows containing 3, 5, 6, 5, and 3 electrodes. Each electrode is
+a white-filled circle with a teal outline, containing its number, 1 through 22,
+in teal. The electrodes must sit fully inside the scalp outline, none touching or
+crossing it.
+
+Lower third: thin teal lines descend from the lowest electrodes and converge into
+a single rounded rectangle filled solid teal, containing the words
+"EEG measurement" in white. Directly beneath that box, two centred lines of teal
+text, exactly:
+    Past EEG window:
+    22 channels x 128 samples
+
+HARD REQUIREMENTS:
+- Output a single flat illustration on a pure white background, no page framing,
+  no caption, no panel letter (A/B/C are added later by the typesetting script).
+- No numbers, no metrics, no statistics, no percentages, no axis values anywhere.
+- Sans-serif type only (Inter or Helvetica), medium or bold weight, no hairline
+  or light weights, no italic, no serif, no condensed faces.
+- Flat vector styling: 1.5 px strokes, rounded-corner rectangles, pale fills with
+  saturated outlines of the same hue. No gradients, no drop shadows, no 3D bevels,
+  no glow, no texture, no photographic elements, no stock icons, no emoji.
+- Palette, use exactly these: teal #0F766E, deep blue #1E4E9C, green #15803D,
+  amber #B45309, warm red #B3261E, neutral grey #5F6368, text near-black #1A1A1A.
+- Spell every label exactly as written below. Do not paraphrase, translate,
+  abbreviate, or add labels that are not listed.
+- Export at the maximum resolution available, at least 2100 px on the long edge.
+  This is a print figure; anything smaller reproduces blurred.

@@ -1,0 +1,60 @@
+### PASTE EVERYTHING BELOW THIS LINE INTO FIGURELABS
+### then save the result as: subject_split.png   (Figure 3, panel B)
+### into: docs/paper/iecbes2026/art/
+------------------------------------------------------------------------
+
+CONTEXT (you have no other information about this project, so read this first):
+This is a panel for a peer-reviewed biomedical engineering paper submitted to IEEE
+IECBES 2026. The paper asks whether a short window of past EEG (scalp
+electroencephalography) can predict the immediately following window of EEG. The
+model is called Kahlus-V1. It treats measured EEG as an observation of a hidden
+"latent neural field" that it evolves forward in time, then reads out a predicted
+future EEG window. The paper's honest finding is that the model beats trivial
+baselines but does not clearly beat linear ridge regression, and the paper is
+explicit about that limit. Nothing in this panel should imply a stronger result.
+
+AUDIENCE: engineers and clinicians reading a two-column IEEE paper in print.
+The panel will be printed about 1.7 inches wide, so every label must stay legible
+when reduced. Prefer fewer, larger labels over many small ones.
+
+WHAT THIS PANEL MUST COMMUNICATE:
+That the model is tested on people it never trained on. The unit of separation is
+the human subject, not the individual data window. This is what makes the
+evaluation conservative.
+
+LAYOUT:
+Landscape, roughly 3 wide by 2 tall.
+
+One horizontal row of seven tall rounded rectangles of equal size, evenly spaced
+with small gaps between them.
+The first five have a pale blue fill and navy outline, and contain the labels
+S1, S2, S3, S4, S5 in navy.
+The last two have a pale amber fill and amber outline, and contain the labels
+S6, S7 in amber.
+
+Above the first five, centred over that group, one bold navy label, exactly: train
+Above the last two, centred over that group, one bold amber label, exactly: held out
+
+Between the fifth and sixth boxes, a thin vertical dashed grey line running the
+full height of the row, marking the boundary.
+
+Beneath the whole row, one centred line of grey text, exactly:
+    no subject appears on both sides
+
+No numbers other than the subject labels, no percentages, no counts.
+
+HARD REQUIREMENTS:
+- Output a single flat illustration on a pure white background, no page framing,
+  no caption, no panel letter (A/B/C are added later by the typesetting script).
+- No numbers, no metrics, no statistics, no percentages, no axis values anywhere.
+- Sans-serif type only (Inter or Helvetica), medium or bold weight, no hairline
+  or light weights, no italic, no serif, no condensed faces.
+- Flat vector styling: 1.5 px strokes, rounded-corner rectangles, pale fills with
+  saturated outlines of the same hue. No gradients, no drop shadows, no 3D bevels,
+  no glow, no texture, no photographic elements, no stock icons, no emoji.
+- Palette, use exactly these: teal #0F766E, deep blue #1E4E9C, green #15803D,
+  amber #B45309, warm red #B3261E, neutral grey #5F6368, text near-black #1A1A1A.
+- Spell every label exactly as written below. Do not paraphrase, translate,
+  abbreviate, or add labels that are not listed.
+- Export at the maximum resolution available, at least 2100 px on the long edge.
+  This is a print figure; anything smaller reproduces blurred.

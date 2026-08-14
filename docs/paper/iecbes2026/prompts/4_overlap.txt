@@ -1,0 +1,62 @@
+### PASTE EVERYTHING BELOW THIS LINE INTO FIGURELABS
+### then save the result as: overlap.png   (Figure 3, panel A)
+### into: docs/paper/iecbes2026/art/
+------------------------------------------------------------------------
+
+CONTEXT (you have no other information about this project, so read this first):
+This is a panel for a peer-reviewed biomedical engineering paper submitted to IEEE
+IECBES 2026. The paper asks whether a short window of past EEG (scalp
+electroencephalography) can predict the immediately following window of EEG. The
+model is called Kahlus-V1. It treats measured EEG as an observation of a hidden
+"latent neural field" that it evolves forward in time, then reads out a predicted
+future EEG window. The paper's honest finding is that the model beats trivial
+baselines but does not clearly beat linear ridge regression, and the paper is
+explicit about that limit. Nothing in this panel should imply a stronger result.
+
+AUDIENCE: engineers and clinicians reading a two-column IEEE paper in print.
+The panel will be printed about 1.7 inches wide, so every label must stay legible
+when reduced. Prefer fewer, larger labels over many small ones.
+
+WHAT THIS PANEL MUST COMMUNICATE:
+The central methodological point of the paper. If the input window and the
+prediction target share any samples, the task is not really forecasting and the
+measured correlation is inflated. Only the fully separated arrangement is a valid
+test. The reader should grasp the difference instantly from the geometry alone.
+
+LAYOUT:
+Landscape, roughly 4 wide by 3 tall. Two cases stacked vertically, the invalid one
+on top and the valid one below.
+
+TOP CASE, the invalid arrangement:
+One bold warm-red label above it, exactly: overlapping
+Two long horizontal bars on the same baseline, which physically overlap through
+their middle. The left bar has a pale blue fill and navy outline. The right bar
+has a pale red fill and red outline. The region where the two bars cross is filled
+a solid, more saturated red, so the shared portion is unmistakable.
+One line of red text beneath, exactly: shared samples inflate correlation
+
+BOTTOM CASE, the valid arrangement:
+One bold green label above it, exactly: disjoint
+Two horizontal bars of equal length side by side on one baseline, separated by a
+clean visible gap, definitely not touching. The left bar has a pale blue fill and
+navy outline and contains the word "input" in navy. The right bar has a pale green
+fill and green outline and contains the word "target" in green.
+One line of grey text beneath, exactly: strictly future samples only
+
+No axis, no tick marks, no time labels, no numbers.
+
+HARD REQUIREMENTS:
+- Output a single flat illustration on a pure white background, no page framing,
+  no caption, no panel letter (A/B/C are added later by the typesetting script).
+- No numbers, no metrics, no statistics, no percentages, no axis values anywhere.
+- Sans-serif type only (Inter or Helvetica), medium or bold weight, no hairline
+  or light weights, no italic, no serif, no condensed faces.
+- Flat vector styling: 1.5 px strokes, rounded-corner rectangles, pale fills with
+  saturated outlines of the same hue. No gradients, no drop shadows, no 3D bevels,
+  no glow, no texture, no photographic elements, no stock icons, no emoji.
+- Palette, use exactly these: teal #0F766E, deep blue #1E4E9C, green #15803D,
+  amber #B45309, warm red #B3261E, neutral grey #5F6368, text near-black #1A1A1A.
+- Spell every label exactly as written below. Do not paraphrase, translate,
+  abbreviate, or add labels that are not listed.
+- Export at the maximum resolution available, at least 2100 px on the long edge.
+  This is a print figure; anything smaller reproduces blurred.
