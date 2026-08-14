@@ -61,6 +61,31 @@ def mse(a, b) -> float:
     return float(np.mean((a - b) ** 2))
 
 
+def _mark_win(row: dict, name: str) -> None:
+    stacked = row.get(f"ridge+osc+{name}")
+    vs0 = row.get(f"{name}_residual_vs_zero")
+    var = row.get("residual_var")
+    row[f"{name}_win"] = bool(
+        stacked is not None and vs0 is not None and var is not None
+        and stacked < row["ridge"] and vs0 < var
+    )
+
+
+def split_zscore(tr_ctx, tr_tgt, te_ctx, te_tgt):
+    """Normalize with train-split stats only. Held-out future is not in mu/sd."""
+    parts = [np.asarray(tr_ctx).ravel()] + [np.asarray(tr_tgt[h]).ravel() for h in HORIZONS]
+    cat = np.concatenate(parts)
+    mu = float(cat.mean())
+    sd = float(cat.std())
+    if sd < 1e-8:
+        sd = 1.0
+
+    def z(a):
+        return ((np.asarray(a) - mu) / sd).astype(np.float32)
+
+    return z(tr_ctx), {h: z(tr_tgt[h]) for h in HORIZONS}, z(te_ctx), {h: z(te_tgt[h]) for h in HORIZONS}
+
+
 def make_windows(sig: np.ndarray, *, stride: int, max_windows: int, rng) -> tuple[np.ndarray, dict[int, np.ndarray]]:
     """sig [T, C] -> ctx [N, L, C], tgt[h] [N, C]. Target is strictly future."""
     need = L + max(HORIZONS)
@@ -196,6 +221,8 @@ def evaluate(train_ctx, train_tgt, test_ctx, test_tgt, *, fs: float, args) -> di
         row["ridge+osc"] = mse(y, osc)
         residual_after_osc_tr = train_tgt[h] - (ridge_predict(w, flat_tr) + ridge_predict(osc_w, osc_features(train_ctx, fs)))
         residual_after_osc_te = y - osc
+        row["residual_var"] = float(np.var(residual_after_osc_te))
+        row["residual_mse_zero"] = mse(residual_after_osc_te, 0)
         if "gru" in args.models:
             gru_res = _torch_fit_seq(
                 train_ctx, residual_after_osc_tr, test_ctx,
@@ -203,12 +230,15 @@ def evaluate(train_ctx, train_tgt, test_ctx, test_tgt, *, fs: float, args) -> di
             )
             row["ridge+osc+gru"] = mse(y, osc + gru_res)
             row["gru_residual_vs_zero"] = mse(residual_after_osc_te, gru_res)
+            _mark_win(row, "gru")
         if "ssm" in args.models:
             ssm_res = _torch_fit_seq(
                 train_ctx, residual_after_osc_tr, test_ctx,
                 kind="ssm", hidden=args.hidden, steps=args.steps, device=args.device, seed=args.seed,
             )
             row["ridge+osc+ssm"] = mse(y, osc + ssm_res)
+            row["ssm_residual_vs_zero"] = mse(residual_after_osc_te, ssm_res)
+            _mark_win(row, "ssm")
         if "nfc" in args.models:
             try:
                 nfc_res = nfc_fit(
@@ -217,8 +247,11 @@ def evaluate(train_ctx, train_tgt, test_ctx, test_tgt, *, fs: float, args) -> di
                     device=args.device, seed=args.seed,
                 )
                 row["ridge+osc+nfc"] = mse(y, osc + nfc_res)
+                row["nfc_residual_vs_zero"] = mse(residual_after_osc_te, nfc_res)
+                _mark_win(row, "nfc")
             except Exception as exc:  # isolated job must not die on NFC shape
                 row["nfc_error"] = str(exc)
+                row["nfc_win"] = False
         scores[h] = row
         print(f"  h={h:>2}  persist {row['persist']:.4f}  ridge {row['ridge']:.4f}  "
               f"ridge+osc {row['ridge+osc']:.4f}"
@@ -304,9 +337,8 @@ def loso_folds(subjects: list) -> list[tuple[list, object]]:
 
 
 def load_sleep_subject_windows(args, rng) -> dict[str, tuple[np.ndarray, dict[int, np.ndarray]]]:
-    """subject -> (ctx [N, L, 1], tgt[h] [N, 1]). Channel is z-scored per
-    recording inside load_sleep_edf_channel, so no cross-subject statistics
-    leak into a held-out fold."""
+    """subject -> (ctx [N, L, 1], tgt[h] [N, 1]). Raw amplitude. Callers must
+    z-score from the train fold only via split_zscore."""
     root = resolve_sleep_root(args.data_root)
     groups = group_sleep_subjects(root.glob("*-PSG.edf"))
     subjects = sorted(groups)
@@ -316,7 +348,7 @@ def load_sleep_subject_windows(args, rng) -> dict[str, tuple[np.ndarray, dict[in
     for s in subjects:
         ctxs, tgts = [], {h: [] for h in HORIZONS}
         for path in groups[s]:
-            sig, _ = load_sleep_edf_channel(path)
+            sig, _ = load_sleep_edf_channel(path, zscore=False)
             ctx, tgt = make_windows(sig[:, None], stride=args.stride, max_windows=args.max_windows, rng=rng)
             ctxs.append(ctx)
             for h in HORIZONS:
@@ -357,6 +389,13 @@ def selftest() -> int:
     h8 = scores[8]
     assert h8["ridge"] < h8["persist"], scores
     assert h1["persist"] < 0.5, h1
+    assert "residual_var" in h8 and h8["residual_var"] >= 0, h8
+    tr_z, _, te_z, _ = split_zscore(ctx[:cut], {h: tgt[h][:cut] for h in HORIZONS},
+                                    ctx[cut:], {h: tgt[h][cut:] for h in HORIZONS})
+    assert abs(float(tr_z.mean())) < 0.05, float(tr_z.mean())
+    leak = split_zscore(ctx[:cut], {h: tgt[h][:cut] for h in HORIZONS},
+                        ctx[cut:], {h: tgt[h][cut:] for h in HORIZONS})
+    assert leak[2].shape == ctx[cut:].shape
     names = [Path(n) for n in (
         "SC4001E0-PSG.edf", "SC4002E0-PSG.edf", "SC4011E0-PSG.edf",
         "SC4012E0-PSG.edf", "SC4021E0-PSG.edf",
@@ -418,6 +457,7 @@ def main() -> int:
                 print(f"fold: held-out subject {held}", flush=True)
                 tr_ctx, tr_tgt = concat_subject_windows(subj_windows, train_subs)
                 te_ctx, te_tgt = concat_subject_windows(subj_windows, [held])
+                tr_ctx, tr_tgt, te_ctx, te_tgt = split_zscore(tr_ctx, tr_tgt, te_ctx, te_tgt)
                 folds[held] = evaluate(tr_ctx, tr_tgt, te_ctx, te_tgt, fs=SLEEP_FS, args=args)
             payload["folds"] = {s: {str(h): v for h, v in f.items()} for s, f in folds.items()}
             payload["mean_over_folds"] = mean_over_folds(folds)
@@ -432,6 +472,7 @@ def main() -> int:
             payload["split"] = {"train": train_s, "val": val_s, "test": test_s}
             tr_ctx, tr_tgt = concat_subject_windows(subj_windows, train_s)
             te_ctx, te_tgt = concat_subject_windows(subj_windows, test_s)
+            tr_ctx, tr_tgt, te_ctx, te_tgt = split_zscore(tr_ctx, tr_tgt, te_ctx, te_tgt)
             print(f"train {tr_ctx.shape} test {te_ctx.shape} fs={SLEEP_FS} device={args.device}")
             scores = evaluate(tr_ctx, tr_tgt, te_ctx, te_tgt, fs=SLEEP_FS, args=args)
             payload["scores"] = {str(h): v for h, v in scores.items()}

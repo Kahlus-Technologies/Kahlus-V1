@@ -18,7 +18,7 @@ export PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
 : "${OUT:=$ROOT/runs/isolated_residual_sleep}"
 : "${STEPS:=8000}"
 : "${HIDDEN:=192}"
-: "${MODELS:=gru,ssm,nfc}"
+: "${MODELS:=gru}"
 : "${MAX_SUBJECTS:=0}"
 : "${DATA_ROOT:=}"
 

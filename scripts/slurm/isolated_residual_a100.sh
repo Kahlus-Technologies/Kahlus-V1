@@ -18,7 +18,7 @@ export PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
 : "${OUT:=$ROOT/runs/isolated_residual}"
 : "${STEPS:=8000}"
 : "${HIDDEN:=192}"
-: "${MODELS:=gru,ssm,nfc}"
+: "${MODELS:=gru}"
 
 "$PYTHON_BIN" scripts/isolated_residual_a100.py \
   --corpus bnci \
