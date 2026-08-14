@@ -15,6 +15,8 @@ predict Y[L+h-1], subject-held-out. Do not call scripts/slurm/train_a100.sh.
   PYTHONPATH=src python3 scripts/isolated_residual_a100.py --selftest
   PYTHONPATH=src python3 scripts/isolated_residual_a100.py \\
       --corpus bnci --device cuda --steps 8000 --out runs/isolated_residual
+  PYTHONPATH=src python3 scripts/isolated_residual_a100.py \\
+      --corpus sleep-edf --loso --device cuda --steps 8000
 """
 from __future__ import annotations
 
@@ -29,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from _forecast_common import ridge_fit, ridge_predict  # noqa: E402
+from _forecast_common import load_sleep_edf_channel, ridge_fit, ridge_predict  # noqa: E402
 from analysis.build_bnci_ridge_tensors import (  # noqa: E402
     DEFAULT_CACHE,
     EEG_CHANNEL_NAMES,
@@ -45,6 +47,12 @@ TRAIN_SUBJ = (1, 3, 4, 5, 7, 9)
 VAL_SUBJ = (2,)
 TEST_SUBJ = (6, 8)
 BAND_HZ = (3.0, 6.0, 10.0, 20.0)
+SLEEP_FS = 100.0
+SLEEP_ROOTS = (
+    Path("/Users/aayu/datasets/sleep-edfx/sleep-cassette"),
+    Path("/Users/aayu/datasets/n/sleep-edfx/sleep-cassette"),
+    Path("/Users/aayu/datasets/kahlus_multidataset_public/sleep-edfx/sleep-cassette"),
+)
 
 
 def mse(a, b) -> float:
@@ -178,7 +186,6 @@ def evaluate(train_ctx, train_tgt, test_ctx, test_tgt, *, fs: float, args) -> di
         w = ridge_fit(flat_tr, train_tgt[h], args.ridge_alpha)
         ridge = ridge_predict(w, flat_te)
         residual_tr = train_tgt[h] - ridge_predict(w, flat_tr)
-        residual_te = y - ridge
         row = {
             "persist": mse(y, persist),
             "ridge": mse(y, ridge),
@@ -253,6 +260,87 @@ def load_bnci(args, rng):
     return parts, fs
 
 
+def bnci_loso_iter(args, rng):
+    """Yield (held_subject, train_parts, test_parts, fs). z-score statistics are
+    recomputed from each fold's training subjects only."""
+    subjects = sorted(TRAIN_SUBJ + VAL_SUBJ + TEST_SUBJ)
+    raw = {s: load_subject_eeg(args.cache, s) for s in subjects}
+    fs = raw[subjects[0]][1]
+
+    def windows(subs, train_cat):
+        ctxs, tgts = [], {h: [] for h in HORIZONS}
+        for s in subs:
+            sig = zscore_train(train_cat, raw[s][0])
+            ctx, tgt = make_windows(sig, stride=args.stride, max_windows=args.max_windows, rng=rng)
+            ctxs.append(ctx)
+            for h in HORIZONS:
+                tgts[h].append(tgt[h])
+        return np.concatenate(ctxs), {h: np.concatenate(tgts[h]) for h in HORIZONS}
+
+    for train_subs, held in loso_folds(subjects):
+        train_cat = np.concatenate([raw[s][0] for s in train_subs], axis=0)
+        yield held, windows(train_subs, train_cat), windows([held], train_cat), fs
+
+
+def resolve_sleep_root(explicit: Path | None) -> Path:
+    candidates = (explicit,) if explicit else SLEEP_ROOTS
+    for root in candidates:
+        if root and root.is_dir() and any(root.glob("*-PSG.edf")):
+            return root
+    raise FileNotFoundError(f"no Sleep-EDF PSG files under any of: {[str(c) for c in candidates]}")
+
+
+def group_sleep_subjects(paths) -> dict[str, list[Path]]:
+    """SC4ssNX0-PSG.edf -> subject key 'ss'. Both nights of a subject stay together."""
+    groups: dict[str, list[Path]] = {}
+    for p in sorted(paths):
+        groups.setdefault(p.name[3:5], []).append(p)
+    return groups
+
+
+def loso_folds(subjects: list) -> list[tuple[list, object]]:
+    """One fold per subject: (train_subjects, held_out_subject)."""
+    return [([t for t in subjects if t != s], s) for s in subjects]
+
+
+def load_sleep_subject_windows(args, rng) -> dict[str, tuple[np.ndarray, dict[int, np.ndarray]]]:
+    """subject -> (ctx [N, L, 1], tgt[h] [N, 1]). Channel is z-scored per
+    recording inside load_sleep_edf_channel, so no cross-subject statistics
+    leak into a held-out fold."""
+    root = resolve_sleep_root(args.data_root)
+    groups = group_sleep_subjects(root.glob("*-PSG.edf"))
+    subjects = sorted(groups)
+    if args.max_subjects:
+        subjects = subjects[: args.max_subjects]
+    out = {}
+    for s in subjects:
+        ctxs, tgts = [], {h: [] for h in HORIZONS}
+        for path in groups[s]:
+            sig, _ = load_sleep_edf_channel(path)
+            ctx, tgt = make_windows(sig[:, None], stride=args.stride, max_windows=args.max_windows, rng=rng)
+            ctxs.append(ctx)
+            for h in HORIZONS:
+                tgts[h].append(tgt[h])
+        out[s] = (np.concatenate(ctxs), {h: np.concatenate(tgts[h]) for h in HORIZONS})
+        print(f"sleep subject {s}: {out[s][0].shape[0]} windows from {len(groups[s])} recording(s)", flush=True)
+    return out
+
+
+def concat_subject_windows(subj_windows, subjects):
+    ctx = np.concatenate([subj_windows[s][0] for s in subjects])
+    tgt = {h: np.concatenate([subj_windows[s][1][h] for s in subjects]) for h in HORIZONS}
+    return ctx, tgt
+
+
+def mean_over_folds(folds: dict) -> dict:
+    """Per-horizon mean of every numeric score present in all folds."""
+    out: dict[str, dict[str, float]] = {}
+    for h in HORIZONS:
+        keys = set.intersection(*({k for k, v in f[h].items() if isinstance(v, float)} for f in folds.values()))
+        out[str(h)] = {k: float(np.mean([f[h][k] for f in folds.values()])) for k in sorted(keys)}
+    return out
+
+
 def selftest() -> int:
     rng = np.random.default_rng(0)
     sig, fs = synthetic()
@@ -269,6 +357,17 @@ def selftest() -> int:
     h8 = scores[8]
     assert h8["ridge"] < h8["persist"], scores
     assert h1["persist"] < 0.5, h1
+    names = [Path(n) for n in (
+        "SC4001E0-PSG.edf", "SC4002E0-PSG.edf", "SC4011E0-PSG.edf",
+        "SC4012E0-PSG.edf", "SC4021E0-PSG.edf",
+    )]
+    groups = group_sleep_subjects(names)
+    assert sorted(groups) == ["00", "01", "02"], groups
+    assert len(groups["00"]) == 2 and len(groups["02"]) == 1, groups
+    folds = loso_folds(sorted(groups))
+    assert len(folds) == 3, folds
+    assert all(held not in train for train, held in folds), folds
+    assert {held for _, held in folds} == set(groups), folds
     print("selftest ok", json.dumps({"h1": h1, "h8": h8}, indent=2))
     return 0
 
@@ -276,9 +375,12 @@ def selftest() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--selftest", action="store_true")
-    ap.add_argument("--corpus", choices=("bnci",), default="bnci")
+    ap.add_argument("--corpus", choices=("bnci", "sleep-edf"), default="bnci")
+    ap.add_argument("--loso", action="store_true", help="leave-one-subject-out over the corpus")
     ap.add_argument("--cache", type=Path, default=DEFAULT_CACHE)
-    ap.add_argument("--out", type=Path, default=Path("runs/isolated_residual"))
+    ap.add_argument("--data-root", type=Path, default=None, help="Sleep-EDF PSG dir (default: first existing candidate)")
+    ap.add_argument("--max-subjects", type=int, default=0, help="cap Sleep-EDF subjects (0 = all)")
+    ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--steps", type=int, default=2000)
     ap.add_argument("--hidden", type=int, default=128)
@@ -296,18 +398,60 @@ def main() -> int:
         import torch
         args.device = "cuda" if torch.cuda.is_available() else "cpu"
     rng = np.random.default_rng(args.seed)
-    parts, fs = load_bnci(args, rng)
-    print(f"train {parts['train'][0].shape} test {parts['test'][0].shape} fs={fs} device={args.device}")
-    scores = evaluate(parts["train"][0], parts["train"][1], parts["test"][0], parts["test"][1], fs=fs, args=args)
-    args.out.mkdir(parents=True, exist_ok=True)
+    if args.out is None:
+        args.out = Path("runs/isolated_residual_sleep" if args.corpus == "sleep-edf" else "runs/isolated_residual")
     payload = {
         "protocol": "isolated residual field; ridge then oscillator then nonlinear leftover",
-        "split": {"train": TRAIN_SUBJ, "val": VAL_SUBJ, "test": TEST_SUBJ},
+        "corpus": args.corpus,
+        "loso": args.loso,
         "L": L,
         "horizons": HORIZONS,
-        "scores": {str(h): v for h, v in scores.items()},
         "win_rule": "claim skill only if residual model beats ridge and residual-vs-zero < residual variance",
     }
+    if args.corpus == "sleep-edf":
+        payload["fs"] = SLEEP_FS
+        subj_windows = load_sleep_subject_windows(args, rng)
+        subjects = sorted(subj_windows)
+        if args.loso:
+            folds = {}
+            for train_subs, held in loso_folds(subjects):
+                print(f"fold: held-out subject {held}", flush=True)
+                tr_ctx, tr_tgt = concat_subject_windows(subj_windows, train_subs)
+                te_ctx, te_tgt = concat_subject_windows(subj_windows, [held])
+                folds[held] = evaluate(tr_ctx, tr_tgt, te_ctx, te_tgt, fs=SLEEP_FS, args=args)
+            payload["folds"] = {s: {str(h): v for h, v in f.items()} for s, f in folds.items()}
+            payload["mean_over_folds"] = mean_over_folds(folds)
+        else:
+            order = list(subjects)
+            rng.shuffle(order)
+            n = len(order)
+            n_test = max(1, int(round(0.2 * n)))
+            n_val = max(1, int(round(0.1 * n))) if n > 2 else 0
+            test_s, val_s = order[:n_test], order[n_test:n_test + n_val]
+            train_s = order[n_test + n_val:]
+            payload["split"] = {"train": train_s, "val": val_s, "test": test_s}
+            tr_ctx, tr_tgt = concat_subject_windows(subj_windows, train_s)
+            te_ctx, te_tgt = concat_subject_windows(subj_windows, test_s)
+            print(f"train {tr_ctx.shape} test {te_ctx.shape} fs={SLEEP_FS} device={args.device}")
+            scores = evaluate(tr_ctx, tr_tgt, te_ctx, te_tgt, fs=SLEEP_FS, args=args)
+            payload["scores"] = {str(h): v for h, v in scores.items()}
+    elif args.loso:
+        folds = {}
+        fs = None
+        for held, (tr_ctx, tr_tgt), (te_ctx, te_tgt), fs in bnci_loso_iter(args, rng):
+            print(f"fold: held-out subject {held}", flush=True)
+            folds[held] = evaluate(tr_ctx, tr_tgt, te_ctx, te_tgt, fs=fs, args=args)
+        payload["fs"] = fs
+        payload["folds"] = {str(s): {str(h): v for h, v in f.items()} for s, f in folds.items()}
+        payload["mean_over_folds"] = mean_over_folds(folds)
+    else:
+        parts, fs = load_bnci(args, rng)
+        print(f"train {parts['train'][0].shape} test {parts['test'][0].shape} fs={fs} device={args.device}")
+        scores = evaluate(parts["train"][0], parts["train"][1], parts["test"][0], parts["test"][1], fs=fs, args=args)
+        payload["fs"] = fs
+        payload["split"] = {"train": TRAIN_SUBJ, "val": VAL_SUBJ, "test": TEST_SUBJ}
+        payload["scores"] = {str(h): v for h, v in scores.items()}
+    args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "scores.json").write_text(json.dumps(payload, indent=2))
     print("wrote", args.out / "scores.json")
     return 0
