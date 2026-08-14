@@ -46,20 +46,28 @@ RIDGE_ALPHA = 5.0
 SEED = 0
 
 
-def gru_direct(train_x, train_y, test_x, *, hidden=32, steps=300, seed=SEED):
+GRU_HIDDEN = 32
+GRU_STEPS = 300
+GRU_DEVICE = "cpu"
+
+
+def gru_direct(train_x, train_y, test_x, *, hidden=None, steps=None, seed=SEED):
     """Fair GRU: trained DIRECTLY to map context(L) -> the sample at horizon h
     (same supervision the ridge_ar baseline gets). No autoregressive rollout, so
     both learned models compound error the same way (i.e. not at all)."""
     import torch
     from torch import nn
 
+    hidden = GRU_HIDDEN if hidden is None else int(hidden)
+    steps = GRU_STEPS if steps is None else int(steps)
+    device = torch.device(GRU_DEVICE if GRU_DEVICE != "auto" else ("cuda" if torch.cuda.is_available() else "cpu"))
     torch.manual_seed(seed)
-    net = nn.GRU(1, hidden, batch_first=True)
-    head = nn.Linear(hidden, 1)
+    net = nn.GRU(1, hidden, batch_first=True).to(device)
+    head = nn.Linear(hidden, 1).to(device)
     params = list(net.parameters()) + list(head.parameters())
     opt = torch.optim.AdamW(params, lr=2e-2)
-    xt = torch.as_tensor(train_x[:, :, None], dtype=torch.float32)
-    yt = torch.as_tensor(train_y[:, None], dtype=torch.float32)
+    xt = torch.as_tensor(train_x[:, :, None], dtype=torch.float32, device=device)
+    yt = torch.as_tensor(train_y[:, None], dtype=torch.float32, device=device)
     n = xt.shape[0]
     bs = min(256, n)
     rng = np.random.default_rng(seed)
@@ -75,7 +83,7 @@ def gru_direct(train_x, train_y, test_x, *, hidden=32, steps=300, seed=SEED):
     net.eval()
     head.eval()
     with torch.no_grad():
-        out, _ = net(torch.as_tensor(test_x[:, :, None], dtype=torch.float32))
+        out, _ = net(xt.new_tensor(test_x[:, :, None]))
         return head(out[:, -1, :]).squeeze(-1).cpu().numpy()
 
 
@@ -218,8 +226,15 @@ def main():
     ap.add_argument("--subjects", type=int, default=8)
     ap.add_argument("--stride", type=int, default=256)
     ap.add_argument("--max-windows", type=int, default=700)
+    ap.add_argument("--hidden", type=int, default=32)
+    ap.add_argument("--steps", type=int, default=300)
+    ap.add_argument("--device", type=str, default="auto")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
+    global GRU_HIDDEN, GRU_STEPS, GRU_DEVICE
+    GRU_HIDDEN = int(args.hidden)
+    GRU_STEPS = int(args.steps)
+    GRU_DEVICE = str(args.device)
 
     if args.selftest:
         selftest()
