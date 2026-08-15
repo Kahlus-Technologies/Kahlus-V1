@@ -122,8 +122,8 @@ def _torch_fit_seq(train_x, train_y, test_x, *, kind: str, hidden: int, steps: i
     torch.manual_seed(seed)
     c = train_x.shape[-1]
     if kind == "gru":
-        enc = nn.GRU(c, hidden, batch_first=True)
-        head = nn.Linear(hidden, c)
+        enc = nn.GRU(c, hidden, batch_first=True).to(device)
+        head = nn.Linear(hidden, c).to(device)
 
         def step(xb):
             out, _ = enc(xb)
@@ -131,7 +131,7 @@ def _torch_fit_seq(train_x, train_y, test_x, *, kind: str, hidden: int, steps: i
     elif kind == "ssm":
         from neurotwin.models.torch_models import TinySSMBaseline
 
-        net = TinySSMBaseline(c, c, latent_dim=hidden, n_layers=2)
+        net = TinySSMBaseline(c, c, latent_dim=hidden, n_layers=2).to(device)
 
         def step(xb):
             return net(xb)[:, -1]
@@ -380,7 +380,7 @@ def selftest() -> int:
     n = ctx.shape[0]
     cut = int(0.7 * n)
     args = argparse.Namespace(
-        ridge_alpha=5.0, ridge_lags=16, models=[], hidden=32, steps=4, device="cpu", seed=0,
+        ridge_alpha=5.0, ridge_lags=16, models=["gru"], hidden=32, steps=4, device="cpu", seed=0,
     )
     scores = evaluate(ctx[:cut], {h: tgt[h][:cut] for h in HORIZONS},
                       ctx[cut:], {h: tgt[h][cut:] for h in HORIZONS},
@@ -389,6 +389,7 @@ def selftest() -> int:
     h8 = scores[8]
     assert h8["ridge"] < h8["persist"], scores
     assert h1["persist"] < 0.5, h1
+    assert "ridge+osc+gru" in h8, h8  # torch head path must execute in selftest
     assert "residual_var" in h8 and h8["residual_var"] >= 0, h8
     tr_z, _, te_z, _ = split_zscore(ctx[:cut], {h: tgt[h][:cut] for h in HORIZONS},
                                     ctx[cut:], {h: tgt[h][cut:] for h in HORIZONS})
