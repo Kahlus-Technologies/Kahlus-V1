@@ -35,7 +35,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import numpy as np
 from PIL import Image
 from pypdf import PdfReader
 
@@ -409,7 +408,6 @@ def main() -> int:
 
     PROV.write_text(json.dumps(prov, indent=1, sort_keys=True) + "\n")
 
-    width = max(len(r[0]) for r in res.rows)
     cur = None
     for fig, check, ok, msg in res.rows:
         if fig != cur:

@@ -20,7 +20,6 @@ The residualised line staying well above zero is the answer.
 
 from __future__ import annotations
 
-import numpy as np
 import matplotlib.pyplot as plt
 
 import common as C

@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -161,7 +160,6 @@ def build(tex: str) -> Checker:
     # The 10-subject run said the effect "largely collapses" without N1; at 60
     # subjects it is the reverse, so these anchors moved to the new sentence.
     # All three horizons are quoted, so all three are checked.
-    eo = at("eeg_only")
     for i, h in enumerate((10.0, 30.0, 60.0)):
         pre = r"chance\} --- AUC \\textbf\{" + (r"[0-9.]+ / " * i)
         c.anchored(f"F12 AUC excluding N1, stage only, h={h:.0f}s",

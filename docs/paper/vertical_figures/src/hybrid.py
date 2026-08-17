@@ -19,7 +19,6 @@ reader can audit "which pixels came from where" without following control flow.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
