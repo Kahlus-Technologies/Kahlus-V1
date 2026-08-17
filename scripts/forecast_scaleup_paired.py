@@ -146,16 +146,23 @@ def split_subjects(subjects, seed: int) -> tuple[list, list, list]:
     return train, val, test
 
 
-def tune_ridge(train_ctx, train_y, val_ctx, val_y) -> tuple[float, np.ndarray]:
+def tune_ridge(train_ctx, train_y, val_ctx, val_y, *, alphas=None) -> tuple[float, np.ndarray]:
     """Pick alpha on validation subjects. A linear baseline is only a fair
-    comparator if it got its own hyperparameter search."""
-    best = (np.inf, RIDGE_ALPHAS[0], None)
-    for alpha in RIDGE_ALPHAS:
+    comparator if it got its own hyperparameter search.
+
+    `alphas` overrides the default grid. The default is left alone so the F8 and
+    F9 numbers stay reproducible; the capacity experiment passes a wider grid
+    because an edge selection there under-tunes the baseline and would inflate
+    the neural advantage it is trying to measure.
+    """
+    RIDGE_ALPHAS_ = tuple(alphas) if alphas is not None else RIDGE_ALPHAS
+    best = (np.inf, RIDGE_ALPHAS_[0], None)
+    for alpha in RIDGE_ALPHAS_:
         w = ridge_fit(train_ctx, train_y, alpha)
         mse = _mse(val_y, ridge_predict(w, val_ctx))
         if mse < best[0]:
             best = (mse, alpha, w)
-    if best[1] in (RIDGE_ALPHAS[0], RIDGE_ALPHAS[-1]):
+    if best[1] in (RIDGE_ALPHAS_[0], RIDGE_ALPHAS_[-1]):
         print(f"    WARNING ridge alpha {best[1]:g} is at a grid edge -- "
               f"baseline may still be under-tuned", flush=True)
     return best[1], best[2]

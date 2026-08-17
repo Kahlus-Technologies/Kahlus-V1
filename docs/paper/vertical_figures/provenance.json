@@ -1,0 +1,403 @@
+[
+  {
+    "figure": "image1_vertical.png",
+    "source": "image1.png",
+    "canvas": {
+      "w": 1261,
+      "h": 3199
+    },
+    "aspect": 2.537,
+    "placed_width_in": 3.25,
+    "effective_dpi": 388.0,
+    "panels": [
+      {
+        "letter": "a",
+        "source": "image1.png",
+        "crop": {
+          "x": 151,
+          "y": 114,
+          "w": 1044,
+          "h": 562
+        },
+        "placed": {
+          "x": 108,
+          "y": 34,
+          "w": 1044,
+          "h": 562
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "source": "image1.png",
+        "crop": {
+          "x": 1458,
+          "y": 114,
+          "w": 1108,
+          "h": 748
+        },
+        "placed": {
+          "x": 76,
+          "y": 724,
+          "w": 1108,
+          "h": 748
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "source": "image1.png",
+        "crop": {
+          "x": 34,
+          "y": 951,
+          "w": 1193,
+          "h": 689
+        },
+        "placed": {
+          "x": 34,
+          "y": 1600,
+          "w": 1193,
+          "h": 689
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "d",
+        "source": "image1.png",
+        "crop": {
+          "x": 1394,
+          "y": 951,
+          "w": 1170,
+          "h": 748
+        },
+        "placed": {
+          "x": 45,
+          "y": 2417,
+          "w": 1170,
+          "h": 748
+        },
+        "scale": 1.0
+      }
+    ]
+  },
+  {
+    "figure": "image2_vertical.png",
+    "source": "image2.png",
+    "canvas": {
+      "w": 1338,
+      "h": 3320
+    },
+    "aspect": 2.481,
+    "placed_width_in": 3.25,
+    "effective_dpi": 411.7,
+    "panels": [
+      {
+        "letter": "a",
+        "source": "image2.png",
+        "crop": {
+          "x": 147,
+          "y": 85,
+          "w": 1094,
+          "h": 743
+        },
+        "placed": {
+          "x": 122,
+          "y": 34,
+          "w": 1094,
+          "h": 743
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "source": "image2.png",
+        "crop": {
+          "x": 1382,
+          "y": 77,
+          "w": 1182,
+          "h": 692
+        },
+        "placed": {
+          "x": 78,
+          "y": 905,
+          "w": 1182,
+          "h": 692
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "source": "image2.png",
+        "crop": {
+          "x": 75,
+          "y": 884,
+          "w": 1270,
+          "h": 683
+        },
+        "placed": {
+          "x": 34,
+          "y": 1725,
+          "w": 1270,
+          "h": 683
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "d",
+        "source": "image2.png",
+        "crop": {
+          "x": 1405,
+          "y": 875,
+          "w": 1159,
+          "h": 750
+        },
+        "placed": {
+          "x": 89,
+          "y": 2536,
+          "w": 1159,
+          "h": 750
+        },
+        "scale": 1.0
+      }
+    ]
+  },
+  {
+    "figure": "image3_vertical.png",
+    "source": "image3.png",
+    "canvas": {
+      "w": 873,
+      "h": 2216
+    },
+    "aspect": 2.538,
+    "placed_width_in": 2.91,
+    "effective_dpi": 300.0,
+    "panels": [
+      {
+        "letter": "a",
+        "source": "image3.png",
+        "crop": {
+          "x": 942,
+          "y": 57,
+          "w": 768,
+          "h": 665
+        },
+        "placed": {
+          "x": 52,
+          "y": 34,
+          "w": 768,
+          "h": 665
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "source": "image3.png",
+        "crop": {
+          "x": 38,
+          "y": 65,
+          "w": 805,
+          "h": 598
+        },
+        "placed": {
+          "x": 34,
+          "y": 827,
+          "w": 805,
+          "h": 598
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "source": "image3.png",
+        "crop": {
+          "x": 1808,
+          "y": 65,
+          "w": 769,
+          "h": 629
+        },
+        "placed": {
+          "x": 52,
+          "y": 1553,
+          "w": 769,
+          "h": 629
+        },
+        "scale": 1.0
+      }
+    ]
+  },
+  {
+    "figure": "image4_vertical.png",
+    "source": "image4.png",
+    "canvas": {
+      "w": 1299,
+      "h": 2696
+    },
+    "aspect": 2.075,
+    "placed_width_in": 3.25,
+    "effective_dpi": 399.7,
+    "panels": [
+      {
+        "letter": "a",
+        "source": "image4.png",
+        "crop": {
+          "x": 152,
+          "y": 85,
+          "w": 987,
+          "h": 462
+        },
+        "placed": {
+          "x": 156,
+          "y": 34,
+          "w": 987,
+          "h": 462
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "source": "image4.png",
+        "crop": {
+          "x": 1333,
+          "y": 86,
+          "w": 1231,
+          "h": 605
+        },
+        "placed": {
+          "x": 34,
+          "y": 624,
+          "w": 1231,
+          "h": 605
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "source": "image4.png",
+        "crop": {
+          "x": 60,
+          "y": 776,
+          "w": 1149,
+          "h": 571
+        },
+        "placed": {
+          "x": 75,
+          "y": 1357,
+          "w": 1149,
+          "h": 571
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "d",
+        "source": "image4.png",
+        "crop": {
+          "x": 1415,
+          "y": 776,
+          "w": 1181,
+          "h": 606
+        },
+        "placed": {
+          "x": 59,
+          "y": 2056,
+          "w": 1181,
+          "h": 606
+        },
+        "scale": 1.0
+      }
+    ]
+  },
+  {
+    "figure": "image5_vertical.png",
+    "source": "image5.png",
+    "canvas": {
+      "w": 903,
+      "h": 2238
+    },
+    "aspect": 2.478,
+    "placed_width_in": 3.01,
+    "effective_dpi": 300.0,
+    "panels": [
+      {
+        "letter": "a",
+        "source": "image5.png",
+        "crop": {
+          "x": 88,
+          "y": 60,
+          "w": 755,
+          "h": 655
+        },
+        "placed": {
+          "x": 74,
+          "y": 34,
+          "w": 755,
+          "h": 655
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "source": "image5.png",
+        "crop": {
+          "x": 905,
+          "y": 52,
+          "w": 835,
+          "h": 605
+        },
+        "placed": {
+          "x": 34,
+          "y": 817,
+          "w": 835,
+          "h": 605
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "source": "image5.png",
+        "crop": {
+          "x": 1813,
+          "y": 61,
+          "w": 775,
+          "h": 654
+        },
+        "placed": {
+          "x": 64,
+          "y": 1550,
+          "w": 775,
+          "h": 654
+        },
+        "scale": 1.0
+      }
+    ]
+  },
+  {
+    "figure": "image6_vertical.png",
+    "source": "image6.png",
+    "canvas": {
+      "w": 1298,
+      "h": 875
+    },
+    "aspect": 0.674,
+    "placed_width_in": 3.25,
+    "effective_dpi": 399.4,
+    "panels": [
+      {
+        "letter": "a",
+        "source": "image6.png",
+        "crop": {
+          "x": 30,
+          "y": 77,
+          "w": 1230,
+          "h": 807
+        },
+        "placed": {
+          "x": 34,
+          "y": 34,
+          "w": 1230,
+          "h": 807
+        },
+        "scale": 1.0
+      }
+    ]
+  }
+]

@@ -55,7 +55,8 @@ def main() -> int:
     ax.set_ylim(lim)
     ax.set_xlabel("predicted bound  $W/H$   (from the methods section alone)")
     ax.set_ylabel("observed inflation\n$\\mathrm{MSE}_{future}/\\mathrm{MSE}_{overlap}$")
-    ax.set_title(f"{len(cells)} configurations, {len(set(signals))} signals, "
+    n_pairs = len({(c["W"], c["H"]) for c in cells})
+    ax.set_title(f"{n_pairs} (W,H) pairs x {len(set(signals))} traces  |  "
                  f"{r['n_bound_violations']} violations", fontsize=11)
     ax.legend(frameon=False, fontsize=9, loc="upper left")
     ax.grid(alpha=0.25, lw=0.6, which="both")

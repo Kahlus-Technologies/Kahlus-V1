@@ -1,0 +1,220 @@
+60 recordings, 6.0 h each, bands=['beta', 'low_gamma']
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [1] SC4001E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [2] SC4002E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [3] SC4011E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [4] SC4012E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [5] SC4021E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [6] SC4022E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [7] SC4031E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [8] SC4032E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [9] SC4041E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [10] SC4042E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [11] SC4051E0-PSG.edf 4.9 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [12] SC4052E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [13] SC4061E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [14] SC4062E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [15] SC4071E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [16] SC4072E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [17] SC4081E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [18] SC4082E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [19] SC4091E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [20] SC4092E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [21] SC4101E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [22] SC4102E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [23] SC4111E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [24] SC4112E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [25] SC4121E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [26] SC4122E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [27] SC4131E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [28] SC4141E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [29] SC4142E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [30] SC4151E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [31] SC4152E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [32] SC4161E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [33] SC4162E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [34] SC4171E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [35] SC4172E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [36] SC4181E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [37] SC4182E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [38] SC4191E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [39] SC4192E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [40] SC4201E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [41] SC4202E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [42] SC4211E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [43] SC4212E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [44] SC4221E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [45] SC4222E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [46] SC4231E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [47] SC4232E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [48] SC4241E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [49] SC4242E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [50] SC4251E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [51] SC4252E0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [52] SC4261F0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [53] SC4262F0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [54] SC4271F0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [55] SC4272F0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [56] SC4281G0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [57] SC4282G0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [58] SC4291G0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [59] SC4292G0-PSG.edf 6.0 h
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:122: RuntimeWarning: Loading an EDF with mixed sampling frequencies and preload=False will result in edge artifacts. It is recommended to use preload=True.See also https://github.com/mne-tools/mne-python/issues/10635
+  return {n: np.asarray(raw.get_data(picks=[n], start=a, stop=b)[0], dtype=float)
+  [60] SC4301E0-PSG.edf 6.0 h
+split: 36 fit / 9 select / 15 test
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:187: RuntimeWarning: divide by zero encountered in matmul
+  out[lags:] = y - d @ coef
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:187: RuntimeWarning: overflow encountered in matmul
+  out[lags:] = y - d @ coef
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:187: RuntimeWarning: invalid value encountered in matmul
+  out[lags:] = y - d @ coef
+
+beta: EEG-vs-EMG corr median +0.171 [-0.100, +0.421]   EEG-vs-EOG median +0.409
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:204: RuntimeWarning: divide by zero encountered in matmul
+  return np.linalg.solve(xb.T @ xb + alpha * np.eye(xb.shape[1]), xb.T @ y)
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:204: RuntimeWarning: overflow encountered in matmul
+  return np.linalg.solve(xb.T @ xb + alpha * np.eye(xb.shape[1]), xb.T @ y)
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:204: RuntimeWarning: invalid value encountered in matmul
+  return np.linalg.solve(xb.T @ xb + alpha * np.eye(xb.shape[1]), xb.T @ y)
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:208: RuntimeWarning: divide by zero encountered in matmul
+  return np.hstack([x, np.ones((x.shape[0], 1))]) @ w
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:208: RuntimeWarning: overflow encountered in matmul
+  return np.hstack([x, np.ones((x.shape[0], 1))]) @ w
+/Users/aayu/.codex/worktrees/8b64/Kahlus-V1/scripts/envelope_horizon_sleepedf.py:208: RuntimeWarning: invalid value encountered in matmul
+  return np.hstack([x, np.ones((x.shape[0], 1))]) @ w
+      1 s   EEG r=+0.508 (15/15 vs pers)   resid r=+0.321 (15/15)   CI[+0.378,+0.481] p=6.1e-05 EXCLUDES 0
+      3 s   EEG r=+0.444 (15/15 vs pers)   resid r=+0.270 (15/15)   CI[+0.498,+0.590] p=6.1e-05 EXCLUDES 0
+      6 s   EEG r=+0.380 (15/15 vs pers)   resid r=+0.218 (15/15)   CI[+0.569,+0.678] p=6.1e-05 EXCLUDES 0
+     10 s   EEG r=+0.340 (15/15 vs pers)   resid r=+0.192 (15/15)   CI[+0.603,+0.735] p=6.1e-05 EXCLUDES 0
+     20 s   EEG r=+0.303 (15/15 vs pers)   resid r=+0.169 (15/15)   CI[+0.651,+0.794] p=6.1e-05 EXCLUDES 0
+     30 s   EEG r=+0.289 (15/15 vs pers)   resid r=+0.163 (15/15)   CI[+0.662,+0.798] p=6.1e-05 EXCLUDES 0
+     60 s   EEG r=+0.256 (15/15 vs pers)   resid r=+0.141 (15/15)   CI[+0.691,+0.823] p=6.1e-05 EXCLUDES 0
+
+low_gamma: EEG-vs-EMG corr median +0.236 [-0.127, +0.509]   EEG-vs-EOG median +0.630
+      1 s   EEG r=+0.677 (15/15 vs pers)   resid r=+0.469 (15/15)   CI[+0.180,+0.277] p=6.1e-05 EXCLUDES 0
+      3 s   EEG r=+0.558 (15/15 vs pers)   resid r=+0.348 (15/15)   CI[+0.321,+0.423] p=6.1e-05 EXCLUDES 0
+      6 s   EEG r=+0.485 (15/15 vs pers)   resid r=+0.301 (15/15)   CI[+0.415,+0.532] p=6.1e-05 EXCLUDES 0
+     10 s   EEG r=+0.437 (15/15 vs pers)   resid r=+0.271 (15/15)   CI[+0.451,+0.588] p=6.1e-05 EXCLUDES 0
+     20 s   EEG r=+0.372 (15/15 vs pers)   resid r=+0.234 (15/15)   CI[+0.525,+0.676] p=6.1e-05 EXCLUDES 0
+     30 s   EEG r=+0.349 (15/15 vs pers)   resid r=+0.220 (15/15)   CI[+0.550,+0.697] p=6.1e-05 EXCLUDES 0
+     60 s   EEG r=+0.294 (15/15 vs pers)   resid r=+0.181 (15/15)   CI[+0.587,+0.754] p=6.1e-05 EXCLUDES 0
+
+wrote runs/envelope_sleepedf/results.json

@@ -1,0 +1,52 @@
+{
+ "artifact": "forecast_crossover/adversarial_validation.json",
+ "dataset": "/Users/aayu/datasets/kahlus_multidataset_public/sleep-edfx/sleep-cassette",
+ "figure_height_in": 3.5,
+ "figure_width_in": 3.25,
+ "horizon_samples": 16,
+ "index_audit": {
+  "context_target_shared_samples": 0,
+  "neighbour_window_shared_samples": 127,
+  "neighbour_windows_overlap": true,
+  "note": "context/target overlap is the claim-critical one and is zero; neighbour-window overlap is within-subject only and cannot cross a subject-disjoint split (tested separately in T7)",
+  "passes": true
+ },
+ "main_artifact": "forecast_crossover/forecast_scaleup_results.json",
+ "min_authored_pt": 6.5,
+ "nulls": {
+  "noise_input": {
+   "gru_mse": 0.9963584961714568,
+   "ridge_mse": 0.9949650062069288
+  },
+  "shuffled_targets": {
+   "gru_mse": 1.0216059662677623,
+   "ridge_mse": 0.9910050653961163
+  }
+ },
+ "robustness": [
+  {
+   "hi": 0.13126345757747504,
+   "label": "headline (overlapping windows)",
+   "lo": 0.07533744339241952,
+   "mean_delta": 0.10305141150236928
+  },
+  {
+   "hi": 0.1250293498176958,
+   "label": "non-overlapping (stride 384)",
+   "lo": 0.0672384400650005,
+   "mean_delta": 0.09632912957120278
+  },
+  {
+   "hi": 0.10695453549069056,
+   "label": "8 resampled splits",
+   "lo": 0.08122754364346078,
+   "mean_delta": 0.09468307274320795
+  },
+  {
+   "hi": 0.1843043210329833,
+   "label": "vs linear SGD baseline",
+   "lo": 0.1219632813224086,
+   "mean_delta": 0.15240593530513621
+  }
+ ]
+}

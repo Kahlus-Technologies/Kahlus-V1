@@ -1,0 +1,21 @@
+% Approximation of the NeurIPS submission style (neurips_20xx.sty is not
+% installed in this environment). Matches the geometry, 10pt body, section
+% styling and abstract block closely enough to judge length and layout.
+% BEFORE SUBMITTING: download the official neurips_<year>.sty and swap it in.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{neurips_style}[2026/07/28 NeurIPS-like layout approximation]
+\RequirePackage[letterpaper,left=1.5in,right=1.5in,top=1.0in,bottom=1.0in]{geometry}
+\RequirePackage{times}
+\RequirePackage{titlesec}
+\RequirePackage{caption}
+\renewcommand{\baselinestretch}{0.99}
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{12pt}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+\titlespacing*{\subsection}{0pt}{8pt}{3pt}
+\captionsetup{font=small,labelfont=bf}
+\renewenvironment{abstract}{%
+  \centerline{\large\bfseries Abstract}\vspace{4pt}%
+  \begin{quote}\small}{\end{quote}\vspace{4pt}}

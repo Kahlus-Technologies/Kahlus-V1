@@ -1,0 +1,396 @@
+[
+  {
+    "figure": "fig1_acquisition.png",
+    "source": "image1.png",
+    "canvas": {
+      "w": 1261,
+      "h": 2944
+    },
+    "aspect": 2.335,
+    "placed_width_in": 3.25,
+    "effective_dpi": 388.0,
+    "caption": "Fig. 1. Noninvasive acquisition and what must be removed before a claim.",
+    "panels": [
+      {
+        "letter": "a",
+        "kind": "art",
+        "origin": "eeg_windowing",
+        "crop": {
+          "x0": 0,
+          "y0": 120,
+          "x1": 928,
+          "y1": 405
+        },
+        "placed": {
+          "x": 166,
+          "y": 34,
+          "w": 928,
+          "h": 285
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "kind": "data",
+        "origin": "image1.png",
+        "crop": {
+          "x": 1458,
+          "y": 114,
+          "w": 1108,
+          "h": 748
+        },
+        "placed": {
+          "x": 76,
+          "y": 439,
+          "w": 1108,
+          "h": 748
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "kind": "data",
+        "origin": "image1.png",
+        "crop": {
+          "x": 34,
+          "y": 951,
+          "w": 1193,
+          "h": 689
+        },
+        "placed": {
+          "x": 34,
+          "y": 1307,
+          "w": 1193,
+          "h": 689
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "d",
+        "kind": "data",
+        "origin": "image1.png",
+        "crop": {
+          "x": 1394,
+          "y": 951,
+          "w": 1170,
+          "h": 748
+        },
+        "placed": {
+          "x": 45,
+          "y": 2116,
+          "w": 1170,
+          "h": 748
+        },
+        "scale": 1.0
+      }
+    ]
+  },
+  {
+    "figure": "fig2_protocol.png",
+    "source": "image2.png",
+    "canvas": {
+      "w": 1338,
+      "h": 3342
+    },
+    "aspect": 2.498,
+    "placed_width_in": 3.25,
+    "effective_dpi": 411.7,
+    "caption": "Fig. 2. Two evaluation protocols and the scale of the leakage illusion.",
+    "panels": [
+      {
+        "letter": "a",
+        "kind": "data",
+        "origin": "image2.png",
+        "crop": {
+          "x": 147,
+          "y": 85,
+          "w": 1094,
+          "h": 743
+        },
+        "placed": {
+          "x": 122,
+          "y": 34,
+          "w": 1094,
+          "h": 743
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "kind": "data",
+        "origin": "image2.png",
+        "crop": {
+          "x": 1382,
+          "y": 77,
+          "w": 1182,
+          "h": 692
+        },
+        "placed": {
+          "x": 78,
+          "y": 897,
+          "w": 1182,
+          "h": 692
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "kind": "data",
+        "origin": "image2.png",
+        "crop": {
+          "x": 75,
+          "y": 884,
+          "w": 1270,
+          "h": 683
+        },
+        "placed": {
+          "x": 34,
+          "y": 1709,
+          "w": 1270,
+          "h": 683
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "d",
+        "kind": "data",
+        "origin": "image2.png",
+        "crop": {
+          "x": 1405,
+          "y": 875,
+          "w": 1159,
+          "h": 750
+        },
+        "placed": {
+          "x": 89,
+          "y": 2512,
+          "w": 1159,
+          "h": 750
+        },
+        "scale": 1.0
+      }
+    ]
+  },
+  {
+    "figure": "fig3_latent.png",
+    "source": "image4.png",
+    "canvas": {
+      "w": 1299,
+      "h": 2568
+    },
+    "aspect": 1.977,
+    "placed_width_in": 3.25,
+    "effective_dpi": 399.7,
+    "caption": "Fig. 3. Latent field and gate outcomes under held-out evaluation.",
+    "panels": [
+      {
+        "letter": "a",
+        "kind": "art",
+        "origin": "latent_field",
+        "crop": {
+          "x0": 0,
+          "y0": 450,
+          "x1": 928,
+          "y1": 762
+        },
+        "placed": {
+          "x": 185,
+          "y": 34,
+          "w": 928,
+          "h": 312
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "kind": "data",
+        "origin": "image4.png",
+        "crop": {
+          "x": 1333,
+          "y": 86,
+          "w": 1231,
+          "h": 605
+        },
+        "placed": {
+          "x": 34,
+          "y": 466,
+          "w": 1231,
+          "h": 605
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "kind": "data",
+        "origin": "image4.png",
+        "crop": {
+          "x": 60,
+          "y": 776,
+          "w": 1149,
+          "h": 571
+        },
+        "placed": {
+          "x": 75,
+          "y": 1191,
+          "w": 1149,
+          "h": 571
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "d",
+        "kind": "data",
+        "origin": "image4.png",
+        "crop": {
+          "x": 1415,
+          "y": 776,
+          "w": 1181,
+          "h": 606
+        },
+        "placed": {
+          "x": 59,
+          "y": 1882,
+          "w": 1181,
+          "h": 606
+        },
+        "scale": 1.0
+      }
+    ]
+  },
+  {
+    "figure": "fig4_gate.png",
+    "source": "image3.png",
+    "canvas": {
+      "w": 873,
+      "h": 2246
+    },
+    "aspect": 2.573,
+    "placed_width_in": 2.91,
+    "effective_dpi": 300.0,
+    "caption": "Fig. 4. Gate protocol results.",
+    "panels": [
+      {
+        "letter": "a",
+        "kind": "data",
+        "origin": "image3.png",
+        "crop": {
+          "x": 942,
+          "y": 57,
+          "w": 768,
+          "h": 665
+        },
+        "placed": {
+          "x": 52,
+          "y": 34,
+          "w": 768,
+          "h": 665
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "kind": "data",
+        "origin": "image3.png",
+        "crop": {
+          "x": 38,
+          "y": 65,
+          "w": 805,
+          "h": 598
+        },
+        "placed": {
+          "x": 34,
+          "y": 819,
+          "w": 805,
+          "h": 598
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "kind": "data",
+        "origin": "image3.png",
+        "crop": {
+          "x": 1808,
+          "y": 65,
+          "w": 769,
+          "h": 629
+        },
+        "placed": {
+          "x": 52,
+          "y": 1537,
+          "w": 769,
+          "h": 629
+        },
+        "scale": 1.0
+      }
+    ]
+  },
+  {
+    "figure": "fig5_sweep.png",
+    "source": "image5.png",
+    "canvas": {
+      "w": 903,
+      "h": 2268
+    },
+    "aspect": 2.512,
+    "placed_width_in": 3.01,
+    "effective_dpi": 300.0,
+    "caption": "Fig. 5. Forecast horizon sweep.",
+    "panels": [
+      {
+        "letter": "a",
+        "kind": "data",
+        "origin": "image5.png",
+        "crop": {
+          "x": 88,
+          "y": 60,
+          "w": 755,
+          "h": 655
+        },
+        "placed": {
+          "x": 74,
+          "y": 34,
+          "w": 755,
+          "h": 655
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "b",
+        "kind": "data",
+        "origin": "image5.png",
+        "crop": {
+          "x": 905,
+          "y": 52,
+          "w": 835,
+          "h": 605
+        },
+        "placed": {
+          "x": 34,
+          "y": 809,
+          "w": 835,
+          "h": 605
+        },
+        "scale": 1.0
+      },
+      {
+        "letter": "c",
+        "kind": "data",
+        "origin": "image5.png",
+        "crop": {
+          "x": 1813,
+          "y": 61,
+          "w": 775,
+          "h": 654
+        },
+        "placed": {
+          "x": 64,
+          "y": 1534,
+          "w": 775,
+          "h": 654
+        },
+        "scale": 1.0
+      }
+    ]
+  }
+]

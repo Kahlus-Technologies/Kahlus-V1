@@ -1,0 +1,17 @@
+{
+  "schema": "kahlus.prevalence_survey_state.v1",
+  "target_papers": 80,
+  "papers_coded": 0,
+  "searches_done": [],
+  "searches_remaining": [
+    "EEG forecasting prediction of future EEG signal",
+    "EEG signal prediction deep learning autoregressive",
+    "seizure prediction preictal window deep learning",
+    "brain-computer interface signal forecasting real-time",
+    "biosignal forecasting sliding window evaluation",
+    "EEG phase prediction closed-loop stimulation",
+    "ECG respiration forecasting deep learning windowed"
+  ],
+  "last_cycle_utc": null,
+  "cycles_run": 0
+}

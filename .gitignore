@@ -31,3 +31,4 @@ graphify-out/
 
 # Local virtualenv. Previously committed by accident; keep it out of the shared ignore.
 .venv/
+docs/paper/results_figures/src/__pycache__/

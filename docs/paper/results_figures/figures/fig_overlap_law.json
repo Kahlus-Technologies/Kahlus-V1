@@ -1,0 +1,23 @@
+{
+ "artifact": "overlap_law/overlap_law_results.json",
+ "figure_height_in": 3.9,
+ "figure_width_in": 3.25,
+ "historical_bug_reference": {
+  "H": 1,
+  "W": 127,
+  "measured_in_repo": 126.1,
+  "predicted_bound": 127.0,
+  "source": "docs/research/eval_leakage_audit_2026-07-21.md"
+ },
+ "law": "inflation = MSE_future/MSE_overlap <= W/H, with equality as MSE_copy/MSE_future -> 0",
+ "min_authored_pt": 6.5,
+ "n_bound_violations": 0,
+ "n_cells": 286,
+ "n_synthetic_cells": 104,
+ "observed_over_bound": {
+  "max": 0.9999999999978493,
+  "mean": 0.98068955789331,
+  "median": 0.9997823644200785,
+  "min": 0.2919518043180261
+ }
+}

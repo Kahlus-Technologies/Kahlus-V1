@@ -1,0 +1,5 @@
+overlap_inflation.pdf
+*.aux
+*.log
+*.out
+q-*.png
