@@ -54,7 +54,7 @@
       "repo": "https://github.com/BINE022/EEGPT",
       "commit": "a0e0a8fad729e2ecf4eedb3a81548a6e6d48a705",
       "reuse_status": "permissive",
-      "license_status": "Apache-2.0 code; pretrained weights are hosted OUTSIDE the repo on figshare and are not covered by this pin - mirror and hash the checkpoint before use; commit verified 2026-08-18"
+      "license_status": "Apache-2.0 code; pretrained weights are hosted OUTSIDE the repo on figshare under CC BY 4.0 and are not covered by this pin - mirror and hash the checkpoint before use; commit verified 2026-08-18"
     },
     "labram": {
       "repo": "https://github.com/935963004/LaBraM",

@@ -63,6 +63,23 @@ AUDITED_MODEL_IDS: tuple[str, ...] = (
 # checkpoint-swap mistakes against the montage-identical PREST-16 checkpoint.
 SLATE_EXCLUDED_MODEL_IDS: tuple[str, ...] = ("biot_six_datasets",)
 
+# Exposure weaker than pretraining overlap but still reportable: the model's
+# authors evaluated (and therefore selected architecture/hyperparameters against)
+# the dataset during development, even though it was not in the pretraining corpus.
+# Verified 2026-08-19: EEGPT's published downstream suite includes Sleep-EDFx
+# (NeurIPS 2024 paper, downstream table). Status stays CLEAN (this is not corpus
+# overlap) but results tables must report it as a distinct exposure column.
+MODEL_SELECTION_EXPOSURE_PAIRS: tuple[tuple[str, str], ...] = (
+    ("eegpt", SLEEP_EDF_EVAL_DATASET_ID),
+)
+
+
+def has_model_selection_exposure(model_id: str, dataset_id: str) -> bool:
+    """True when the model's authors used this dataset for downstream evaluation
+    during development (architecture/HP selection), without pretraining on it."""
+
+    return (model_id, dataset_id) in MODEL_SELECTION_EXPOSURE_PAIRS
+
 
 @dataclass(frozen=True)
 class ContaminationRecord:
@@ -87,7 +104,11 @@ CONTAMINATION_RECORDS: tuple[ContaminationRecord, ...] = (
         model_id="eegpt",
         dataset_id=SLEEP_EDF_EVAL_DATASET_ID,
         status=CLEAN,
-        reason=f"Published pretraining corpus ({_EEGPT_CORPUS}) contains no sleep-staging data and does not include Sleep-EDF.",
+        reason=(
+            f"Published pretraining corpus ({_EEGPT_CORPUS}) contains no sleep-staging data and does not include "
+            "Sleep-EDF. Caveat (see MODEL_SELECTION_EXPOSURE_PAIRS): Sleep-EDFx was in EEGPT's published downstream "
+            "evaluation suite, so its architecture/HPs were selected with Sleep-EDF in view."
+        ),
     ),
     ContaminationRecord(
         model_id="eegpt",
@@ -105,7 +126,11 @@ CONTAMINATION_RECORDS: tuple[ContaminationRecord, ...] = (
         model_id="cbramod",
         dataset_id=SLEEP_EDF_EVAL_DATASET_ID,
         status=CLEAN,
-        reason="Pretrained only on TUEG clinical EEG (>9,000h); Sleep-EDF is a separate PhysioNet sleep corpus not included in TUEG.",
+        reason=(
+            "Pretrained only on TUEG clinical EEG (>9,000h); Sleep-EDF is a separate PhysioNet sleep corpus not "
+            "included in TUEG. TUEG does contain unscored sleep-state recordings, so CBraMod is not sleep-naive - "
+            "just Sleep-EDF-disjoint."
+        ),
     ),
     ContaminationRecord(
         model_id="cbramod",
@@ -130,8 +155,9 @@ CONTAMINATION_RECORDS: tuple[ContaminationRecord, ...] = (
         dataset_id=CHB_MIT_EVAL_DATASET_ID,
         status=UNVERIFIED,
         reason=(
-            "CHB-MIT is not named in the published corpus list, but that list spans ~20 datasets plus self-collected "
-            "data whose contents are not enumerated; overlap cannot be ruled out without contacting the authors."
+            "The published corpus list (Appendix D, 2534.78h) is fully enumerated and does not name CHB-MIT; the only "
+            "opaque component is 342.23h (~13.5%) of proprietary self-collected EEG. Overlap can be excluded for the "
+            "public 86.5% but not for that remainder without contacting the authors."
         ),
     ),
     ContaminationRecord(
@@ -162,7 +188,11 @@ CONTAMINATION_RECORDS: tuple[ContaminationRecord, ...] = (
         model_id="biot_six_datasets",
         dataset_id=SLEEP_EDF_EVAL_DATASET_ID,
         status=CLEAN,
-        reason="The six-datasets pretraining mix (TUAB, TUEV, CHB-MIT, IIIC, PREST, SHHS) does not include Sleep-EDF; SHHS is a distinct sleep cohort.",
+        reason=(
+            "The six-datasets pretraining mix (5M PREST/MGH + 5M SHHS samples, the bulk, plus TUAB/TUEV/CHB-MIT/IIIC "
+            "train sets) does not include Sleep-EDF. SHHS is a distinct sleep cohort, so the model is sleep-domain "
+            "in-domain without exact-recording overlap; report that domain exposure alongside the clean status."
+        ),
     ),
     ContaminationRecord(
         model_id="biot_six_datasets",

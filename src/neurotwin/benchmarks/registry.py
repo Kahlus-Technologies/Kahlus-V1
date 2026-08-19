@@ -93,12 +93,15 @@ def competitor_registry() -> tuple[CompetitorSpec, ...]:
             family="pretrained EEG foundation model",
             role="External pretrained EEG baseline; the only frontier-scale transformer entrant whose published pretraining corpus is disjoint from our Sleep-EDF/CHB-MIT/TUSZ eval sets (BIOT PREST-16 is likewise disjoint).",
             upstream_url="https://github.com/BINE022/EEGPT",
-            license_status="Apache-2.0 code (NeurIPS 2024); weights hosted off-repo on figshare, verify terms before reuse",
+            license_status="Apache-2.0 code (NeurIPS 2024); weights hosted off-repo on figshare under CC BY 4.0, verify terms before reuse",
             notes=(
                 "Pretrained by dual self-supervised spatio-temporal masking (80% channel mask) for representation "
-                "learning, not forecasting; downstream use is classification/masked infill. Pretraining corpus is "
-                "PhysioNet-MI, HGD, TSU-Benchmark, SEED, M3CV. Checkpoint is distributed only via a figshare share "
-                "link, which is fragile and must be mirrored and hashed before any benchmark run. No weights vendored."
+                "learning, not forecasting; downstream use is classification/masked infill. Window length is a "
+                "constructor argument (no temporal positional parameters); the released checkpoint runs at 2-30s. "
+                "Pretraining corpus is PhysioNet-MI, HGD, TSU-Benchmark, SEED, M3CV; Sleep-EDFx was in the paper's "
+                "downstream suite (model-selection exposure, see pretraining_contamination). Checkpoint is "
+                "distributed only via a figshare share link, which is fragile and must be mirrored and hashed before "
+                "any benchmark run. No weights vendored."
             ),
             implementation_status="unavailable",
         ),

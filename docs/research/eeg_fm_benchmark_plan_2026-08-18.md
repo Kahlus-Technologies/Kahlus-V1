@@ -74,8 +74,8 @@ strictly stronger; if they don't, the ladder was incomplete and we say so.
 | # | Model | Params | Weights source | License | Why it is in |
 |---|---|---:|---|---|---|
 | 1 | **CBraMod** (ICLR 2025) | 4.9 M | HF `weighting666/CBraMod`; `braindecode/cbramod-pretrained` | MIT / Apache-2.0 | Strongest entrant under *independent* cross-subject benchmarks (OmniEEG-Bench full-FT rank 1). Released weights include a raw-patch reconstruction head (`proj_out`), so it can emit µV-scale waveform without us inventing a decoder. Positional channel handling means bipolar montages need no manual mapping. |
-| 2 | **EEGPT** (NeurIPS 2024) | 25.3 M enc | figshare checkpoint (**must be mirrored**, see §8) + braindecode | Apache-2.0 | Pretraining corpus (PhysioNet-MI, HGD, TSU, SEED, M3CV) is disjoint from all three of Sleep-EDF / CHB-MIT / TUSZ — a property it shares only with BIOT PREST-16, and it is the only frontier-scale transformer entrant with it. Its 80 % channel-mask pretraining objective is the closest published analogue to our held-out-channel task. Upstream repo ships a Sleep-EDF harness. |
-| 3 | **LaBraM-Base** (ICLR 2024) | 5.8 M | committed in upstream repo + braindecode | MIT | Field reference point; a reviewer will ask for it by name. Worst task fit of the four: VQ-token objective, **no raw-waveform decoder**, ≤256-patch cap (≈11 s at 23 ch), and known HP sensitivity — under-tuning it would be exactly the weak-baseline pathology this project exists to catch (§5.3). |
+| 2 | **EEGPT** (NeurIPS 2024) | 25.3 M enc | figshare checkpoint (**must be mirrored**, see §8) + braindecode | Apache-2.0 code, **CC BY 4.0 weights** (figshare item) | Pretraining corpus (PhysioNet-MI, HGD, TSU, SEED, M3CV) is disjoint from all three of Sleep-EDF / CHB-MIT / TUSZ — a property it shares only with BIOT PREST-16, and it is the only frontier-scale transformer entrant with it. Caveat (verified 2026-08-19): Sleep-EDFx was in EEGPT's published *downstream* suite, so its architecture/HPs saw Sleep-EDF — model-selection exposure, tracked in `MODEL_SELECTION_EXPOSURE_PAIRS`. Its 80 % channel-mask pretraining objective is the closest published analogue to our held-out-channel task. Upstream repo ships a Sleep-EDF harness. |
+| 3 | **LaBraM-Base** (ICLR 2024) | 5.8 M | committed in upstream repo + braindecode | MIT | Field reference point; a reviewer will ask for it by name. Worst task fit of the four: VQ-token objective, **no raw-waveform decoder**, a **16-time-patch cap (16 s max window at any channel count ≤128** — corrected 2026-08-19 from an earlier "≤256 total patches" misreading; caps are independent per axis, `modeling_finetune.py:283-286`), and known HP sensitivity — under-tuning it would be exactly the weak-baseline pathology this project exists to catch (§5.3). |
 | 4 | **BIOT** `EEG-PREST-16-channels` | 3.4 M | upstream repo checkpoints | MIT | Its pretraining montage *is* CHB-MIT's bipolar layout, so it is the natural entrant if the arena ever extends past Sleep-EDF. **Hard rule: never the `six-datasets` checkpoint** — that one was pretrained on CHB-MIT + TUAB + TUEV directly. |
 
 ### 1.1 Explicitly excluded, with reasons recorded
@@ -191,8 +191,8 @@ montages, and a 1-channel input discards the spatial structure they encode. Repo
 it as such; do not use Lane A alone to conclude anything about the FMs.
 
 **Lane B — multi-channel.** All available Sleep-EDF cassette EEG channels, montage
-handled per model (CBraMod positional, EEGPT name-keyed dict, LaBraM patch cap,
-BIOT bipolar). This is the lane that is *fair to the FMs*, and it simultaneously
+handled per model (CBraMod positional, EEGPT name-keyed dict, LaBraM named
+electrodes within its 16 s window cap, BIOT bipolar). This is the lane that is *fair to the FMs*, and it simultaneously
 addresses F8's own stated limitation:
 
 > "Nothing multichannel — this is one channel, which is the most likely reason the
@@ -203,6 +203,22 @@ multichannel replication that F8 §5 asks for
 (`forecast_crossover_2026-07-27.md:191-193`), with Onojima et al. (2025) as the
 comparator. The incumbents must be re-run in Lane B — a Lane-A incumbent number
 must never be printed in a Lane-B table.
+
+**Context-length compatibility (verified against upstream code, 2026-08-19).**
+EEGPT's window length is a constructor argument, not a checkpoint property: the
+encoder carries no temporal positional parameters (attention runs across channels
+within each time patch), and the authors load the *same* released checkpoint at
+2 s, 2.1 s, 4 s and 30 s in their own downstream scripts. Any multiple of 64
+samples at 256 Hz works. So no entrant is structurally excluded from a short
+context. The real constraint is patch alignment: F8's L=127 @ 100 Hz (1.27 s) is
+not a whole number of patches for any FM. Rule: in the F8-comparable lane, each
+FM receives the largest patch-aligned context **not exceeding** F8's 1.27 s
+(CBraMod/LaBraM: 1 s; EEGPT: 1.25 s = 5×64 @ 256 Hz), so no FM ever sees more
+history than the incumbent — a conservative handicap that must be stated in the
+results table. Optionally, a context-matched sub-lane at a patch-friendly
+duration (e.g. 2 s) may be added where **every** entrant, incumbents included,
+receives identical context; if added, incumbents are re-tuned at that context
+under the §3.4 symmetric budget.
 
 ### 3.3 Three conditions per external model
 
@@ -342,10 +358,24 @@ loss**, and we should not be surprised or disappointed by it:
 
 - EEG-FM-Audit (arXiv:2605.26910): well-tuned supervised baselines match or beat
   EEG foundation models.
-- arXiv:2605.11410: classical features recover ~79 % of the claimed FM advantage.
-- arXiv:2607.24519: classical features beat FMs outright on CAUEEG.
-- NeuralBench (arXiv:2605.08495): FMs "only marginally outperform task-specific
-  models."
+- arXiv:2605.11410: classical features recover ~79 % of the claimed FM advantage
+  over a random-feature baseline (interpretability probe, not a tuned-baseline
+  benchmark — cite it for feature redundancy, not for "baselines beat FMs").
+- arXiv:2607.24519: classical features beat FMs outright on CAUEEG. **Its Table 8
+  is a direct external comparator for our exact setting** — Sleep-EDF, 2 channels
+  (Fpz-Cz, Pz-Oz), LOSO subject-disjoint linear probe: classical 64.8 BA / 68.6
+  AUROC vs CBraMod 63.6/68.3, EEGMamba 62.1/68.1, REVE-Base 58.2/62.3, LaBraM
+  56.4/58.1 — no FM beats classical on 2-channel sleep EEG. (Classification, not
+  forecasting, so it is context, not a row in our table. Cite by version: the
+  title has changed three times; pin the 13 Aug 2026 revision.)
+- NeuralBench (arXiv:2605.08495, Meta, v1.0 released 2026-05): 36 tasks / 94
+  datasets / 14 architectures — FMs "only marginally outperform task-specific
+  models"; a 150K-parameter CTNet nearly matches the 69M REVE. The largest
+  independent benchmark; our related-work section must engage it.
+- Counterweight, stated to avoid cherry-picking: OmniEEG-Bench's own regression
+  finds pretraining-data diversity and model size *are* associated with better
+  average ranks, even though 5M CBraMod tops its fine-tune leaderboard. The
+  small-model story is strong but not unanimous.
 - Our own roadmap already plans for this shape:
   `docs/research/ROADMAP_TO_PUBLICATION.md:257-263` — three independent 2026
   results find richer architectures do not reliably help on EEG, and it instructs
@@ -454,11 +484,23 @@ blockers, not risks.
 - [ ] **Transductive z-score fix or ablation** (§4.1 condition 1) landed on the F8
       lane, with the F8 numbers re-confirmed or amended under the new convention,
       before any cross-model number is computed.
-- [ ] **EEGPT figshare checkpoint mirrored.** It is the only contamination-clean
-      entrant and it lives on figshare with no redundancy. Mirror it to controlled
-      storage with a recorded SHA-256 **before** the run, not during. If it
-      disappears un-mirrored, the cleanest arm of the benchmark is unreproducible.
-      Checkpoint hashes go in the artifact.
+- [ ] **EEGPT figshare checkpoint mirrored.** It is the cleanest-corpus entrant
+      and it lives on figshare with no redundancy (verified live 2026-08-19: 77
+      files, 974.67 MB, CC BY 4.0). Mirror it to controlled storage with a
+      recorded SHA-256 **before** the run, not during. If it disappears
+      un-mirrored, the cleanest arm of the benchmark is unreproducible.
+      Checkpoint hashes go in the artifact. Operational note: figshare sits
+      behind AWS WAF — a plain `curl` liveness check returns HTTP 202 challenge
+      and looks dead when it is not; verify with a real browser. The braindecode
+      HF mirror is **encoder-only** (103 tensors, `target_encoder.*` only — no
+      reconstructor/predictor weights) and is not a substitute.
+- [ ] **LaBraM positional-embedding overflow guarded.** Upstream bug (verified
+      2026-08-19): `standard_1020` has 136 entries but `pos_embed` has 129
+      slots, so the last 8 channel names — the CHB-MIT-style bipolar
+      derivations FP1-F3 … P4-O2 — index out of range and either crash or
+      silently corrupt embeddings. Any future CHB-MIT lane must map bipolar
+      channels to in-range anode names for LaBraM and assert every channel index
+      < 129 at adapter construction.
 - [ ] **`pretraining_contamination.py` merged** and consulted by the runner
       (sibling change on this branch).
 - [ ] **`gbm` present in the produced `baseline_table.csv`**, not merely registered

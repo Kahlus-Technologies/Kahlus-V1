@@ -76,6 +76,17 @@ class PretrainingContaminationTests(unittest.TestCase):
             with self.subTest(dataset_id=dataset_id):
                 self.assertFalse(is_evaluation_permitted("biot_six_datasets", dataset_id))
 
+    def test_model_selection_exposure_is_tracked_without_flipping_clean_status(self):
+        from neurotwin.benchmarks.pretraining_contamination import has_model_selection_exposure
+
+        # EEGPT: Sleep-EDFx was in its published downstream suite (verified
+        # 2026-08-19) - exposure is tracked, but corpus status stays clean.
+        self.assertTrue(has_model_selection_exposure("eegpt", SLEEP_EDF_EVAL_DATASET_ID))
+        self.assertEqual(contamination_status("eegpt", SLEEP_EDF_EVAL_DATASET_ID), CLEAN)
+        # No exposure recorded for pairs never used in upstream model selection.
+        self.assertFalse(has_model_selection_exposure("cbramod", SLEEP_EDF_EVAL_DATASET_ID))
+        self.assertFalse(has_model_selection_exposure("eegpt", CHB_MIT_EVAL_DATASET_ID))
+
     def test_biot_checkpoint_variants_are_tracked_separately(self):
         self.assertNotEqual(
             contamination_status("biot_prest16", CHB_MIT_EVAL_DATASET_ID),
