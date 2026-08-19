@@ -33,6 +33,22 @@ class RegistryTests(unittest.TestCase):
         self.assertIn("mamba", {upstream.upstream_id for upstream in permissive_upstreams()})
         self.assertNotIn("brainlm", {upstream.upstream_id for upstream in permissive_upstreams()})
 
+    def test_upstream_registry_matches_lockfile_for_external_eeg_pretrained_repos(self):
+        upstreams = {upstream.upstream_id: upstream for upstream in upstream_registry()}
+        lock = json.loads(Path("external/upstreams.lock.json").read_text())["upstreams"]
+        permissive_ids = {upstream.upstream_id for upstream in permissive_upstreams()}
+
+        for upstream_id in ("eegpt", "labram", "cbramod", "biot"):
+            with self.subTest(upstream_id=upstream_id):
+                self.assertIn(upstream_id, upstreams)
+                self.assertEqual(upstreams[upstream_id].repo, lock[upstream_id]["repo"])
+                self.assertEqual(upstreams[upstream_id].commit, lock[upstream_id]["commit"])
+                self.assertEqual(upstreams[upstream_id].reuse_status, lock[upstream_id]["reuse_status"])
+
+        # Checkpoint-bearing repos must never be default-vendorable.
+        self.assertNotIn("labram", permissive_ids)
+        self.assertNotIn("biot", permissive_ids)
+
     def test_lockfile_contains_verified_commits(self):
         lock = json.loads(Path("external/upstreams.lock.json").read_text())
 
@@ -43,18 +59,21 @@ class RegistryTests(unittest.TestCase):
         lock = json.loads(Path("external/upstreams.lock.json").read_text())
         upstreams = lock["upstreams"]
 
-        expected_repos = {
-            "eegpt": "https://github.com/BINE022/EEGPT",
-            "labram": "https://github.com/935963004/LaBraM",
-            "cbramod": "https://github.com/wjq-learning/CBraMod",
-            "biot": "https://github.com/ycq091044/BIOT",
+        # Repos that commit checkpoint weights in-tree (labram, biot) are "mixed" so
+        # default vendoring never clones pretrained weights; weight-free repos are
+        # "permissive".
+        expected = {
+            "eegpt": ("https://github.com/BINE022/EEGPT", "permissive"),
+            "labram": ("https://github.com/935963004/LaBraM", "mixed"),
+            "cbramod": ("https://github.com/wjq-learning/CBraMod", "permissive"),
+            "biot": ("https://github.com/ycq091044/BIOT", "mixed"),
         }
-        for upstream_id, repo in expected_repos.items():
+        for upstream_id, (repo, reuse_status) in expected.items():
             with self.subTest(upstream_id=upstream_id):
                 entry = upstreams[upstream_id]
                 self.assertEqual(set(entry), {"repo", "commit", "reuse_status", "license_status"})
                 self.assertEqual(entry["repo"], repo)
-                self.assertEqual(entry["reuse_status"], "permissive")
+                self.assertEqual(entry["reuse_status"], reuse_status)
                 self.assertRegex(entry["commit"], r"^[0-9a-f]{40}$")
 
         self.assertIn("figshare", upstreams["eegpt"]["license_status"])
@@ -67,7 +86,7 @@ class RegistryTests(unittest.TestCase):
     def test_eeg_fm_baseline_requirements_stay_quarantined(self):
         quarantined = Path("requirements/eeg-fm-baselines.txt").read_text(encoding="utf-8")
 
-        self.assertIn("braindecode[hug]>=1.7", quarantined)
+        self.assertIn("braindecode[hub]>=1.7", quarantined)
         self.assertIn("huggingface_hub", quarantined)
         self.assertIn("MUST NEVER be merged", quarantined)
 

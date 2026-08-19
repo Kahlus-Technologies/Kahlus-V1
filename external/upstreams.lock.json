@@ -59,8 +59,8 @@
     "labram": {
       "repo": "https://github.com/935963004/LaBraM",
       "commit": "c431221e6cfd23dbfa9950e0180682fb322b0548",
-      "reuse_status": "permissive",
-      "license_status": "MIT code; Base checkpoint is committed in-repo at this pin, Large/Huge weights are withheld by the authors; commit verified 2026-08-18"
+      "reuse_status": "mixed",
+      "license_status": "MIT code but Base checkpoint weights are committed in-repo at this pin (Large/Huge withheld); marked mixed so default vendoring does not clone pretrained weights - verify code and weight terms separately; commit verified 2026-08-18"
     },
     "cbramod": {
       "repo": "https://github.com/wjq-learning/CBraMod",
@@ -71,8 +71,8 @@
     "biot": {
       "repo": "https://github.com/ycq091044/BIOT",
       "commit": "d138e32634e52ae9fa6ec98ac9c4087b14ca869a",
-      "reuse_status": "permissive",
-      "license_status": "MIT code; checkpoints are committed in-repo at this pin - the six-datasets checkpoint is pretrained on CHB-MIT and is contamination-blocked for CHB-MIT/TUSZ evaluation; commit verified 2026-08-18"
+      "reuse_status": "mixed",
+      "license_status": "MIT code but checkpoint weights are committed in-repo at this pin, including the six-datasets checkpoint (pretrained on CHB-MIT, contamination-blocked and slate-excluded); marked mixed so default vendoring does not clone pretrained weights; commit verified 2026-08-18"
     }
   }
 }

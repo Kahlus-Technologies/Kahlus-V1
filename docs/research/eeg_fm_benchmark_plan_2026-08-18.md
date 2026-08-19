@@ -74,7 +74,7 @@ strictly stronger; if they don't, the ladder was incomplete and we say so.
 | # | Model | Params | Weights source | License | Why it is in |
 |---|---|---:|---|---|---|
 | 1 | **CBraMod** (ICLR 2025) | 4.9 M | HF `weighting666/CBraMod`; `braindecode/cbramod-pretrained` | MIT / Apache-2.0 | Strongest entrant under *independent* cross-subject benchmarks (OmniEEG-Bench full-FT rank 1). Released weights include a raw-patch reconstruction head (`proj_out`), so it can emit µV-scale waveform without us inventing a decoder. Positional channel handling means bipolar montages need no manual mapping. |
-| 2 | **EEGPT** (NeurIPS 2024) | 25.3 M enc | figshare checkpoint (**must be mirrored**, see §8) + braindecode | Apache-2.0 | The only entrant whose pretraining corpus is disjoint from all three of Sleep-EDF / CHB-MIT / TUSZ (PhysioNet-MI, HGD, TSU, SEED, M3CV). Its 80 % channel-mask pretraining objective is the closest published analogue to our held-out-channel task. Upstream repo ships a Sleep-EDF harness. |
+| 2 | **EEGPT** (NeurIPS 2024) | 25.3 M enc | figshare checkpoint (**must be mirrored**, see §8) + braindecode | Apache-2.0 | Pretraining corpus (PhysioNet-MI, HGD, TSU, SEED, M3CV) is disjoint from all three of Sleep-EDF / CHB-MIT / TUSZ — a property it shares only with BIOT PREST-16, and it is the only frontier-scale transformer entrant with it. Its 80 % channel-mask pretraining objective is the closest published analogue to our held-out-channel task. Upstream repo ships a Sleep-EDF harness. |
 | 3 | **LaBraM-Base** (ICLR 2024) | 5.8 M | committed in upstream repo + braindecode | MIT | Field reference point; a reviewer will ask for it by name. Worst task fit of the four: VQ-token objective, **no raw-waveform decoder**, ≤256-patch cap (≈11 s at 23 ch), and known HP sensitivity — under-tuning it would be exactly the weak-baseline pathology this project exists to catch (§5.3). |
 | 4 | **BIOT** `EEG-PREST-16-channels` | 3.4 M | upstream repo checkpoints | MIT | Its pretraining montage *is* CHB-MIT's bipolar layout, so it is the natural entrant if the arena ever extends past Sleep-EDF. **Hard rule: never the `six-datasets` checkpoint** — that one was pretrained on CHB-MIT + TUAB + TUEV directly. |
 
@@ -150,7 +150,13 @@ branch): a declared mapping of `model_id × dataset_id →
 {clean, contaminated, unverified}` plus the evidence string for each cell, with
 `contamination_status()` failing closed to `unverified` on unknown pairs and
 `is_evaluation_permitted()` returning True only for explicitly audited `clean`
-pairs. The runner must consult that module and refuse to score anything that is not
+pairs, and `SLATE_EXCLUDED_MODEL_IDS` for checkpoints banned outright (the BIOT
+six-datasets checkpoint is refused even on datasets where its corpus is technically
+clean). This gate applies to **external pretrained entrants only** — the local
+incumbents (`kahlus_gru`, ridge/AR, persistence, `gbm`) have no pretraining corpus
+and are outside its scope; running them requires no contamination record. The
+runner must consult that module and refuse to score any external pretrained model
+that is not
 explicitly permitted; where
 this document and that module disagree, **the module wins and this document is the
 bug.** Its status column is copied verbatim into `baseline_table.csv` (§9).
@@ -206,8 +212,10 @@ must never be printed in a Lane-B table.
 | **(b) Frozen encoder + trained head** | Encoder weights frozen; identical bolt-on head trained per horizon. | Causal, admissible. This is the cleanest measurement of "what did pretraining buy". |
 | **(c) Full fine-tune** | Encoder + head trained end to end per horizon. | Causal, admissible. Most favourable to the FMs; the condition a reviewer will insist on. |
 
-The ranking claim is computed over each model's **best admissible condition**
-(max over b, c). Condition (a) exists to answer a different question — "is the
+The ranking claim is computed over each model's **best admissible condition** —
+selected as the argmin of held-out *validation* MSE over {b, c}, with only the
+selected condition's test-set number entering the ranking (selecting on test MSE
+would be tuning on test). Condition (a) exists to answer a different question — "is the
 future window predictable at all from a pretrained EEG representation?" — and to
 make it impossible for anyone to quietly reuse an acausal number as a forecast.
 

@@ -27,9 +27,9 @@
 
 # Unified loader/wrapper layer: Model.from_pretrained(...), sleep_physionet/chb_mit/tuh
 # loaders, montage interpolation. Pinned upstream: external/upstreams.lock.json:braindecode.
-# NOTE: the [hug] extra transitively installs huggingface_hub - that is exactly why this
+# NOTE: the [hub] extra transitively installs huggingface_hub - that is exactly why this
 # file is quarantined and must stay out of the three files listed above.
-braindecode[hug]>=1.7
+braindecode[hub]>=1.7
 
 # Model-specific extras - keep commented until the corresponding runner exists and the
 # contamination audit for that model/dataset pair is cleared.

@@ -91,7 +91,7 @@ def competitor_registry() -> tuple[CompetitorSpec, ...]:
             competitor_id="eegpt",
             display_name="EEGPT",
             family="pretrained EEG foundation model",
-            role="External pretrained EEG baseline; the only audited candidate whose published pretraining corpus is disjoint from our Sleep-EDF/CHB-MIT/TUSZ eval sets.",
+            role="External pretrained EEG baseline; the only frontier-scale transformer entrant whose published pretraining corpus is disjoint from our Sleep-EDF/CHB-MIT/TUSZ eval sets (BIOT PREST-16 is likewise disjoint).",
             upstream_url="https://github.com/BINE022/EEGPT",
             license_status="Apache-2.0 code (NeurIPS 2024); weights hosted off-repo on figshare, verify terms before reuse",
             notes=(

@@ -55,6 +55,14 @@ AUDITED_MODEL_IDS: tuple[str, ...] = (
     "biot_six_datasets",
 )
 
+# Models banned from evaluation outright, independent of per-dataset contamination
+# status. A record below may honestly say a pair is CLEAN (the corpus facts stand on
+# their own), but `is_evaluation_permitted` must still refuse these models: the
+# benchmark plan excludes the BIOT six-datasets checkpoint entirely because its
+# pretraining saw CHB-MIT and TUH-family data, and running it anywhere invites
+# checkpoint-swap mistakes against the montage-identical PREST-16 checkpoint.
+SLATE_EXCLUDED_MODEL_IDS: tuple[str, ...] = ("biot_six_datasets",)
+
 
 @dataclass(frozen=True)
 class ContaminationRecord:
@@ -213,6 +221,13 @@ def contaminated_pairs() -> list[dict[str, str]]:
 
 
 def is_evaluation_permitted(model_id: str, dataset_id: str) -> bool:
-    """Return True only when the pair is explicitly audited as clean."""
+    """Return True only when the pair is explicitly audited as clean.
 
+    Slate-excluded models (``SLATE_EXCLUDED_MODEL_IDS``) are refused regardless of
+    their per-dataset contamination status. This gate applies to external pretrained
+    models only; local baselines with no pretraining corpus are outside its scope.
+    """
+
+    if model_id in SLATE_EXCLUDED_MODEL_IDS:
+        return False
     return contamination_status(model_id, dataset_id) == CLEAN

@@ -69,6 +69,13 @@ class PretrainingContaminationTests(unittest.TestCase):
         self.assertEqual(contamination_status("biot_six_datasets", TUSZ_EVAL_DATASET_ID), CONTAMINATED)
         self.assertEqual(contamination_status("biot_six_datasets", SLEEP_EDF_EVAL_DATASET_ID), CLEAN)
 
+    def test_slate_excluded_checkpoint_is_never_permitted(self):
+        # Sleep-EDF is corpus-clean for biot_six_datasets, but the checkpoint is
+        # banned from the slate outright; the permission gate must refuse it anyway.
+        for dataset_id in EVAL_DATASET_IDS:
+            with self.subTest(dataset_id=dataset_id):
+                self.assertFalse(is_evaluation_permitted("biot_six_datasets", dataset_id))
+
     def test_biot_checkpoint_variants_are_tracked_separately(self):
         self.assertNotEqual(
             contamination_status("biot_prest16", CHB_MIT_EVAL_DATASET_ID),
