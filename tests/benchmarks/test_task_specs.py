@@ -25,3 +25,31 @@ class TaskSpecTests(unittest.TestCase):
         self.assertIn("brain_harmony", competitors)
         self.assertEqual(competitors["tribe_v2"].implementation_status, "clean_room_approximation")
         self.assertIn("not exact TRIBE v2", competitors["tribe_v2"].notes)
+
+    def test_external_pretrained_eeg_models_are_registered_as_unavailable(self):
+        competitors = {competitor.competitor_id: competitor for competitor in competitor_registry()}
+
+        for competitor_id in ("eegpt", "labram", "cbramod", "biot"):
+            with self.subTest(competitor_id=competitor_id):
+                self.assertIn(competitor_id, competitors)
+                spec = competitors[competitor_id]
+                self.assertEqual(spec.implementation_status, "unavailable")
+                self.assertTrue(spec.upstream_url.startswith("https://github.com/"))
+                self.assertIn("No weights vendored.", spec.notes)
+
+    def test_external_eeg_competitor_notes_record_weight_hosting_and_task_mismatch(self):
+        competitors = {competitor.competitor_id: competitor for competitor in competitor_registry()}
+
+        self.assertIn("figshare", competitors["eegpt"].notes)
+        self.assertIn("mirrored", competitors["eegpt"].notes)
+        self.assertIn("not a forecaster", competitors["labram"].notes)
+        self.assertIn("withheld", competitors["labram"].notes)
+        self.assertIn("Hugging Face", competitors["cbramod"].license_status)
+        self.assertIn("not forecasting", competitors["cbramod"].notes)
+        self.assertIn("TUEG", competitors["cbramod"].notes)
+        self.assertIn("FORBIDDEN for CHB-MIT", competitors["biot"].notes)
+
+    def test_competitor_ids_are_unique(self):
+        competitor_ids = [competitor.competitor_id for competitor in competitor_registry()]
+
+        self.assertEqual(len(competitor_ids), len(set(competitor_ids)))

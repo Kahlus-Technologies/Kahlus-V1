@@ -1,0 +1,53 @@
+# Quarantined optional dependencies for external pretrained EEG baseline models
+# (EEGPT, LaBraM, CBraMod, BIOT).
+#
+# QUARANTINE CONTRACT - read before touching this file:
+#
+# 1. This file MUST NEVER be merged into, or referenced from, any of:
+#      - requirements/cluster-a100.txt
+#      - deploy/a100/environment-a100.yml
+#      - pyproject.toml
+#    tests/artifacts/test_docs_contracts.py:149-172 asserts that `huggingface_hub`
+#    (among other packages) does not appear in those three files. Everything below
+#    pulls huggingface_hub in transitively, so folding it into them breaks that
+#    contract and silently makes a weight-downloading dependency mandatory.
+#
+# 2. The P0 remediation freeze (docs/audit/REMEDIATION_ROADMAP.md,
+#    p0_remediation_complete=false) forbids A100 use until R1-R6 are merged. Do not
+#    install this on the cluster and do not schedule external-model runs until that
+#    flag clears.
+#
+# 3. Installing these packages does not authorize downloading weights. Every external
+#    checkpoint must first pass the pretraining-contamination check in
+#    src/neurotwin/benchmarks/pretraining_contamination.py, and off-repo checkpoints
+#    (EEGPT figshare, CBraMod Hugging Face) must be mirrored and hashed first.
+#
+# Local, opt-in install only:
+#   python -m pip install -r requirements/eeg-fm-baselines.txt
+
+# Unified loader/wrapper layer: Model.from_pretrained(...), sleep_physionet/chb_mit/tuh
+# loaders, montage interpolation. Pinned upstream: external/upstreams.lock.json:braindecode.
+# NOTE: the [hug] extra transitively installs huggingface_hub - that is exactly why this
+# file is quarantined and must stay out of the three files listed above.
+braindecode[hug]>=1.7
+
+# Model-specific extras - keep commented until the corresponding runner exists and the
+# contamination audit for that model/dataset pair is cleared.
+#
+# EEGPT (github.com/BINE022/EEGPT, Apache-2.0): upstream training code expects
+#   pytorch-lightning and torchmetrics; checkpoint is a figshare share link, mirror it.
+# pytorch-lightning>=2.2
+# torchmetrics>=1.3
+#
+# LaBraM (github.com/935963004/LaBraM, MIT): Base checkpoint is committed in-repo;
+#   upstream uses timm-style model registration and einops.
+# timm>=0.9
+# einops>=0.7
+#
+# CBraMod (github.com/wjq-learning/CBraMod, MIT): weights on Hugging Face
+#   (weighting666/CBraMod); einops required by the criss-cross attention blocks.
+# einops>=0.7
+#
+# BIOT (github.com/ycq091044/BIOT, MIT): checkpoints committed in-repo; upstream uses
+#   linear-attention transformers.
+# linear-attention-transformer>=0.19

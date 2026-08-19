@@ -49,6 +49,30 @@
       "commit": "43078cf84482708a3593c3453bef7e1ef9078dfb",
       "reuse_status": "permissive",
       "license_status": "verify upstream license file at pinned commit"
+    },
+    "eegpt": {
+      "repo": "https://github.com/BINE022/EEGPT",
+      "commit": "a0e0a8fad729e2ecf4eedb3a81548a6e6d48a705",
+      "reuse_status": "permissive",
+      "license_status": "Apache-2.0 code; pretrained weights are hosted OUTSIDE the repo on figshare and are not covered by this pin - mirror and hash the checkpoint before use; commit verified 2026-08-18"
+    },
+    "labram": {
+      "repo": "https://github.com/935963004/LaBraM",
+      "commit": "c431221e6cfd23dbfa9950e0180682fb322b0548",
+      "reuse_status": "permissive",
+      "license_status": "MIT code; Base checkpoint is committed in-repo at this pin, Large/Huge weights are withheld by the authors; commit verified 2026-08-18"
+    },
+    "cbramod": {
+      "repo": "https://github.com/wjq-learning/CBraMod",
+      "commit": "b9e961003214326972c567eff390e75b0287e32a",
+      "reuse_status": "permissive",
+      "license_status": "MIT code; pretrained weights are hosted OUTSIDE the repo on Hugging Face (weighting666/CBraMod) and are not covered by this pin - verify model-card terms separately; commit verified 2026-08-18"
+    },
+    "biot": {
+      "repo": "https://github.com/ycq091044/BIOT",
+      "commit": "d138e32634e52ae9fa6ec98ac9c4087b14ca869a",
+      "reuse_status": "permissive",
+      "license_status": "MIT code; checkpoints are committed in-repo at this pin - the six-datasets checkpoint is pretrained on CHB-MIT and is contamination-blocked for CHB-MIT/TUSZ evaluation; commit verified 2026-08-18"
     }
   }
 }

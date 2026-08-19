@@ -78,6 +78,12 @@ BASELINE_CATALOG: tuple[BaselineCatalogEntry, ...] = (
         notes="Closed-form sanity baseline on identical prepared windows.",
     ),
     BaselineCatalogEntry(
+        model_id="gbm",
+        display_name="Gradient Boosting",
+        status="local_baseline",
+        notes="Local multi-output histogram gradient-boosting regressor on flattened prepared windows; scikit-learn implementation with shared splits.",
+    ),
+    BaselineCatalogEntry(
         model_id="autoregressive_ridge",
         display_name="Autoregressive Ridge",
         status="local_baseline",
@@ -185,5 +191,59 @@ BASELINE_CATALOG: tuple[BaselineCatalogEntry, ...] = (
         status="unavailable",
         notes="Optional neural-behavior embedding wrapper slot; exact use requires installed CEBRA and aligned behavior data.",
         upstream_reference="CEBRA",
+    ),
+    BaselineCatalogEntry(
+        model_id="eegpt",
+        display_name="EEGPT (External Pretrained)",
+        status="unavailable",
+        notes=(
+            "External pretrained weights not vendored; integration pending contamination audit + task-compatibility "
+            "adapter. Pretrained for masked representation learning, not forecasting; checkpoint is figshare-hosted "
+            "and must be mirrored before use."
+        ),
+        upstream_reference="EEGPT",
+    ),
+    BaselineCatalogEntry(
+        model_id="labram_base",
+        display_name="LaBraM-Base (External Pretrained)",
+        status="unavailable",
+        notes=(
+            "External pretrained weights not vendored; integration pending contamination audit + task-compatibility "
+            "adapter. Neural-token masked prediction with no raw-waveform decoder; TUSZ evaluation is contaminated "
+            "by TUH pretraining."
+        ),
+        upstream_reference="LaBraM",
+    ),
+    BaselineCatalogEntry(
+        model_id="cbramod",
+        display_name="CBraMod (External Pretrained)",
+        status="unavailable",
+        notes=(
+            "External pretrained weights not vendored; integration pending contamination audit + task-compatibility "
+            "adapter. Masked patch reconstruction pretraining on TUEG; TUSZ evaluation is contaminated."
+        ),
+        upstream_reference="CBraMod",
+    ),
+    BaselineCatalogEntry(
+        model_id="biot_prest16",
+        display_name="BIOT EEG-PREST-16-channels (External Pretrained)",
+        status="unavailable",
+        notes=(
+            "External pretrained weights not vendored; integration pending contamination audit + task-compatibility "
+            "adapter. MGH resting-EEG pretraining only; the separate six-datasets checkpoint must never be "
+            "substituted for it."
+        ),
+        upstream_reference="BIOT",
+    ),
+    BaselineCatalogEntry(
+        model_id="biot_six_datasets",
+        display_name="BIOT six-datasets (External Pretrained)",
+        status="unavailable",
+        notes=(
+            "External pretrained weights not vendored; integration pending contamination audit + task-compatibility "
+            "adapter. Pretrained on CHB-MIT and TUH corpora, so it is contaminated for CHB-MIT and TUSZ evaluation "
+            "and is catalogued only to make that exclusion explicit."
+        ),
+        upstream_reference="BIOT",
     ),
 )

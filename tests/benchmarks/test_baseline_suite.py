@@ -10,6 +10,7 @@ from unittest import mock
 
 import numpy as np
 
+from neurotwin.benchmarks.baseline_catalog import baseline_catalog_rows
 from neurotwin.benchmarks.baseline_suite import (
     BASELINE_CATALOG,
     BrainVistaStyleConfig,
@@ -218,6 +219,55 @@ class BaselineSuiteTests(unittest.TestCase):
         self.assertIn("tribe_style_clean_room", runner_ids)
         self.assertIn("pair_operator", runner_ids)
         self.assertIn("pair_operator_no_pair_state", runner_ids)
+
+    def test_every_executable_runner_has_a_catalog_entry(self):
+        catalog_ids = {entry.model_id for entry in BASELINE_CATALOG}
+        runner_ids = {runner.model_id for runner in EXECUTABLE_BASELINE_RUNNERS}
+
+        self.assertIn("gbm", catalog_ids)
+        self.assertEqual(sorted(runner_ids - catalog_ids), [])
+
+    def test_gbm_catalog_entry_describes_the_local_implementation(self):
+        catalog = {entry.model_id: entry for entry in BASELINE_CATALOG}
+        gbm = catalog["gbm"]
+
+        self.assertEqual(gbm.status, "local_baseline")
+        self.assertFalse(gbm.uses_upstream_code)
+        self.assertFalse(gbm.uses_upstream_weights)
+        self.assertIsNone(gbm.upstream_reference)
+        self.assertIn("gradient-boosting", gbm.notes)
+
+    def test_external_pretrained_eeg_models_are_catalogued_as_unavailable(self):
+        catalog = {entry.model_id: entry for entry in BASELINE_CATALOG}
+        runner_ids = {runner.model_id for runner in EXECUTABLE_BASELINE_RUNNERS}
+
+        for model_id in ("eegpt", "labram_base", "cbramod", "biot_prest16", "biot_six_datasets"):
+            with self.subTest(model_id=model_id):
+                self.assertIn(model_id, catalog)
+                entry = catalog[model_id]
+                self.assertEqual(entry.status, "unavailable")
+                self.assertFalse(entry.exact_reproduction)
+                self.assertFalse(entry.uses_upstream_code)
+                self.assertFalse(entry.uses_upstream_weights)
+                self.assertIn("external pretrained weights not vendored", entry.notes.lower())
+                self.assertIn("contamination audit", entry.notes)
+                self.assertNotIn(model_id, runner_ids)
+
+    def test_external_pretrained_models_are_excluded_from_catalog_rows_as_available(self):
+        rows = {
+            row["model_id"]: row
+            for row in baseline_catalog_rows({"future_state_forecasting"}, {"eeg"})
+        }
+
+        self.assertEqual(rows["gbm"]["status"], "local_baseline")
+        for model_id in ("eegpt", "labram_base", "cbramod", "biot_prest16", "biot_six_datasets"):
+            with self.subTest(model_id=model_id):
+                self.assertEqual(rows[model_id]["status"], "unavailable")
+
+    def test_catalog_model_ids_are_unique(self):
+        model_ids = [entry.model_id for entry in BASELINE_CATALOG]
+
+        self.assertEqual(len(model_ids), len(set(model_ids)))
 
     def test_executable_baseline_ids_are_unique_and_have_no_model_alias(self):
         runner_ids = [runner.model_id for runner in EXECUTABLE_BASELINE_RUNNERS]

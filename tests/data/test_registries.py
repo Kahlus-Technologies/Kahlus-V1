@@ -39,6 +39,48 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(lock["upstreams"]["mamba"]["commit"], "a14b1dff0454a3bc27d9eb31355dc01e4b2490ec")
         self.assertEqual(lock["upstreams"]["braindecode"]["repo"], "https://github.com/braindecode/braindecode")
 
+    def test_lockfile_pins_external_pretrained_eeg_upstreams(self):
+        lock = json.loads(Path("external/upstreams.lock.json").read_text())
+        upstreams = lock["upstreams"]
+
+        expected_repos = {
+            "eegpt": "https://github.com/BINE022/EEGPT",
+            "labram": "https://github.com/935963004/LaBraM",
+            "cbramod": "https://github.com/wjq-learning/CBraMod",
+            "biot": "https://github.com/ycq091044/BIOT",
+        }
+        for upstream_id, repo in expected_repos.items():
+            with self.subTest(upstream_id=upstream_id):
+                entry = upstreams[upstream_id]
+                self.assertEqual(set(entry), {"repo", "commit", "reuse_status", "license_status"})
+                self.assertEqual(entry["repo"], repo)
+                self.assertEqual(entry["reuse_status"], "permissive")
+                self.assertRegex(entry["commit"], r"^[0-9a-f]{40}$")
+
+        self.assertIn("figshare", upstreams["eegpt"]["license_status"])
+        self.assertIn("OUTSIDE the repo", upstreams["eegpt"]["license_status"])
+        self.assertIn("OUTSIDE the repo", upstreams["cbramod"]["license_status"])
+        self.assertIn("Hugging Face", upstreams["cbramod"]["license_status"])
+        self.assertIn("in-repo", upstreams["labram"]["license_status"])
+        self.assertIn("in-repo", upstreams["biot"]["license_status"])
+
+    def test_eeg_fm_baseline_requirements_stay_quarantined(self):
+        quarantined = Path("requirements/eeg-fm-baselines.txt").read_text(encoding="utf-8")
+
+        self.assertIn("braindecode[hug]>=1.7", quarantined)
+        self.assertIn("huggingface_hub", quarantined)
+        self.assertIn("MUST NEVER be merged", quarantined)
+
+        for path in (
+            "pyproject.toml",
+            "deploy/a100/environment-a100.yml",
+            "requirements/cluster-a100.txt",
+        ):
+            with self.subTest(path=path):
+                text = Path(path).read_text(encoding="utf-8").lower()
+                self.assertNotIn("huggingface_hub", text)
+                self.assertNotIn("eeg-fm-baselines", text)
+
     def test_vendor_script_dry_run(self):
         result = subprocess.run(
             [sys.executable, "scripts/vendor_upstreams.py", "--dry-run", "--ids", "mamba"],
