@@ -92,6 +92,47 @@ class UnifiedGateTests(unittest.TestCase):
         self.assertFalse(gate["scientific_claim_allowed"])
         self.assertTrue(any("did not beat baselines" in r for r in gate["failure_reasons"]))
 
+    def test_eeg_fm_ranking_scope_allowed_when_every_check_passes(self):
+        gate = evaluate_gate(
+            **_passing_kwargs(
+                branch="v1",
+                dataset="sleep-edf-expanded-sleep-cassette",
+                claim_scope="external_pretrained_eeg_baseline_ranking_sleep_edf_forecast",
+            )
+        )
+        self.assertTrue(gate["scientific_claim_allowed"])
+        self.assertIn("external_pretrained_eeg_baseline_ranking_sleep_edf_forecast", NARROW_CLAIM_SCOPES)
+
+    def test_eeg_fm_ranking_scope_still_fails_closed_on_a_failed_check(self):
+        # Being on the allowlist only makes the scope eligible; the conjunctive gate
+        # still has to pass, and a benchmark-specific failure reason still blocks it.
+        for override in (
+            {"split_audit_passed": False},
+            {"finite_metrics": False},
+            {"extra_failure_reasons": ["random-init architectural twin control is missing"]},
+        ):
+            with self.subTest(override=sorted(override)):
+                gate = evaluate_gate(
+                    **_passing_kwargs(
+                        branch="v1",
+                        dataset="sleep-edf-expanded-sleep-cassette",
+                        claim_scope="external_pretrained_eeg_baseline_ranking_sleep_edf_forecast",
+                        **override,
+                    )
+                )
+                self.assertFalse(gate["scientific_claim_allowed"])
+                self.assertTrue(gate["failure_reasons"])
+
+    def test_no_sota_or_superiority_scope_is_reachable(self):
+        for scope in (
+            "beats_all_baselines_sota",
+            "kahlus_beats_foundation_models",
+            "external_pretrained_eeg_baseline_ranking_any_dataset",
+            "clinical_seizure_prediction",
+        ):
+            with self.subTest(scope=scope):
+                self.assertNotIn(scope, NARROW_CLAIM_SCOPES)
+
     def test_round_trip_write_read(self):
         gate = evaluate_gate(**_passing_kwargs())
         with tempfile.TemporaryDirectory() as tmp:

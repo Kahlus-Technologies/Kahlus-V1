@@ -101,9 +101,12 @@ def competitor_registry() -> tuple[CompetitorSpec, ...]:
                 "Pretraining corpus is PhysioNet-MI, HGD, TSU-Benchmark, SEED, M3CV; Sleep-EDFx was in the paper's "
                 "downstream suite (model-selection exposure, see pretraining_contamination). Checkpoint is "
                 "distributed only via a figshare share link, which is fragile and must be mirrored and hashed before "
-                "any benchmark run. No weights vendored."
+                "any benchmark run. No weights vendored. "
+                "Executable adapter: neurotwin.benchmarks.fm_forecast.adapters.eegpt_adapter, driven by "
+                "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned "
+                "checkpoint and fails closed without one."
             ),
-            implementation_status="unavailable",
+            implementation_status="executable_adapter",
         ),
         CompetitorSpec(
             competitor_id="labram",
@@ -117,9 +120,12 @@ def competitor_registry() -> tuple[CompetitorSpec, ...]:
                 "raw-waveform decoder, so it is not a forecaster and any forecasting comparison needs a bolted-on "
                 "head. Pretraining is ~2,500h across ~20 corpora including TUH corpora, so TUSZ evaluation is "
                 "contaminated. Only the Base checkpoint is publicly available (committed in the upstream repo); "
-                "Large and Huge are withheld. No weights vendored."
+                "Large and Huge are withheld. No weights vendored. "
+                "Executable adapter: neurotwin.benchmarks.fm_forecast.adapters.labram_adapter, driven by "
+                "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned "
+                "checkpoint and fails closed without one."
             ),
-            implementation_status="unavailable",
+            implementation_status="executable_adapter",
         ),
         CompetitorSpec(
             competitor_id="cbramod",
@@ -131,9 +137,12 @@ def competitor_registry() -> tuple[CompetitorSpec, ...]:
             notes=(
                 "Criss-cross transformer pretrained by masked patch reconstruction/infill, not forecasting; released "
                 "weights do include a raw-patch reconstruction head. Pretraining corpus is TUEG (>9,000h), which is a "
-                "superset of TUSZ, so TUSZ evaluation is contaminated. No weights vendored."
+                "superset of TUSZ, so TUSZ evaluation is contaminated. No weights vendored. "
+                "Executable adapter: neurotwin.benchmarks.fm_forecast.adapters.cbramod_adapter, driven by "
+                "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned "
+                "checkpoint and fails closed without one."
             ),
-            implementation_status="unavailable",
+            implementation_status="executable_adapter",
         ),
         CompetitorSpec(
             competitor_id="biot",
@@ -147,9 +156,12 @@ def competitor_registry() -> tuple[CompetitorSpec, ...]:
                 "Checkpoints ship inside the upstream repo. The EEG-PREST-16-channels checkpoint is MGH resting EEG "
                 "only and is clean for our eval sets; the six-datasets checkpoint was pretrained on CHB-MIT (plus "
                 "TUAB/TUEV/IIIC) and is FORBIDDEN for CHB-MIT evaluation and unsafe for TUSZ. Checkpoint identity "
-                "must be recorded per run. No weights vendored."
+                "must be recorded per run. No weights vendored. "
+                "Executable adapter: neurotwin.benchmarks.fm_forecast.adapters.biot_adapter, driven by "
+                "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned "
+                "checkpoint and fails closed without one."
             ),
-            implementation_status="unavailable",
+            implementation_status="executable_adapter",
         ),
         CompetitorSpec(
             competitor_id="modality_specialist",

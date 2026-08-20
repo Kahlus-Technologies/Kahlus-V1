@@ -237,32 +237,45 @@ class BaselineSuiteTests(unittest.TestCase):
         self.assertIsNone(gbm.upstream_reference)
         self.assertIn("gradient-boosting", gbm.notes)
 
-    def test_external_pretrained_eeg_models_are_catalogued_as_unavailable(self):
+    def test_external_pretrained_eeg_models_are_catalogued_with_adapter_status(self):
         catalog = {entry.model_id: entry for entry in BASELINE_CATALOG}
         runner_ids = {runner.model_id for runner in EXECUTABLE_BASELINE_RUNNERS}
 
-        for model_id in ("eegpt", "labram_base", "cbramod", "biot_prest16", "biot_six_datasets"):
+        # The four slate models now have executable adapters (driven by
+        # scripts/eeg_fm_benchmark.py); the slate-excluded six-datasets checkpoint
+        # deliberately does not and stays unavailable.
+        expected_status = {
+            "eegpt": "executable_adapter",
+            "labram_base": "executable_adapter",
+            "cbramod": "executable_adapter",
+            "biot_prest16": "executable_adapter",
+            "biot_six_datasets": "unavailable",
+        }
+        for model_id, status in expected_status.items():
             with self.subTest(model_id=model_id):
                 self.assertIn(model_id, catalog)
                 entry = catalog[model_id]
-                self.assertEqual(entry.status, "unavailable")
+                self.assertEqual(entry.status, status)
                 self.assertFalse(entry.exact_reproduction)
                 self.assertFalse(entry.uses_upstream_code)
                 self.assertFalse(entry.uses_upstream_weights)
                 self.assertIn("external pretrained weights not vendored", entry.notes.lower())
                 self.assertIn("contamination audit", entry.notes)
+                # Never runnable from the generic suite: only the benchmark driver
+                # knows the contamination gate, the staged checkpoints and the budget.
                 self.assertNotIn(model_id, runner_ids)
 
-    def test_external_pretrained_models_are_excluded_from_catalog_rows_as_available(self):
+    def test_external_pretrained_models_are_never_rowed_as_local_baselines(self):
         rows = {
             row["model_id"]: row
             for row in baseline_catalog_rows({"future_state_forecasting"}, {"eeg"})
         }
 
         self.assertEqual(rows["gbm"]["status"], "local_baseline")
-        for model_id in ("eegpt", "labram_base", "cbramod", "biot_prest16", "biot_six_datasets"):
+        for model_id in ("eegpt", "labram_base", "cbramod", "biot_prest16"):
             with self.subTest(model_id=model_id):
-                self.assertEqual(rows[model_id]["status"], "unavailable")
+                self.assertEqual(rows[model_id]["status"], "executable_adapter")
+        self.assertEqual(rows["biot_six_datasets"]["status"], "unavailable")
 
     def test_catalog_model_ids_are_unique(self):
         model_ids = [entry.model_id for entry in BASELINE_CATALOG]

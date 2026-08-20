@@ -195,43 +195,56 @@ BASELINE_CATALOG: tuple[BaselineCatalogEntry, ...] = (
     BaselineCatalogEntry(
         model_id="eegpt",
         display_name="EEGPT (External Pretrained)",
-        status="unavailable",
+        status="executable_adapter",
         notes=(
-            "External pretrained weights not vendored; integration pending contamination audit + task-compatibility "
-            "adapter. Pretrained for masked representation learning, not forecasting; checkpoint is figshare-hosted "
-            "and must be mirrored before use."
+            "External pretrained weights not vendored; contamination audit and task-compatibility adapter now exist. "
+            "Executable via neurotwin.benchmarks.fm_forecast.adapters.eegpt_adapter, driven by "
+            "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned checkpoint and fails closed "
+            "without one. Pretrained for masked representation learning, not forecasting; checkpoint is "
+            "figshare-hosted and must be mirrored before use. Not registered in EXECUTABLE_BASELINE_RUNNERS: it is "
+            "not runnable from the generic suite, only from the benchmark driver."
         ),
         upstream_reference="EEGPT",
     ),
     BaselineCatalogEntry(
         model_id="labram_base",
         display_name="LaBraM-Base (External Pretrained)",
-        status="unavailable",
+        status="executable_adapter",
         notes=(
-            "External pretrained weights not vendored; integration pending contamination audit + task-compatibility "
-            "adapter. Neural-token masked prediction with no raw-waveform decoder; TUSZ evaluation is contaminated "
-            "by TUH pretraining."
+            "External pretrained weights not vendored; contamination audit and task-compatibility adapter now exist. "
+            "Executable via neurotwin.benchmarks.fm_forecast.adapters.labram_adapter, driven by "
+            "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned checkpoint and fails closed "
+            "without one. Neural-token masked prediction with no raw-waveform decoder; TUSZ evaluation is "
+            "contaminated by TUH pretraining. Not registered in EXECUTABLE_BASELINE_RUNNERS: it is not runnable from "
+            "the generic suite, only from the benchmark driver."
         ),
         upstream_reference="LaBraM",
     ),
     BaselineCatalogEntry(
         model_id="cbramod",
         display_name="CBraMod (External Pretrained)",
-        status="unavailable",
+        status="executable_adapter",
         notes=(
-            "External pretrained weights not vendored; integration pending contamination audit + task-compatibility "
-            "adapter. Masked patch reconstruction pretraining on TUEG; TUSZ evaluation is contaminated."
+            "External pretrained weights not vendored; contamination audit and task-compatibility adapter now exist. "
+            "Executable via neurotwin.benchmarks.fm_forecast.adapters.cbramod_adapter, driven by "
+            "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned checkpoint and fails closed "
+            "without one. Masked patch reconstruction pretraining on TUEG; TUSZ evaluation is contaminated. Not "
+            "registered in EXECUTABLE_BASELINE_RUNNERS: it is not runnable from the generic suite, only from the "
+            "benchmark driver."
         ),
         upstream_reference="CBraMod",
     ),
     BaselineCatalogEntry(
         model_id="biot_prest16",
         display_name="BIOT EEG-PREST-16-channels (External Pretrained)",
-        status="unavailable",
+        status="executable_adapter",
         notes=(
-            "External pretrained weights not vendored; integration pending contamination audit + task-compatibility "
-            "adapter. MGH resting-EEG pretraining only; the separate six-datasets checkpoint must never be "
-            "substituted for it."
+            "External pretrained weights not vendored; contamination audit and task-compatibility adapter now exist. "
+            "Executable via neurotwin.benchmarks.fm_forecast.adapters.biot_adapter, driven by "
+            "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned checkpoint and fails closed "
+            "without one. MGH resting-EEG pretraining only; the separate six-datasets checkpoint must never be "
+            "substituted for it. Not registered in EXECUTABLE_BASELINE_RUNNERS: it is not runnable from the generic "
+            "suite, only from the benchmark driver."
         ),
         upstream_reference="BIOT",
     ),

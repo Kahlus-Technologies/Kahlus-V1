@@ -13,9 +13,10 @@
 #    contract and silently makes a weight-downloading dependency mandatory.
 #
 # 2. The P0 remediation freeze (docs/audit/REMEDIATION_ROADMAP.md,
-#    p0_remediation_complete=false) forbids A100 use until R1-R6 are merged. Do not
-#    install this on the cluster and do not schedule external-model runs until that
-#    flag clears.
+#    p0_remediation_complete=false) forbids A100 use until R1-R6 are merged.
+#    WAIVED 2026-08-19 by Krish Garg for the EEG-FM benchmark experiment only
+#    (docs/research/eeg_fm_benchmark_plan_2026-08-18.md), capped at 4 GPUs; the
+#    freeze remains in force for all other A100 work.
 #
 # 3. Installing these packages does not authorize downloading weights. Every external
 #    checkpoint must first pass the pretraining-contamination check in
@@ -31,23 +32,23 @@
 # file is quarantined and must stay out of the three files listed above.
 braindecode[hub]>=1.7
 
-# Model-specific extras - keep commented until the corresponding runner exists and the
-# contamination audit for that model/dataset pair is cleared.
+# Model-specific extras - activated 2026-08-19: runners live in
+# src/neurotwin/benchmarks/fm_forecast/, all four checkpoints are mirrored and
+# hashed (see fm_forecast/weights_manifest.py), and the Sleep-EDF pairs are clean
+# in pretraining_contamination.py (EEGPT carries a model-selection-exposure
+# caveat, tracked there).
 #
-# EEGPT (github.com/BINE022/EEGPT, Apache-2.0): upstream training code expects
-#   pytorch-lightning and torchmetrics; checkpoint is a figshare share link, mirror it.
-# pytorch-lightning>=2.2
-# torchmetrics>=1.3
-#
+# EEGPT (github.com/BINE022/EEGPT, Apache-2.0): upstream model code expects
+#   pytorch-lightning and torchmetrics; checkpoint is a figshare share link,
+#   mirrored + sha256-pinned.
+pytorch-lightning>=2.2
+torchmetrics>=1.3
+
 # LaBraM (github.com/935963004/LaBraM, MIT): Base checkpoint is committed in-repo;
 #   upstream uses timm-style model registration and einops.
-# timm>=0.9
-# einops>=0.7
-#
-# CBraMod (github.com/wjq-learning/CBraMod, MIT): weights on Hugging Face
-#   (weighting666/CBraMod); einops required by the criss-cross attention blocks.
-# einops>=0.7
-#
+timm>=0.9
+einops>=0.7
+
 # BIOT (github.com/ycq091044/BIOT, MIT): checkpoints committed in-repo; upstream uses
-#   linear-attention transformers.
-# linear-attention-transformer>=0.19
+#   linear-attention transformers. (CBraMod needs only einops, covered above.)
+linear-attention-transformer>=0.19

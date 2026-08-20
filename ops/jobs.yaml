@@ -59,3 +59,29 @@ jobs:
       workers: {type: int, min: 1, max: 64, default: 8}
     timeout_seconds: 43200
     evidence: ["manifest.json"]
+
+  eeg_fm_benchmark:
+    description: >
+      Leakage-controlled Sleep-EDF forecasting benchmark of external pretrained EEG
+      models (CBraMod, EEGPT, LaBraM-Base, BIOT PREST-16) against the Kahlus incumbent
+      ladder. Reads hand-staged, hash-pinned checkpoints from weights_dir; downloads
+      nothing. Writes a dossier and a gate; makes no claim by itself.
+    command: [python3, scripts/eeg_fm_benchmark.py]
+    args:
+      - ["--data-root", "${data_root}"]
+      - ["--weights-dir", "${weights_dir}"]
+      - ["--out-dir", "${out_dir}"]
+      - ["--models", "${models}"]
+      - ["--device", "${device}"]
+      - ["--smoke", "${smoke}"]
+    params:
+      data_root: {type: path, required: true}
+      weights_dir: {type: path, required: true}
+      out_dir: {type: path, required: true}
+      models: {type: str, default: "all"}
+      device: {type: str, choices: ["auto", "cpu", "cuda"], default: "auto"}
+      # The runner has no boolean parameter type, so the smoke switch is an explicit
+      # on/off choice that the script accepts as `--smoke on` / `--smoke off`.
+      smoke: {type: str, choices: ["on", "off"], default: "off"}
+    timeout_seconds: 21600
+    evidence: ["eeg_fm_benchmark.json", "eeg_fm_benchmark_gate.json", "EEG_FM_BENCHMARK_REPORT.md"]

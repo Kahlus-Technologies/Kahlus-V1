@@ -39,11 +39,28 @@ ALLOWED_BRANCHES: frozenset[str] = frozenset({"v1", "v2", "v3", "em", "researchd
 #: loss decreases, checkpoint/resume, bundle writes); it never implies the model recovered
 #: anything. ``synthetic_ktm_recovery`` is the stronger claim and is earned only when a trained
 #: KTM actually beats strong baselines on locked held-out metrics.
+#: ``external_pretrained_eeg_baseline_ranking_sleep_edf_forecast`` is the single scope that
+#: touches a cross-model ranking. It is pinned to one dataset, one protocol and a
+#: contamination-audited entrant slate, and it still permits no SOTA, generic-superiority,
+#: or clinical language; see the inline comment on its entry below.
 NARROW_CLAIM_SCOPES: frozenset[str] = frozenset(
     {
         "none",
         "eeg_fewshot_adaptation_benchmark_ready",
         "eeg_future_forecasting_benchmark_ready",
+        # Permits reporting a *ranking* of named external pretrained EEG models against
+        # the internal baseline ladder, on the Sleep-EDF ``kahlus.forecast.v2_nonoverlap``
+        # forecasting task only, at declared horizons, under a declared symmetric tuning
+        # budget, with every ranked entrant ``clean`` in ``pretraining_contamination``.
+        # It does NOT permit: SOTA claims, generic model-superiority claims, claims about
+        # the external models' published tasks, claims on any other dataset, claims from
+        # the acausal masked-infilling condition, or any clinical claim. Being in this
+        # allowlist only makes the scope *eligible*: ``scientific_claim_allowed`` still
+        # requires every other gate boolean to pass and no extra failure reason.
+        # Governance: added on explicit human sign-off (Krish Garg, 2026-08-19), per
+        # ``docs/research/eeg_fm_benchmark_plan_2026-08-18.md`` section 6, which forbids
+        # an agent from adding it unilaterally.
+        "external_pretrained_eeg_baseline_ranking_sleep_edf_forecast",
         "stf_epilepsy_benchmark_definition_ready",
         "synthetic_plumbing_only",
         "synthetic_dual_field_recovery",
