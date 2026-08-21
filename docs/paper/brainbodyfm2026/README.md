@@ -9,12 +9,12 @@ Double-blind. Non-archival. OpenReview.
 
 ## What is drafted
 
-Yellow box after the title is an Amrith-only disclaimer (strip before
-OpenReview). Tests start 22 Aug 2026. Body is current evidence only.
-
 Only `\section{Introduction}` (three paragraphs). Title is a working label.
 Abstract, author block, methods, figures, tables, and references are still the
 stock NeurIPS 2026 template text. Do not submit this PDF.
+
+This PDF is current evidence only. Tests start 22 Aug 2026. The Amrith-only
+disclaimer and build plan live on `docs/comms/amrith_one_page/`, not here.
 
 Numbers in the intro are the same artifacts as `docs/comms/amrith_one_page/`.
 

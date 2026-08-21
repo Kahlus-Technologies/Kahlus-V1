@@ -112,31 +112,6 @@
 
 \maketitle
 
-\begin{center}
-\fcolorbox{black}{yellow!15}{%
-\parbox{0.94\linewidth}{\footnotesize
-\textbf{Note for Amrith. Strip this box before OpenReview.}
-This PDF is the current evidence only. Tests start 22 August 2026.
-Nothing below is a capability claim for a model we have not yet run.
-
-\textbf{Build plan} (levers, not story), ranked by expected gain:
-
-1. Stop fighting 10--160\,ms. Ridge already owns that band. Headroom is at $320$\,ms and beyond (stack MSE $\approx 0.80$ vs a mean-reversion wall near $1.0$). Every lever below attacks that region.
-
-2. Give the model eyes. Today: $1$\,s, one channel. Sleep EEG lives at 10--30\,s (spindles, K-complexes, slow waves). Sleep-EDF also has a second EEG channel plus EOG and EMG, unused. Longer context and multi-channel is a harness extension, not a research bet. Starts tomorrow. About $70\%$ this beats today's stack visibly at long horizons.
-
-3. Architecture the physics asks for. The oscillator rung is fixed FFT bins. Right bias for a quasi-periodic signal: learned resonant state-space (S4-family, poles near the unit circle). About $30$--$40\%$ it beats the GRU stack. If it does, that is a small named model class.
-
-4. Scale data $13\times$ where scaling might pay. Challenge-2018 ($\sim$1{,}000 subjects) on the cluster. If the nonlinear residual grows, we ride it. If it flattens, we stop.
-
-5. Change the target where microvolts run out. Sleep-onset in the next $N$ seconds is Track 3 of the EEG/EMG Foundation Challenge 2026 attached to this workshop (1{,}197 teams last year, winner gets a spotlight). That is the public scoreboard.
-
-\textbf{Sequence.} Paper ships 5 Sep 2026 on \emph{current} results. Starting tomorrow: \#2 (context/channel sweep, curve by the weekend), then \#3, then \#4 after Krish's current job, then \#5 after 5 Sep. One thing only you can do: register us for the 2026 challenge.
-
-\textbf{Tonight.} Build now. Launch the moment the GPU frees.
-}}
-\end{center}
-
 \begin{abstract}
   The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on both the left- and right-hand margins. Use 10~point type, with a vertical spacing (leading) of 11~points. The word \textbf{Abstract} must be centered, bold, and in point size 12. Two line spaces precede the abstract. The abstract must be limited to one paragraph.
 \end{abstract}

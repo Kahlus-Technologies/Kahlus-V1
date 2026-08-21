@@ -1,0 +1,200 @@
+% Kahlus one-pager for Amrith Lotlikar (Stanford EE).
+% Source of truth: Obsidian "Amrith one page.md" (corrected 2026-08-19)
+%   + artifacts/isolated_residual_evidence_20260815/VERDICT.md (added 2026-08-20)
+% Build: pdflatex main.tex   (no bibliography, no shell-escape, Overleaf-safe)
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{charter}
+\usepackage[expansion=false]{microtype}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+\urlstyle{tt}
+
+\definecolor{navy}{HTML}{173B63}
+\definecolor{graytext}{HTML}{555555}
+
+\titleformat{\section}{\normalfont\bfseries\color{navy}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{7pt}
+\pagestyle{empty}
+
+\newcommand{\lead}[1]{\textbf{\color{navy}#1}}
+
+\begin{document}
+
+{\LARGE\bfseries Kahlus: what the retraction bought}\\[2pt]
+{\color{graytext}\small Aayushya Patel \quad|\quad for Amrith Lotlikar \quad|\quad 21 August 2026}
+
+\vspace{4pt}
+\hrule
+\vspace{8pt}
+
+\begin{center}
+\fcolorbox{navy}{yellow!15}{%
+\parbox{0.96\linewidth}{\footnotesize
+\textbf{For Amrith.} Tests start 22 August 2026. Everything below this box is
+the current evidence only. None of it is a capability claim for a model we
+have not yet run.
+
+\smallskip
+\textbf{Build plan} (the levers that make the model better, not the story),
+ranked by expected gain:
+
+1. Stop fighting where the war is over. At 10--160\,ms the linear model owns
+almost all extractable signal. Headroom is at $320$\,ms and beyond: the stack
+sits at MSE $\approx 0.80$ against a mean-reversion wall near $1.0$, and nobody
+knows the true floor out there. Every lever below attacks that region.
+
+2. Give the model eyes. We feed it 1 second, one channel. Sleep EEG runs on
+quasi-periodic machinery (spindles, K-complexes, slow waves) at 10--30\,s.
+Sleep-EDF also has a second EEG channel plus EOG and EMG, unused. Longer
+context and multi-channel is a harness extension, not a research bet. The
+sweep script is already in the repo. About $70\%$ this beats today's stack
+visibly at long horizons.
+
+3. Build the architecture the physics asks for. The oscillator rung is dumb
+fixed FFT bins. Right inductive bias for a quasi-periodic signal: a learned
+resonant state-space (S4-family, poles near the unit circle). About
+$30$--$40\%$ it beats the GRU stack. If it does, that is a small named model
+class.
+
+4. Scale data $13\times$ where scaling might actually pay. Challenge-2018
+($\sim$1{,}000 subjects) on the cluster. If the nonlinear residual grows with
+data, we ride it. If it flattens, we stop wasting GPUs where physics says no.
+
+5. Change the target where microvolts run out. Sleep-onset in the next $N$
+seconds is Track 3 of the EEG/EMG Foundation Challenge 2026 attached to
+BrainBodyFM (1{,}197 teams last year, winner gets a spotlight). That is the
+public scoreboard.
+
+\smallskip
+\textbf{Sequence.} Paper ships 5 Sep 2026 on \emph{current} results, unchanged.
+In parallel: \#2 now (capability curve by the weekend), then \#3, then \#4
+after Krish's current job, then \#5 after 5 Sep.
+
+\textbf{One thing only you can do:} register us for the EEG/EMG Foundation
+Challenge 2026.
+
+\textbf{Tonight.} Both. Build now. Launch the moment the GPU frees.
+}}
+\end{center}
+
+\vspace{6pt}
+
+\lead{The problem.}
+EEG forecasting papers report scores that look close to solved. Ours did too:
+MSE 3.116 and $r = 0.972$ from a 100{,}000-step recurrent model on
+BNCI2014\_001, against ridge at 7.745. That number is not forecasting. The
+input window and the scored window overlapped by 127 of 128 samples, so a model
+that copies its own input scores well. For squared error the inflation has a
+closed form, $W/H$, where $W$ is the scored window and $H$ the horizon. We
+checked 286 configurations and found no violations, and the bound predicts the
+$126\times$ gap we actually measured. Correlation is worse and does not obey
+that shortcut: the exact factor is
+$1 + \frac{W-H}{H}\left(s_{\mathrm{pred}} s_{\mathrm{targ}}\right)^{-1/2}$,
+and because models shrink toward the mean where signal is absent
+($s_{\mathrm{pred}} \approx 0.70$), $W/H$ \emph{understates} the true inflation
+on 223 of the same 286 cells, always in the flattering direction. The sharpest
+case is white noise at $W{=}32$, $H{=}1$ reporting $r = 0.984$ when the true
+forecast correlation is $0.014$. So $0.972$ is retracted for a stronger reason
+than $3.116$ is.
+
+\lead{What the field does, and why it does not settle this.}
+Deep EEG models are usually compared against weak baselines, or trained and
+tested on windows from the same person. The 2026 foundation-model benchmarks
+make the same point for classification: tuned specialists stay competitive,
+linear probes are weak, and scale is not a free win. Forecasting shows up only
+as a side task. FoME forecasts patches on a 6:2:2 split and reports no
+persistence or ridge baseline. So there is no standard test where a model must
+beat copy-the-last-sample and a linear map on a strictly future sample from a
+subject it has never seen.
+
+\lead{What we did, and where it stands.}
+We built that test and ran our own model through it. Splits are frozen before
+windowing, subjects are held out, and the scored sample is never in the input.
+Baselines are persistence, ridge, and mean. On Sleep-EDF the GRU beats both at
+every horizon we ran except 64 samples ahead: 0.211 against ridge 0.227 and
+persistence 0.281 at one sample, 0.690 against 0.822 and 1.334 at sixteen. That
+margin is not established as significant, and on 9-subject BNCI LOSO the same
+protocol cannot separate the GRU from tuned ridge at any horizon --- 0 of 9
+horizons reach $p < 0.05$. The contribution is the protocol and the retraction,
+not a new model.
+
+\section{Since we met: the residual run came back positive, and I do not trust it yet}
+
+At our meeting this was the next experiment. It ran on 15 August, on Sleep-EDF
+78-subject LOSO: strip what ridge can predict, strip narrowband oscillations,
+ask whether a GRU finds anything in the leftover.
+
+It won at every horizon. Because an undertuned linear baseline has already
+manufactured one win in this project, the first thing we did was attack it:
+re-score against a 127-lag ridge with $\alpha$ tuned per fold and per horizon
+on held-out training subjects, identical windows, identical train-fold-only
+normalisation. Tuning the baseline closed 5--49\% of the raw gap.
+
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+horizon & weak ridge & tuned ridge & GRU stack & gap [95\% CI] & folds won \\
+\midrule
+1 (10 ms)   & 0.2951 & 0.2932 & 0.2600 & $+0.0332$ $[+0.0280, +0.0392]$ & 77/78 \\
+8 (80 ms)   & 0.6603 & 0.6370 & 0.5418 & $+0.0952$ $[+0.0799, +0.1119]$ & 78/78 \\
+16 (160 ms) & 0.9004 & 0.8410 & 0.6929 & $+0.1481$ $[+0.1219, +0.1774]$ & 75/78 \\
+32 (320 ms) & 0.9872 & 0.8970 & 0.8025 & $+0.0945$ $[+0.0720, +0.1239]$ & 72/78 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+An 11--18\% MSE advantage survives a tuned baseline at every horizon, CIs
+excluding zero, on 72--78 of 78 held-out subjects. I am calling it a
+\emph{powered preliminary positive}, not a result, because five things are open:
+one seed where our own standard is three; an undisclosed normalisation change in
+the run script that I have not reproduced from repo code; one channel of one
+corpus; BNCI still negative under a weaker fixed-split protocol; and the
+baseline ladder stops at ridge, where the gate demands the best available
+baseline, so gradient boosting is next.
+
+There is also a direct tension I would rather show you than smooth over. F8 put
+the plain-GRU advantage at zero by about 320 ms. This stack still shows
+$+0.0945$ at 320 ms on 72 of 78 subjects. Different architecture, different
+split, different normalisation --- so it is not a contradiction yet, but it is
+the kind of gap that resolves into either a real finding or a bug, and I would
+like your read on which controlled comparison settles it fastest.
+
+\section{The two questions I actually want answered}
+
+\textbf{1. Is the residual stack worth a paper on its own, or is it Result 3 of
+the protocol paper?} My instinct is the latter: the protocol plus the
+retraction is the contribution, and a nonlinear residual that survives a tuned
+baseline is the evidence that the protocol is worth adopting. But that may be
+undervaluing the only positive result in the project.
+
+\textbf{2. What kills this fastest?} The seed sweep and the GBM baseline are
+both cheap. If you think either is likely to erase an 11--18\% margin, I would
+rather run it before writing anything than after.
+
+\vspace{6pt}
+\hrule
+\vspace{4pt}
+{\color{graytext}\small
+Every number above is read from a run artifact, not from memory.
+
+\smallskip
+Overlap work (public): \url{github.com/ptlnextdoor/eeg-forecastability-limits}
+
+Residual pack: \path{artifacts/isolated_residual_evidence_20260815/}
+--- per-fold scores, tuned-ridge audit, SHA-verified handoff.
+
+\smallskip
+Seven self-caught corrections are listed in the handbook's honest ledger,
+including two I fixed in this page on 19 August.}
+
+\end{document}
