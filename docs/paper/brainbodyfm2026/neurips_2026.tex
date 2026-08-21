@@ -119,13 +119,69 @@
 
 \section{Introduction}
 
-EEG forecasting papers report scores that look close to solved. A 100{,}000-step recurrent model on BNCI2014\_001 scores MSE $3.116$ and $r = 0.972$ against ridge at $7.745$. That number is not a forecast. The input window and the scored window share $127$ of $128$ samples, so a model that copies its input scores well. For squared error the inflation has a closed form, $W/H$, where $W$ is the scored window and $H$ the horizon. Across $286$ configurations the bound is never violated, and it predicts the $126\times$ gap we measured. Correlation is worse and does not obey that shortcut. The exact factor is
-$1 + \frac{W-H}{H}\bigl(s_{\mathrm{pred}} s_{\mathrm{targ}}\bigr)^{-1/2}$,
-and because models shrink toward the mean where signal is absent ($s_{\mathrm{pred}} \approx 0.70$), $W/H$ understates the true inflation on $223$ of the same $286$ cells, always in the flattering direction. The sharpest case is white noise at $W{=}32$, $H{=}1$ reporting $r = 0.984$ when the true forecast correlation is $0.014$. So $0.972$ is retracted for a stronger reason than $3.116$ is.
+A device that knew what the brain was about to do could act before the event
+rather than after it. Predicting the next fraction of a second of brain
+activity is the shared requirement behind a responsive neurostimulator that
+aborts a seizure before it spreads, a prosthetic limb that moves without the
+lag users describe as the reason they abandon the device, and an alertness
+monitor that warns a driver before attention lapses rather than once it has.
+Each of these is a closed loop, and a closed loop needs a forecast: an
+estimate of a signal at a time that has not happened yet. The same
+requirement now drives interest in large pretrained models of brain activity,
+which promise a single system that transfers across people and tasks instead
+of a bespoke model per clinic. Whether such models can forecast at all is
+therefore a question about what the whole approach can support.
 
-Deep EEG models are usually compared against weak baselines, or trained and tested on windows from the same person. Forecasting, when it appears, is usually a side task on a random split, with no persistence or ridge baseline. A model is rarely required to beat copy-the-last-sample and a linear map on a strictly future sample from a subject it has never seen.
+The measurement makes this hard in a specific way. Electroencephalography
+records voltage at the scalp, outside the skull, so each electrode sees the
+summed activity of many millions of neurons after it has been blurred and
+attenuated by intervening tissue. The result is a signal with poor spatial
+resolution, a low ratio of brain activity to noise, and contamination from
+eye movement, muscle tension, and line interference that can exceed the
+activity of interest. It is also non-stationary: the statistics change within
+a session and differ between people, so a representation learned on one
+recording need not hold on the next. Existing work addresses this mainly by
+pretraining on large volumes of unlabelled recordings and transferring the
+learned representation to a downstream task. That strategy has produced
+strong reported numbers, but recent independent evaluations find that frozen
+pretrained representations often fail to beat well-tuned classical baselines,
+which suggests the reported gains may owe more to how they are measured than
+to what was learned.
 
-We built that test and ran our own model through it. Splits are frozen before windowing, subjects are held out, and the scored sample is never in the input. Baselines are persistence, ridge, and mean. On Sleep-EDF the GRU beats both at every horizon we ran except $64$ samples ahead: $0.211$ against ridge $0.227$ and persistence $0.281$ at one sample, $0.690$ against $0.822$ and $1.334$ at sixteen. That margin is not established as significant, and on $9$-subject BNCI leave-one-subject-out the same protocol cannot separate the GRU from tuned ridge at any horizon. After subtracting what ridge can predict and stripping narrowband oscillations, a residual GRU stack retains an $11$--$18\%$ MSE advantage against a per-fold-tuned $127$-lag ridge on $78$-subject Sleep-EDF leave-one-subject-out, with confidence intervals excluding zero on $72$--$78$ of $78$ held-out subjects. We treat that as a powered preliminary positive, not a result: one seed, one channel of one corpus, an unreproduced normalisation change, BNCI still negative, and the baseline ladder not yet past ridge. What we claim is the protocol and the retraction.
+We find that the way forecasting is currently scored can manufacture the
+appearance of skill. When a model is scored on a window that overlaps the
+window it was given as input, it can achieve a strong score by copying its
+input forward, and published protocols routinely permit this overlap. The
+effect is large enough to make a model look nearly perfect on data that
+contains no predictable structure at all. Compounding this, deep models are
+often compared against baselines weaker than a properly tuned linear map, and
+trained and tested on recordings from the same person, so nothing in the
+protocol requires the model to generalise to a new subject or to a genuinely
+future sample.
+
+This paper does three things. We derive exactly how much overlap inflates the
+two scores reported in this literature, mean squared error and correlation,
+and show the correction is not the same for both: for squared error the
+inflation is a closed-form ratio of window length to horizon, $W/H$, which we
+verify is never violated across $286$ configurations, while correlation
+carries an additional shrinkage term that makes $W/H$ understate the
+inflation on $223$ of those cells, always in the flattering direction. The
+sharpest case is white noise scored at $W{=}32$, $H{=}1$, which reports
+$r = 0.984$ where the true forecast correlation is $0.014$. Applying this to
+a $100{,}000$-step recurrent model on BNCI2014\_001, its reported $r = 0.972$
+is retracted for a stronger reason than its MSE is. We then specify an
+evaluation in which splits are frozen before windowing, subjects are held
+out, and the scored sample is never in the input, with persistence, ridge,
+and mean as mandatory baselines. Finally we run our own model through it.
+After subtracting what ridge can predict and stripping narrowband
+oscillations, a residual recurrent stack retains an $11$--$18\%$ MSE
+advantage over a per-fold-tuned $127$-lag ridge on $78$-subject Sleep-EDF
+leave-one-subject-out, with confidence intervals excluding zero on $72$--$78$
+of $78$ held-out subjects. We treat this as a powered preliminary positive
+rather than a result: one seed, one channel of one corpus, an unreproduced
+normalisation change, and a $9$-subject BNCI arm on which the same protocol
+cannot separate the model from tuned ridge at any horizon. What we claim is
+the protocol and the retraction.
 
 
 \section{Submission of papers to NeurIPS 2026}
