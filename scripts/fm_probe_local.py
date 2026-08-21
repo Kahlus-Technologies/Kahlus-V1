@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -36,7 +37,8 @@ H_MS = (10, 80, 160, 320)
 H_SAMP = {ms: int(round(ms * FS / 1000)) for ms in H_MS}   # {2,16,32,64}
 RIDGE_LAGS = 127
 ALPHAS = (0.3, 1.0, 3.0, 10.0, 30.0, 100.0, 300.0)
-DATA = Path("/Users/aayu/datasets/sleep-edfx/sleep-cassette")
+DATA = Path(os.environ.get("KAHLUS_SLEEP_ROOT",
+                           "/Users/aayu/datasets/sleep-edfx/sleep-cassette"))
 CACHE = Path(__file__).resolve().parents[1] / "artifacts/fm_probe/embeddings"
 
 
@@ -121,6 +123,87 @@ def tuned_ridge_pred(train_ctx, train_y, val_ctx, val_y, test_ctx):
     return ridge_predict(w, feats(test_ctx)), best_a
 
 
+def gru_residual_pred(train_ctx, train_res, test_ctx, *, seed: int, device: str,
+                      hidden: int = 64, steps: int = 2000, batch: int = 256):
+    """Small task-trained GRU fitted to the residual left by the tuned ridge.
+    Same context every other method sees; predicts the residual only."""
+    import torch
+    from torch import nn
+
+    torch.manual_seed(seed)
+    enc = nn.GRU(1, hidden, batch_first=True).to(device)
+    head = nn.Linear(hidden, 1).to(device)
+    opt = torch.optim.AdamW(list(enc.parameters()) + list(head.parameters()), lr=2e-3)
+    xt = torch.as_tensor(train_ctx[:, :, None], dtype=torch.float32, device=device)
+    yt = torch.as_tensor(train_res[:, None], dtype=torch.float32, device=device)
+    rng = np.random.default_rng(seed)
+    n = xt.shape[0]
+    for _ in range(steps):
+        idx = torch.as_tensor(rng.integers(0, n, size=min(batch, n)), device=device)
+        opt.zero_grad(set_to_none=True)
+        out, _ = enc(xt[idx])
+        loss = nn.functional.mse_loss(head(out[:, -1]), yt[idx])
+        loss.backward()
+        opt.step()
+    preds = []
+    te = torch.as_tensor(test_ctx[:, :, None], dtype=torch.float32, device=device)
+    with torch.no_grad():
+        for i in range(0, te.shape[0], 512):
+            out, _ = enc(te[i:i + 512])
+            preds.append(head(out[:, -1]).cpu().numpy()[:, 0])
+    return np.concatenate(preds)
+
+
+def cbramod_finetune_pred(train_ctx, train_y, test_ctx, *, seed: int, device: str,
+                          steps: int = 2000, batch: int = 128, lr_backbone: float = 1e-4,
+                          lr_head: float = 1e-3, pretrained: bool = True):
+    """Fully fine-tuned CBraMod + linear head, end-to-end on the raw target.
+
+    The fairness rung linear probing cannot provide: the backbone is free to
+    adapt. Budget (steps, optimizer family) matches the GRU stack. Fresh model
+    per call so folds/seeds stay independent."""
+    import torch
+    from torch import nn
+    from braindecode.models import CBraMod
+
+    torch.manual_seed(seed)
+    if pretrained:
+        net = CBraMod.from_pretrained("braindecode/cbramod-pretrained",
+                                      return_encoder_output=True)
+    else:
+        net = CBraMod(n_chans=1, n_times=CTX, sfreq=int(FS), return_encoder_output=True)
+    net = net.to(device).train()
+    head = nn.Linear(200, 1).to(device)
+    opt = torch.optim.AdamW([
+        {"params": net.parameters(), "lr": lr_backbone},
+        {"params": head.parameters(), "lr": lr_head},
+    ])
+    xt = torch.as_tensor(train_ctx[:, None, :], dtype=torch.float32, device=device)
+    yt = torch.as_tensor(train_y[:, None], dtype=torch.float32, device=device)
+    rng = np.random.default_rng(seed)
+    n = xt.shape[0]
+    for _ in range(steps):
+        idx = torch.as_tensor(rng.integers(0, n, size=min(batch, n)), device=device)
+        opt.zero_grad(set_to_none=True)
+        emb = net(xt[idx])
+        emb = emb if torch.is_tensor(emb) else emb[0]
+        loss = nn.functional.mse_loss(head(emb.reshape(emb.shape[0], -1)), yt[idx])
+        loss.backward()
+        opt.step()
+    net.eval()
+    preds = []
+    te = torch.as_tensor(test_ctx[:, None, :], dtype=torch.float32, device=device)
+    with torch.no_grad():
+        for i in range(0, te.shape[0], 256):
+            emb = net(te[i:i + 256])
+            emb = emb if torch.is_tensor(emb) else emb[0]
+            preds.append(head(emb.reshape(emb.shape[0], -1)).cpu().numpy()[:, 0])
+    del net, head
+    if device == "cuda":
+        torch.cuda.empty_cache()
+    return np.concatenate(preds)
+
+
 def probe_pred(train_emb, train_y, val_emb, val_y, test_emb):
     """Linear probe with the SAME fairness the baseline ridge gets: features
     standardized on train stats, alpha tuned on the val split."""
@@ -145,7 +228,7 @@ def selftest() -> int:
     for i in range(1, len(x)):
         x[i] = 0.9 * x[i - 1] + rng.normal(0, 0.4)
     c, t = make_windows(x, stride=13, max_windows=1500, rng=rng)
-    n = len(c); cut = int(0.7 * n)
+    cut = int(0.7 * len(c))
     pred, _ = tuned_ridge_pred(c[:cut], t[80][:cut], c[cut:], t[80][cut:], c[cut:])
     persist = c[cut:, -1]
     assert mse(t[80][cut:], pred) < mse(t[80][cut:], persist), "ridge must beat persistence on AR(1)"
@@ -160,6 +243,11 @@ def main() -> int:
     ap.add_argument("--models", default="cbramod")
     ap.add_argument("--device", default="mps")
     ap.add_argument("--stride", type=int, default=100)
+    ap.add_argument("--seeds", type=int, default=3)
+    ap.add_argument("--gru-steps", type=int, default=2000)
+    ap.add_argument("--shard", default="",
+                    help="'i/N': score only LOSO folds where fold_index %% N == i "
+                         "(cluster sharding; merge shard outputs with fm_merge_shards.py)")
     ap.add_argument("--max-subjects", type=int, default=6)
     ap.add_argument("--max-windows", type=int, default=600)
     ap.add_argument("--out", type=Path, default=Path("artifacts/fm_probe/scores.json"))
@@ -194,9 +282,16 @@ def main() -> int:
                 np.save(cf, emb["rand"][s])
         print(f"subject {s}: {ctx.shape[0]} windows  ({time.time()-t:.1f}s)", flush=True)
 
+    score_subjects = subjects
+    if args.shard:
+        i, nw = (int(v) for v in args.shard.split("/"))
+        score_subjects = [s for k, s in enumerate(subjects) if k % nw == i]
+        print(f"shard {i}/{nw}: scoring {len(score_subjects)} of {len(subjects)} folds", flush=True)
+
     folds = {}
-    for held in subjects:
+    for held in score_subjects:
         train = [s for s in subjects if s != held]
+        assert len(train) >= 2, "need >= 3 subjects total (fit + val + held-out)"
         val = train[-1]
         fit = train[:-1]
         te_ctx, te_tgt = data[held]
@@ -210,6 +305,20 @@ def main() -> int:
             r = {"persist": mse(y_te, te_ctx[:, -1])}
             pred, r["ridge_alpha"] = tuned_ridge_pred(tr_ctx, tr_y, va_ctx, va_y, te_ctx)
             r["tuned_ridge"] = mse(y_te, pred)
+            if "gru-stack" in models:
+                # residual after the SAME tuned ridge that serves as the floor
+                w = ridge_fit(np.concatenate([tr_ctx, va_ctx])[:, -RIDGE_LAGS:],
+                              np.concatenate([tr_y, va_y]), r["ridge_alpha"])
+                res_tr = np.concatenate([tr_y, va_y]) - ridge_predict(
+                    w, np.concatenate([tr_ctx, va_ctx])[:, -RIDGE_LAGS:])
+                stack_mses = []
+                for seed in range(args.seeds):
+                    gru_res = gru_residual_pred(
+                        np.concatenate([tr_ctx, va_ctx]), res_tr, te_ctx,
+                        seed=seed, device=args.device, steps=args.gru_steps)
+                    stack_mses.append(mse(y_te, pred + gru_res))
+                r["gru_stack_per_seed"] = stack_mses
+                r["gru_stack"] = float(np.mean(stack_mses))
             if "cbramod" in models:
                 tr_e = np.concatenate([emb[s] for s in fit])
                 tr_ey = np.concatenate([data[s][1][ms] for s in fit])
@@ -220,6 +329,22 @@ def main() -> int:
                 tr_ey = np.concatenate([data[s][1][ms] for s in fit])
                 pred, _ = probe_pred(tr_e, tr_ey, emb["rand"][val], va_y, emb["rand"][held])
                 r["cbramod_rand_probe"] = mse(y_te, pred)
+            if "cbramod-ft" in models:
+                xtr = np.concatenate([tr_ctx, va_ctx])
+                ytr = np.concatenate([tr_y, va_y])
+                ft = [mse(y_te, cbramod_finetune_pred(
+                    xtr, ytr, te_ctx, seed=seed, device=args.device,
+                    steps=args.gru_steps)) for seed in range(args.seeds)]
+                r["cbramod_ft_per_seed"] = ft
+                r["cbramod_ft"] = float(np.mean(ft))
+            if "cbramod-ft-rand" in models:
+                xtr = np.concatenate([tr_ctx, va_ctx])
+                ytr = np.concatenate([tr_y, va_y])
+                ft = [mse(y_te, cbramod_finetune_pred(
+                    xtr, ytr, te_ctx, seed=seed, device=args.device,
+                    steps=args.gru_steps, pretrained=False)) for seed in range(args.seeds)]
+                r["cbramod_ft_rand_per_seed"] = ft
+                r["cbramod_ft_rand"] = float(np.mean(ft))
             row[str(ms)] = r
         folds[held] = row
         print(f"fold {held}: " + "  ".join(
@@ -229,11 +354,15 @@ def main() -> int:
 
     means = {}
     for ms in H_MS:
-        keys = [k for k in ("persist", "tuned_ridge", "cbramod_probe", "cbramod_rand_probe")
-                if k in folds[subjects[0]][str(ms)]]
-        means[str(ms)] = {k: float(np.mean([folds[s][str(ms)][k] for s in subjects])) for k in keys}
+        first = folds[score_subjects[0]][str(ms)]
+        keys = [k for k in ("persist", "tuned_ridge", "gru_stack", "cbramod_probe",
+                            "cbramod_rand_probe", "cbramod_ft", "cbramod_ft_rand")
+                if k in first]
+        means[str(ms)] = {k: float(np.mean([folds[s][str(ms)][k] for s in score_subjects]))
+                          for k in keys}
     payload = {"task": "isolated forecast, 200 Hz, 1 s context, LOSO",
                "horizons_ms": list(H_MS), "n_subjects": len(subjects),
+               "shard": args.shard, "scored_folds": len(score_subjects),
                "models": models, "folds": folds, "mean_over_folds": means}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2))
