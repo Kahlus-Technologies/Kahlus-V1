@@ -15,11 +15,15 @@ Covered:
 * the artifact writer emits the schema fields, including the model-selection-exposure
   column the plan requires;
 * the gate dossier passes under the new narrow claim scope only when every check is
-  True, and fails closed otherwise.
+  True, and fails closed otherwise;
+* ``--merge`` recomputes a dossier from shard runs that is *equal* to the single run's --
+  same ranking, same paired statistics, same gate verdict -- and refuses shard sets that
+  do not describe one experiment.
 """
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import json
 import sys
@@ -196,6 +200,41 @@ class CliTests(unittest.TestCase):
 
     def test_legacy_normalization_is_opt_in(self):
         self.assertTrue(driver.resolve_config(_cli("--legacy-normalization")).legacy_normalization)
+
+    def test_incumbent_ladder_switch_defaults_on_and_is_echoed(self):
+        self.assertTrue(driver.resolve_config(_cli()).include_incumbents)
+        self.assertTrue(driver.resolve_config(_cli("--incumbents", "on")).include_incumbents)
+        self.assertFalse(driver.resolve_config(_cli("--incumbents", "off")).include_incumbents)
+        self.assertIs(driver.resolve_config(_cli("--incumbents", "off")).as_log()["include_incumbents"], False)
+
+
+class MergeCliTests(unittest.TestCase):
+    def test_help_documents_the_merge_mode(self):
+        help_text = driver.build_parser().format_help()
+
+        for flag in ("--merge", "--allow-smoke-merge", "--incumbents"):
+            self.assertIn(flag, help_text)
+        self.assertIn("SHARD_DIR", help_text)
+
+    def test_merge_mode_needs_neither_data_nor_weights(self):
+        args = driver.build_parser().parse_args(
+            ["--merge", "/tmp/shard_a", "/tmp/shard_b", "--out-dir", "/tmp/merged"]
+        )
+        config = driver.resolve_merge_config(args)
+
+        self.assertEqual(config.shard_dirs, (Path("/tmp/shard_a"), Path("/tmp/shard_b")))
+        self.assertEqual(config.out_dir, Path("/tmp/merged"))
+        self.assertFalse(config.allow_smoke_merge)
+        self.assertIsNone(args.data_root)
+        self.assertIsNone(args.weights_dir)
+
+    def test_running_the_benchmark_still_requires_data_and_weights(self):
+        args = driver.build_parser().parse_args(["--out-dir", "/tmp/out"])
+
+        with self.assertRaises(ValueError) as caught:
+            driver.resolve_config(args)
+        self.assertIn("--data-root", str(caught.exception))
+        self.assertIn("--weights-dir", str(caught.exception))
 
 
 # ---------------------------------------------------------------------------
@@ -483,6 +522,17 @@ class EntrantSlateTests(unittest.TestCase):
             self.assertTrue(by_id[incumbent].ranked)
             self.assertIsNone(by_id[incumbent].model_id)
 
+    def test_incumbents_off_leaves_only_the_external_slate(self):
+        # The shard switch: the ladder runs on exactly one shard, because running it twice
+        # is two held-out test looks at one configuration family.
+        entrants, _ = self._entrants(include_incumbents=False)
+        entrant_ids = {entrant.entrant_id for entrant in entrants}
+
+        self.assertTrue(entrant_ids)
+        for incumbent in driver.INCUMBENT_IDS:
+            self.assertNotIn(incumbent, entrant_ids)
+        self.assertTrue(all(entrant.model_id for entrant in entrants))
+
     def test_random_twins_are_controls_not_competitors(self):
         entrants, _ = self._entrants()
         twins = [entrant for entrant in entrants if entrant.family == driver.FAMILY_RANDOM_TWIN]
@@ -644,7 +694,11 @@ def _passing_payload(*, horizons=None, n_boot=driver.MIN_CLAIMABLE_N_BOOT, **ove
 
     horizons = list(driver.HORIZONS if horizons is None else horizons)
     results = _passing_results(horizons)
-    ranked_ids = sorted({row["entrant_id"] for row in results if row["ranked"] and row["model_id"] is None})
+    # Every *ranked* entrant, external rows included: the gate checks control coverage, not
+    # merely that the control list is non-empty and all-passing, so a fixture that controlled
+    # the incumbents alone would describe a run whose foundation-model rows were never
+    # corruption-tested.
+    ranked_ids = sorted({row["entrant_id"] for row in results if row["ranked"]})
 
     payload = {
         "schema": driver.ARTIFACT_SCHEMA,
@@ -1254,6 +1308,587 @@ class ArtifactWriterTests(unittest.TestCase):
             "seed variance",
         ):
             self.assertIn(fragment, report)
+
+
+# ---------------------------------------------------------------------------
+# Shard merge
+#
+# Two kinds of test here, and they check different things.
+#
+# The *equivalence* test is the load-bearing one: it runs the driver end to end three
+# times on the synthetic corpus -- once over the whole slate, and twice over disjoint
+# halves of it -- and asserts that merging the two halves reproduces the whole run's
+# ranking, paired statistics, beat-best-baseline verdict and gate failure reasons exactly.
+# That is the only property that makes sharding legitimate: if a merged dossier were not
+# the run that would have happened on one GPU, sharding would be a way of getting a
+# different answer by spending less money.
+#
+# The *refusal* tests use hand-written shard artifacts, because what they check is the
+# behaviour on inputs a real run cannot produce: two shards at different commits, two
+# shards under different protocols, two shards that both scored the same entrant.
+# ---------------------------------------------------------------------------
+
+
+def _stub_gain_factory(config):
+    """A deterministic linear predictor: ``gain * last context sample``.
+
+    Deterministic in the seed and blind to ``y_train`` on purpose. Seed-independence is
+    what makes the single run and the sharded runs comparable at all (a stub that consumed
+    global RNG state would make the answer depend on entrant order, which is exactly what
+    sharding changes); target-blindness makes the corruption controls fail identically in
+    both, which is a property the gate comparison then has to reproduce rather than dodge.
+    """
+
+    gain = float(config["gain"])
+
+    def runner(task, seed, train_steps):
+        context = np.asarray(task.x_test, dtype=np.float64)
+        return (gain * context[:, -1, 0]).reshape(task.y_test.shape).astype(np.float32)
+
+    return runner
+
+
+#: The synthetic corpus generates ``target = 0.5 * context[-1] + noise``, so a gain of 0.5
+#: is optimal and these grids order the slate: kahlus_gru wins, the externals sit below the
+#: incumbents, each twin sits below its own pretrained row (so the twin control passes) and
+#: persistence is the naive floor. Every gradient-trained *ranked* entrant gets two
+#: configurations, so the budget-symmetry check has something true to find.
+#:
+#: The gaps are wide on purpose. The scored quantity is
+#: ``(gain - 0.5)**2 * mean(x**2) - 2 * (gain - 0.5) * mean(x * noise) + mean(noise**2)``,
+#: and on a handful of test windows the middle term -- pure noise -- is comparable to the
+#: first one, so finely spaced gains would order the table by which noise draw happened to
+#: correlate with the context rather than by which gain is closer to the truth. That would
+#: still be *reproducible*, and the equivalence assertions would still hold, but the fixture
+#: would no longer mean what it says it means.
+_STUB_INCUMBENT_GAINS: dict[str, tuple[float, ...]] = {
+    "persistence": (1.0,),
+    "tuned_ridge_ar": (0.44, 0.05),
+    "gbm": (0.40, 0.05),
+    "kahlus_gru": (0.50, 0.05),
+}
+
+
+def _stub_build_entrants(
+    *,
+    models,
+    conditions,
+    weights_dir,
+    include_random_twin,
+    n_configs,
+    max_train_epochs,
+    batch_size,
+    patience,
+    device,
+    truncate_closed_form=None,
+    include_incumbents=True,
+):
+    """``build_entrants`` without torch, adapters or staged checkpoints.
+
+    Each entrant's grid is keyed off its *model id*, never off its position in ``models``,
+    so a shard that carries one model builds the identical entrant the full run builds.
+    """
+
+    common = {"epochs": int(max_train_epochs), "batch_size": int(batch_size), "patience": int(patience)}
+    entrants = []
+    if include_incumbents:
+        for entrant_id, gains in _STUB_INCUMBENT_GAINS.items():
+            entrants.append(
+                driver.Entrant(
+                    entrant_id=entrant_id,
+                    family=driver.FAMILY_INCUMBENT,
+                    model_id=None,
+                    condition=None,
+                    pretrained=False,
+                    grid=tuple({"gain": gain, **common} for gain in gains),
+                    factory=_stub_gain_factory,
+                    gradient_trained=entrant_id == "kahlus_gru",
+                    fits_targets=entrant_id != "persistence",
+                    budget_note=f"merge-equivalence stub ({entrant_id})",
+                )
+            )
+    for model_id in models:
+        offset = driver.FM_MODEL_IDS.index(model_id)
+        for condition in conditions:
+            condition_offset = driver.CONDITIONS.index(condition)
+            gain = 0.34 - 0.04 * offset - 0.02 * condition_offset
+            variants = [(True, driver.FAMILY_EXTERNAL, "", 0.0)]
+            if include_random_twin:
+                variants.append((False, driver.FAMILY_RANDOM_TWIN, "__random_twin", 0.08))
+            for pretrained, family, suffix, handicap in variants:
+                entrants.append(
+                    driver.Entrant(
+                        entrant_id=f"{model_id}__{condition}{suffix}",
+                        family=family,
+                        model_id=model_id,
+                        condition=condition,
+                        pretrained=pretrained,
+                        grid=({"gain": gain - handicap, **common}, {"gain": 0.05, **common}),
+                        factory=_stub_gain_factory,
+                        gradient_trained=True,
+                        ranked=pretrained,
+                        budget_note="merge-equivalence stub (external)",
+                    )
+                )
+    return entrants, []
+
+
+def _stub_load_corpus(_data_root, _plan, *, horizons, **_kwargs):
+    # 48 windows per subject rather than the 6 the other fixtures use: the per-subject test
+    # MSE has to be precise enough that the entrants order by gain rather than by which
+    # noise draw they were scored against (see _STUB_INCUMBENT_GAINS).
+    return _synthetic_corpus(n_subjects=8, n_windows=48, horizons=tuple(int(h) for h in horizons))
+
+
+#: The shards must agree on the commit, and a dirty worktree is a merge refusal, so the
+#: git state has to be stubbed: this test suite runs while the worktree is being edited.
+_STUB_GIT = {
+    "commit": "0" * 40,
+    "branch": "merge-equivalence-test",
+    "clean_worktree": True,
+    "dirty_paths": [],
+}
+
+
+@contextlib.contextmanager
+def _torch_free_driver():
+    """Run the real driver with the corpus loader, entrant slate and git state stubbed."""
+
+    originals = {
+        name: getattr(driver, name) for name in ("load_corpus", "build_entrants", "_git_state")
+    }
+    driver.load_corpus = _stub_load_corpus
+    driver.build_entrants = _stub_build_entrants
+    driver._git_state = lambda: dict(_STUB_GIT)
+    try:
+        yield
+    finally:
+        for name, value in originals.items():
+            setattr(driver, name, value)
+
+
+def _run_shard(out_dir: Path, *, models: str, incumbents: str = "on", horizon: int = 4):
+    args = driver.build_parser().parse_args(
+        [
+            "--data-root", "/nonexistent-data",
+            "--weights-dir", "/nonexistent-weights",
+            "--out-dir", str(out_dir),
+            "--models", models,
+            "--horizons", str(horizon),
+            "--incumbents", incumbents,
+            "--device", "cpu",
+            "--smoke", "on",
+        ]
+    )
+    return driver.run_benchmark(driver.resolve_config(args))
+
+
+def _ranking_view(payload):
+    return [
+        (
+            int(block["horizon"]),
+            [(row["rank"], row["entrant_id"], row["test_mse_mean"]) for row in block["rows"]],
+        )
+        for block in payload["ranking"]
+    ]
+
+
+def _paired_view(payload):
+    return [
+        (
+            int(block["horizon"]),
+            block.get("reference_entrant_id"),
+            [
+                (
+                    comparison["entrant_id"],
+                    comparison["mean_delta"],
+                    comparison["ci95_low"],
+                    comparison["ci95_high"],
+                    comparison["wilcoxon_p"],
+                    comparison["holm_p"],
+                    comparison["significant_after_holm"],
+                    comparison["statistical_tie"],
+                )
+                for comparison in block["comparisons"]
+            ],
+        )
+        for block in payload["paired_statistics"]["by_horizon"]
+    ]
+
+
+def _shard_artifact(
+    *,
+    entrant_ids,
+    horizon: int = 2,
+    commit: str = "c0ffee",
+    clean: bool = True,
+    smoke: bool = False,
+    config_overrides=None,
+    checkpoints=None,
+):
+    """A schema-shaped shard dossier carrying exactly ``entrant_ids``.
+
+    Hand-written rather than produced by a run, because the refusal tests need shard sets
+    a correct run cannot produce (two commits, two protocols, one entrant scored twice).
+    """
+
+    wanted = set(entrant_ids)
+    results = [row for row in _passing_results([horizon]) if row["entrant_id"] in wanted]
+    config = {
+        "smoke": smoke,
+        "horizons": [horizon],
+        "seeds": [0, 1, 2],
+        "n_boot": 200,
+        "subjects": 78,
+        "stride": 256,
+        "max_windows_per_recording": 400,
+        "batch_size": 64,
+        "max_train_epochs": 50,
+        "patience": 5,
+        "n_configs": driver.TUNING_GRID_SIZE,
+        "closed_form_grid_truncated": False,
+        "include_incumbents": True,
+        "include_random_twin": True,
+        "models": sorted({row["model_id"] for row in results if row["model_id"]}),
+    }
+    config.update(config_overrides or {})
+    return {
+        "schema": driver.ARTIFACT_SCHEMA,
+        "created_utc": "2026-08-20T00:00:00+00:00",
+        "dataset_id": driver.DATASET_ID,
+        "lane": "lane_a_single_channel_fpz_cz",
+        "config": config,
+        "environment": {"python": "3.11"},
+        "determinism": {"fully_deterministic": True, "reason": ""},
+        "git": {"commit": commit, "clean_worktree": clean, "dirty_paths": []},
+        "recordings": [{"record_id": "SC4001E0-PSG", "resolved_channel": driver.CHANNEL}],
+        "protocol": {"horizons": [horizon]},
+        "normalization": driver.plan_normalization().as_log(),
+        "split": {
+            "seed": 0,
+            "train": list(TRAIN_SUBJECTS),
+            "val": list(VAL_SUBJECTS),
+            "test": list(TEST_SUBJECTS),
+        },
+        "tuning_budget": {"n_configs_per_entrant": driver.TUNING_GRID_SIZE, "notes": []},
+        "tuning_budget_symmetry": {"symmetric": True, "per_entrant": {}},
+        "entrants": [
+            {
+                "entrant_id": row["entrant_id"],
+                "family": row["family"],
+                "model_id": row["model_id"],
+                "condition": row["condition"],
+                "pretrained": row["family"] != driver.FAMILY_RANDOM_TWIN,
+                "ranked": row["ranked"],
+                "gradient_trained": row["gradient_trained"],
+            }
+            for row in results
+        ],
+        "incumbent_ladder": driver.ladder_report(results),
+        "results": results,
+        "contamination_table": [],
+        "checkpoints": {"verified": list(checkpoints or []), "manifest_reference": []},
+        "controls": {"index_audit": [{"horizon": horizon, "passed": True}]},
+        "skipped_models": [],
+        "unavailable_models": [],
+        "failed_entrants": [],
+        "attempts": {"run_id": f"shard-{commit}", "n_attempts": 0, "repeated_test_families": []},
+    }
+
+
+def _write_shard(root: Path, name: str, payload) -> Path:
+    path = root / name
+    path.mkdir(parents=True, exist_ok=True)
+    (path / "eeg_fm_benchmark.json").write_text(json.dumps(payload), encoding="utf-8")
+    (path / "attempts.log").write_text(
+        json.dumps({"run_id": payload["attempts"]["run_id"], "phase": "validation"}) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+class ShardMergeEquivalenceTests(unittest.TestCase):
+    def test_merging_two_shards_reproduces_the_single_run(self):
+        with tempfile.TemporaryDirectory() as tmp, _torch_free_driver():
+            root = Path(tmp)
+            single = _run_shard(root / "single", models="all")
+            _run_shard(root / "shard_a", models="eegpt", incumbents="on")
+            _run_shard(
+                root / "shard_b",
+                models="cbramod,labram_base,biot_prest16",
+                incumbents="off",
+            )
+            merged = driver.run_merge(
+                driver.MergeConfig(
+                    shard_dirs=(root / "shard_a", root / "shard_b"),
+                    out_dir=root / "merged",
+                    allow_smoke_merge=True,
+                )
+            )
+            report = (root / "merged" / "EEG_FM_BENCHMARK_REPORT.md").read_text(encoding="utf-8")
+            merged_gate = json.loads(
+                (root / "merged" / "eeg_fm_benchmark_gate.json").read_text(encoding="utf-8")
+            )
+            merged_log = (root / "merged" / "attempts.log").read_text(encoding="utf-8").splitlines()
+            shard_log = [
+                line
+                for name in ("shard_a", "shard_b")
+                for line in (root / name / "attempts.log").read_text(encoding="utf-8").splitlines()
+            ]
+
+        # Non-vacuity first: an equality between two empty tables proves nothing. The run
+        # must have produced the whole slate -- 4 incumbents plus 4 models x 2 conditions,
+        # each with its random-init twin -- and a full paired block.
+        self.assertEqual(len(single["results"]), 4 + len(driver.FM_MODEL_IDS) * len(driver.CONDITIONS) * 2)
+        self.assertEqual(len(merged["results"]), len(single["results"]))
+        self.assertEqual(len(_ranking_view(single)[0][1]), 4 + len(driver.FM_MODEL_IDS) * len(driver.CONDITIONS))
+        self.assertEqual(len(_paired_view(single)[0][2]), len(driver.FM_MODEL_IDS) * len(driver.CONDITIONS))
+        self.assertEqual(_ranking_view(single)[0][1][0][1], "kahlus_gru")
+
+        # The whole point: the merged dossier IS the single run's dossier.
+        self.assertEqual(_ranking_view(merged), _ranking_view(single))
+        self.assertEqual(_paired_view(merged), _paired_view(single))
+        self.assertEqual(merged["beat_best_baseline"], single["beat_best_baseline"])
+        self.assertEqual(merged["powered"]["powered"], single["powered"]["powered"])
+        self.assertEqual(
+            merged["tuning_budget_symmetry"]["symmetric"],
+            single["tuning_budget_symmetry"]["symmetric"],
+        )
+
+        # ...and it says the same things about itself, apart from the one reason that is
+        # about the merge rather than about the experiment.
+        merge_specific = [
+            reason
+            for reason in merged["gate"]["failure_reasons"]
+            if reason.startswith("merged from smoke shards")
+        ]
+        self.assertEqual(len(merge_specific), 1)
+        self.assertEqual(
+            [reason for reason in merged["gate"]["failure_reasons"] if reason not in merge_specific],
+            single["gate"]["failure_reasons"],
+        )
+        self.assertFalse(merged["gate"]["scientific_claim_allowed"])
+        self.assertEqual(sorted(merged_gate), sorted(single["gate"]))
+        self.assertEqual(merged_gate["claim_scope"], driver.CLAIM_SCOPE)
+
+        # Provenance: the merged artifact says it is merged, and from what.
+        self.assertEqual(merged["mode"], "merged")
+        self.assertEqual([shard["shard_dir"].split("/")[-1] for shard in merged["shards"]], ["shard_a", "shard_b"])
+        self.assertEqual(
+            sorted(shard["model_ids"][0] for shard in merged["shards"] if len(shard["model_ids"]) == 1),
+            ["eegpt"],
+        )
+        self.assertIn("## Shards", report)
+        self.assertIn("shard_b", report)
+        self.assertIn("`merged`", report)
+
+        # The ledger is a concatenation, not a re-serialisation.
+        self.assertEqual(merged_log, shard_log)
+        self.assertEqual(merged["attempts"]["n_attempts"], len(shard_log))
+
+    def test_an_incumbent_free_shard_is_ladderless_until_it_is_merged(self):
+        with tempfile.TemporaryDirectory() as tmp, _torch_free_driver():
+            root = Path(tmp)
+            ladder_shard = _run_shard(root / "with_ladder", models="eegpt", incumbents="on")
+            fm_shard = _run_shard(
+                root / "no_ladder", models="cbramod,labram_base,biot_prest16", incumbents="off"
+            )
+            merged = driver.run_merge(
+                driver.MergeConfig(
+                    shard_dirs=(root / "with_ladder", root / "no_ladder"),
+                    out_dir=root / "merged",
+                    allow_smoke_merge=True,
+                )
+            )
+
+        fm_entrants = {row["entrant_id"] for row in fm_shard["results"]}
+        for incumbent in driver.INCUMBENT_IDS:
+            self.assertNotIn(incumbent, fm_entrants)
+        self.assertFalse(fm_shard["config"]["include_incumbents"])
+        self.assertFalse(fm_shard["incumbent_ladder"]["complete"])
+        self.assertFalse(fm_shard["gate"]["incumbent_ladder_complete"])
+        self.assertTrue(
+            any("incumbent ladder" in reason for reason in fm_shard["gate"]["failure_reasons"])
+        )
+        self.assertTrue(ladder_shard["incumbent_ladder"]["complete"])
+
+        # The gap is a gap, not an error, and the merge closes it.
+        self.assertTrue(merged["incumbent_ladder"]["complete"])
+        self.assertEqual(merged["incumbent_ladder"]["missing_rungs"], [])
+        self.assertTrue(merged["gate"]["incumbent_ladder_complete"])
+        self.assertFalse(
+            any("incumbent ladder" in reason for reason in merged["gate"]["failure_reasons"])
+        )
+        self.assertTrue(merged["protocol_completeness"]["all_fm_models_ranked"])
+        self.assertTrue(merged["protocol_completeness"]["both_conditions_per_fm"])
+        self.assertTrue(merged["protocol_completeness"]["full_horizon_grid_per_entrant"])
+
+
+class ShardMergeRefusalTests(unittest.TestCase):
+    def _merge(self, root: Path, names, *, allow_smoke_merge: bool = False):
+        shards = [driver.load_shard(root / name) for name in names]
+        driver.validate_shards(shards, allow_smoke_merge=allow_smoke_merge)
+        return driver.build_merged_payload(
+            shards, out_dir=root / "merged", allow_smoke_merge=allow_smoke_merge
+        )
+
+    def test_the_same_entrant_and_horizon_in_two_shards_is_a_repeated_test_look(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_shard(root, "a", _shard_artifact(entrant_ids=["kahlus_gru", "eegpt__frozen"]))
+            _write_shard(root, "b", _shard_artifact(entrant_ids=["kahlus_gru", "cbramod__frozen"]))
+
+            with self.assertRaises(driver.ShardMergeError) as caught:
+                self._merge(root, ["a", "b"])
+
+            message = str(caught.exception)
+            self.assertIn("kahlus_gru@h2", message)
+            self.assertIn("more than one shard", message)
+            # Nothing was written: a refused merge leaves no half-dossier behind.
+            self.assertFalse((root / "merged").exists())
+
+    def test_differing_protocol_blocks_abort_the_merge(self):
+        cases = {
+            "stride": {"stride": 128},
+            "n_boot": {"n_boot": 10_000},
+            "max_train_epochs": {"max_train_epochs": 25},
+            "horizons": {"horizons": [8]},
+        }
+        for key, override in cases.items():
+            with self.subTest(config_key=key), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                _write_shard(root, "a", _shard_artifact(entrant_ids=["kahlus_gru"]))
+                _write_shard(
+                    root,
+                    "b",
+                    _shard_artifact(entrant_ids=["eegpt__frozen"], config_overrides=override),
+                )
+
+                with self.assertRaises(driver.ShardMergeError) as caught:
+                    self._merge(root, ["a", "b"])
+                self.assertIn(key, str(caught.exception))
+
+    def test_a_differing_split_aborts_the_merge(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shard_a = _shard_artifact(entrant_ids=["kahlus_gru"])
+            shard_b = _shard_artifact(entrant_ids=["eegpt__frozen"])
+            shard_b["split"] = {**shard_b["split"], "test": TEST_SUBJECTS[:-1]}
+            _write_shard(root, "a", shard_a)
+            _write_shard(root, "b", shard_b)
+
+            with self.assertRaises(driver.ShardMergeError) as caught:
+                self._merge(root, ["a", "b"])
+            self.assertIn("split", str(caught.exception))
+
+    def test_differing_git_commits_abort_the_merge(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_shard(root, "a", _shard_artifact(entrant_ids=["kahlus_gru"], commit="aaaaaaaa"))
+            _write_shard(root, "b", _shard_artifact(entrant_ids=["eegpt__frozen"], commit="bbbbbbbb"))
+
+            with self.assertRaises(driver.ShardMergeError) as caught:
+                self._merge(root, ["a", "b"])
+            self.assertIn("different git commits", str(caught.exception))
+
+    def test_a_dirty_shard_worktree_aborts_the_merge(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_shard(root, "a", _shard_artifact(entrant_ids=["kahlus_gru"]))
+            _write_shard(root, "b", _shard_artifact(entrant_ids=["eegpt__frozen"], clean=False))
+
+            with self.assertRaises(driver.ShardMergeError) as caught:
+                self._merge(root, ["a", "b"])
+            self.assertIn("dirty worktree", str(caught.exception))
+
+    def test_smoke_shards_are_refused_unless_explicitly_admitted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_shard(root, "a", _shard_artifact(entrant_ids=["kahlus_gru"], smoke=True))
+            _write_shard(root, "b", _shard_artifact(entrant_ids=["eegpt__frozen"], smoke=True))
+
+            with self.assertRaises(driver.ShardMergeError) as caught:
+                self._merge(root, ["a", "b"])
+            self.assertIn("smoke shard", str(caught.exception))
+
+            # Admitted explicitly, the merge proceeds but can never be claim-bearing.
+            merged = self._merge(root, ["a", "b"], allow_smoke_merge=True)
+
+        self.assertFalse(merged["gate"]["scientific_claim_allowed"])
+        self.assertTrue(
+            any(
+                reason.startswith("merged from smoke shards")
+                for reason in merged["gate"]["failure_reasons"]
+            )
+        )
+
+    def test_two_shards_that_loaded_different_checkpoint_bytes_abort_the_merge(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_shard(
+                root,
+                "a",
+                _shard_artifact(
+                    entrant_ids=["kahlus_gru"],
+                    checkpoints=[{"model_id": "eegpt", "verified": True, "observed_sha256": "a" * 64}],
+                ),
+            )
+            _write_shard(
+                root,
+                "b",
+                _shard_artifact(
+                    entrant_ids=["eegpt__frozen"],
+                    checkpoints=[{"model_id": "eegpt", "verified": True, "observed_sha256": "b" * 64}],
+                ),
+            )
+
+            with self.assertRaises(driver.ShardMergeError) as caught:
+                self._merge(root, ["a", "b"])
+            self.assertIn("different checkpoint bytes", str(caught.exception))
+
+    def test_a_schema_mismatch_aborts_the_merge(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shard_b = _shard_artifact(entrant_ids=["eegpt__frozen"])
+            shard_b["schema"] = "kahlus.eeg_fm_benchmark.v99"
+            _write_shard(root, "a", _shard_artifact(entrant_ids=["kahlus_gru"]))
+            _write_shard(root, "b", shard_b)
+
+            with self.assertRaises(driver.ShardMergeError) as caught:
+                self._merge(root, ["a", "b"])
+            self.assertIn("schema", str(caught.exception))
+
+    def test_a_directory_that_is_not_a_shard_is_refused_by_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "empty").mkdir()
+
+            with self.assertRaises(driver.ShardMergeError) as caught:
+                driver.load_shard(root / "empty")
+            self.assertIn("eeg_fm_benchmark.json", str(caught.exception))
+
+    def test_a_shard_set_that_leaves_gaps_fails_the_gate_rather_than_the_merge(self):
+        # Missing coverage is a *finding*, not an error: the merge succeeds and the gate
+        # names exactly what is absent, so an operator sees a dossier that says "incomplete"
+        # rather than a traceback that says nothing.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_shard(
+                root,
+                "a",
+                _shard_artifact(entrant_ids=["persistence", "tuned_ridge_ar", "gbm", "kahlus_gru"]),
+            )
+            _write_shard(root, "b", _shard_artifact(entrant_ids=["eegpt__frozen"]))
+            merged = self._merge(root, ["a", "b"])
+
+        reasons = " | ".join(merged["gate"]["failure_reasons"])
+        self.assertFalse(merged["gate"]["scientific_claim_allowed"])
+        self.assertIn("missing: biot_prest16, cbramod, labram_base", reasons)
+        self.assertIn("eegpt:full_ft", reasons)
+        self.assertEqual(
+            merged["protocol_completeness"]["missing_fm_models"],
+            ["biot_prest16", "cbramod", "labram_base"],
+        )
 
 
 if __name__ == "__main__":

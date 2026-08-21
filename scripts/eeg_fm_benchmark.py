@@ -82,12 +82,30 @@ respects whatever ``CUDA_VISIBLE_DEVICES`` the operator set and never edits it. 
 several GPUs, launch several processes with disjoint ``--models`` and disjoint
 ``--out-dir``; there is deliberately no multiprocessing inside this script.
 
+Sharding and merging
+--------------------
+Each of those per-GPU invocations writes a dossier that is a *fragment*: its incumbent
+ladder may be incomplete, its slate is missing the models the other shards carried, and
+its gate says so. The claim, if there is one, is about the union, so ``--merge`` is a
+first-class mode rather than a shell script over the JSONs. It recomputes ranking, paired
+statistics, Holm families, power, the beat-best-baseline verdict, protocol completeness,
+budget symmetry and the gate from the union of the shards' per-subject test errors, and it
+hard-errors before writing anything if the shards do not describe *one* experiment.
+
+Exactly one shard may carry the incumbent ladder (``--incumbents off`` on the others):
+running the ladder twice would put the same ``(entrant, horizon)`` through two held-out
+test evaluations, which the merge refuses as a repeated test look.
+
 Run::
 
     PYTHONPATH=src python3 scripts/eeg_fm_benchmark.py \\
         --data-root /path/to/sleep-edfx/sleep-cassette \\
         --weights-dir /path/to/staged/weights \\
         --out-dir artifacts/eeg_fm_benchmark --smoke
+
+    PYTHONPATH=src python3 scripts/eeg_fm_benchmark.py \\
+        --merge artifacts/shard_a artifacts/shard_b \\
+        --out-dir artifacts/eeg_fm_benchmark_merged
 """
 
 from __future__ import annotations
@@ -1469,6 +1487,7 @@ def build_entrants(
     patience: int,
     device: str,
     truncate_closed_form: int | None = None,
+    include_incumbents: bool = True,
 ) -> tuple[list[Entrant], list[dict[str, str]]]:
     """Assemble the entrant slate, skipping models whose contamination gate refuses them.
 
@@ -1478,12 +1497,21 @@ def build_entrants(
     prevent -- and ``--n-configs`` therefore cannot reach them. ``truncate_closed_form``
     is set only by the smoke path, which can never pass the gate anyway, and its use is
     reported as ``closed_form_grid_truncated`` so it cannot go unnoticed.
+
+    ``include_incumbents`` exists for sharding, and only for sharding (``--incumbents
+    off``). The ladder is cheap next to a fine-tuned foundation model, so running it on
+    every shard would look like a harmless duplication -- but each duplicate is a second
+    held-out test evaluation of the same ``(entrant, horizon)`` family, which plan section
+    5.3 forbids and which :func:`validate_shards` refuses to merge. Exactly one shard
+    therefore carries the ladder, and the shards that do not simply report the missing
+    rows: an incumbent-free slate fails its own ladder and protocol-completeness checks,
+    and the merged union restores them.
     """
 
     def _closed_form(grid: tuple[dict[str, Any], ...]) -> tuple[dict[str, Any], ...]:
         return grid if truncate_closed_form is None else grid[: int(truncate_closed_form)]
 
-    entrants: list[Entrant] = [
+    incumbents: list[Entrant] = [
         Entrant(
             entrant_id="persistence",
             family=FAMILY_INCUMBENT,
@@ -1558,6 +1586,7 @@ def build_entrants(
         ),
     ]
 
+    entrants: list[Entrant] = list(incumbents) if include_incumbents else []
     skipped: list[dict[str, str]] = []
     for model_id in models:
         if not is_evaluation_permitted(model_id, DATASET_ID):
@@ -2892,6 +2921,19 @@ def protocol_completeness(payload: Mapping[str, Any]) -> dict[str, Any]:
         if row.get("model_id"):
             conditions_by_model.setdefault(str(row["model_id"]), set()).add(str(row.get("condition")))
 
+    # Per-entrant horizon coverage. ``full_horizon_grid`` only checks what the run
+    # *declared*; in a merged dossier the declared grid can be complete while a shard
+    # contributed one entrant at three of the nine horizons, which would leave holes in
+    # every table without failing a single other check.
+    declared_horizons = [int(horizon) for horizon in (config.get("horizons") or [])]
+    present_pairs = {(str(row["entrant_id"]), int(row["horizon"])) for row in ranked}
+    missing_entrant_horizons = sorted(
+        f"{entrant_id}@h{horizon}"
+        for entrant_id in {str(row["entrant_id"]) for row in ranked}
+        for horizon in declared_horizons
+        if (entrant_id, horizon) not in present_pairs
+    )
+
     split_sizes = tuple(len(split.get(name, [])) for name in ("train", "val", "test"))
     missing_models = sorted(set(FM_MODEL_IDS) - ranked_models)
     missing_conditions = sorted(
@@ -2911,12 +2953,51 @@ def protocol_completeness(payload: Mapping[str, Any]) -> dict[str, Any]:
         "both_conditions_per_fm": not missing_conditions,
         "missing_model_conditions": missing_conditions,
         "full_horizon_grid": tuple(int(h) for h in (config.get("horizons") or [])) == HORIZONS,
+        "full_horizon_grid_per_entrant": not missing_entrant_horizons,
+        "missing_entrant_horizons": missing_entrant_horizons,
         "seeds_sufficient": len(config.get("seeds") or []) >= MIN_SEEDS,
         "n_boot_sufficient": int(config.get("n_boot") or 0) >= MIN_CLAIMABLE_N_BOOT,
         "claim_eligible_horizons": claim_horizons,
         "claimable_horizons_exclude_h1": 1 not in claim_horizons,
         "closed_form_grid_truncated": bool(config.get("closed_form_grid_truncated")),
     }
+
+
+def control_coverage(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Which ranked entrants actually carry a passing corruption control, and at which horizon.
+
+    "Every row in the list passed" is not "every entrant was checked": a controls list that
+    happens to be non-empty satisfies an all-passed test even when half the ranked slate is
+    absent from it. In a single run the two coincide, because the controls are produced in
+    the same loop that produces the rows. In a merged dossier they do not: each shard
+    contributed controls for its own entrants only, and a shard that skipped them would
+    otherwise disappear behind another shard's passing rows.
+
+    A row also has to sit at a *claim-eligible* horizon. A label shuffle demonstrated only
+    at the protocol-ineligible ``h = 1`` says nothing about the horizons being claimed.
+    """
+
+    results = list(payload.get("results") or [])
+    config = dict(payload.get("config") or {})
+    controls = dict(payload.get("controls") or {})
+    eligible = set(claim_eligible_horizons(results, config.get("horizons") or []))
+    ranked_ids = sorted({str(row["entrant_id"]) for row in results if row.get("ranked")})
+
+    report: dict[str, Any] = {
+        "claim_eligible_horizons": sorted(eligible),
+        "ranked_entrants": ranked_ids,
+    }
+    for name in ("label_shuffle", "time_shift"):
+        covered: set[str] = set()
+        for row in controls.get(name) or []:
+            horizon = row.get("horizon")
+            if not row.get("passed") or horizon is None:
+                continue
+            if int(horizon) in eligible:
+                covered.add(str(row.get("entrant_id")))
+        report[f"{name}_missing"] = sorted(set(ranked_ids) - covered)
+    report["complete"] = not (report["label_shuffle_missing"] or report["time_shift_missing"])
+    return report
 
 
 def _powered(payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -3033,10 +3114,11 @@ def build_gate_dossier(payload: Mapping[str, Any]) -> dict[str, Any]:
         rows = controls.get(name) or []
         return bool(rows) and all(bool(row.get("passed")) for row in rows)
 
+    coverage = control_coverage(payload)
     index_audit_passed = _all_passed("index_audit")
     normalization_passed = not bool(payload.get("normalization", {}).get("transductive", True))
-    label_shuffle_passed = _all_passed("label_shuffle")
-    time_shift_passed = _all_passed("time_shift")
+    label_shuffle_passed = _all_passed("label_shuffle") and not coverage["label_shuffle_missing"]
+    time_shift_passed = _all_passed("time_shift") and not coverage["time_shift_missing"]
     harness_sanity_passed = _all_passed("harness_sanity")
     random_twin_present = bool(controls.get("random_init_twin"))
     random_twin_passed = _all_passed("random_init_twin")
@@ -3085,14 +3167,26 @@ def build_gate_dossier(payload: Mapping[str, Any]) -> dict[str, Any]:
             "ablation, not a claim-bearing run"
         )
     if not label_shuffle_passed:
+        missing = coverage["label_shuffle_missing"]
         reasons.append(
             "label-shuffle control did not collapse for every ranked entrant by the "
             f"preregistered {LABEL_SHUFFLE_MIN_DEGRADATION:.0%} margin"
+            + (
+                "; no passing row at a claim-eligible horizon for: " + ", ".join(missing)
+                if missing
+                else ""
+            )
         )
     if not time_shift_passed:
+        missing = coverage["time_shift_missing"]
         reasons.append(
             "time-shift control did not collapse for every ranked entrant by the "
             f"preregistered {TIME_SHIFT_MIN_DEGRADATION:.0%} margin"
+            + (
+                "; no passing row at a claim-eligible horizon for: " + ", ".join(missing)
+                if missing
+                else ""
+            )
         )
     if not harness_sanity_passed:
         reasons.append(
@@ -3164,6 +3258,13 @@ def build_gate_dossier(payload: Mapping[str, Any]) -> dict[str, Any]:
         )
     if not protocol.get("full_horizon_grid", False):
         reasons.append(f"horizon grid is not the declared {list(HORIZONS)}")
+    if not protocol.get("full_horizon_grid_per_entrant", False):
+        gaps = list(protocol.get("missing_entrant_horizons") or [])
+        reasons.append(
+            "not every ranked entrant produced a row at every declared horizon: "
+            + ", ".join(gaps[:5])
+            + (f" (and {len(gaps) - 5} more)" if len(gaps) > 5 else "")
+        )
     if not protocol.get("seeds_sufficient", False):
         reasons.append(f"fewer than {MIN_SEEDS} seeds per selected configuration (plan section 3.4)")
     if not protocol.get("n_boot_sufficient", False):
@@ -3206,6 +3307,12 @@ def build_gate_dossier(payload: Mapping[str, Any]) -> dict[str, Any]:
         )
     if not bool(payload.get("git", {}).get("clean_worktree")):
         reasons.append("dirty worktree: committed artifacts would not match the code that produced them")
+    # Reasons a *caller* has to contribute because they are properties of how the payload
+    # was assembled rather than of anything inside it -- currently only the merge path's
+    # smoke-shard admission (see SMOKE_MERGE_FAILURE_REASON).
+    reasons.extend(
+        str(reason) for reason in payload.get("additional_failure_reasons") or [] if str(reason).strip()
+    )
 
     gate = evaluate_gate(
         branch=GATE_BRANCH,
@@ -3223,6 +3330,7 @@ def build_gate_dossier(payload: Mapping[str, Any]) -> dict[str, Any]:
             "normalization_causal": normalization_passed,
             "label_shuffle_collapsed": label_shuffle_passed,
             "time_shift_collapsed": time_shift_passed,
+            "control_coverage": coverage,
             "harness_sanity_passed": harness_sanity_passed,
             "random_twin_control_present": random_twin_present,
             "pretraining_helped_every_fm": random_twin_passed,
@@ -3240,6 +3348,7 @@ def build_gate_dossier(payload: Mapping[str, Any]) -> dict[str, Any]:
                 and protocol.get("all_fm_models_ranked")
                 and protocol.get("both_conditions_per_fm")
                 and protocol.get("full_horizon_grid")
+                and protocol.get("full_horizon_grid_per_entrant")
                 and protocol.get("seeds_sufficient")
                 and protocol.get("n_boot_sufficient")
                 and protocol.get("claimable_horizons_exclude_h1")
@@ -3349,6 +3458,13 @@ def write_markdown_report(path: Path, payload: Mapping[str, Any]) -> Path:
         "",
         f"- Schema: `{payload.get('schema')}`",
         f"- Created: {payload.get('created_utc')}",
+    ]
+    if payload.get("mode") == MERGE_MODE:
+        lines.append(
+            f"- Mode: `{MERGE_MODE}` from {len(payload.get('shards') or [])} shard run(s) "
+            "— see the Shards section"
+        )
+    lines += [
         f"- Commit: `{payload.get('git', {}).get('commit')}` "
         f"(clean worktree: {payload.get('git', {}).get('clean_worktree')})",
         f"- Dataset: `{payload.get('dataset_id')}`",
@@ -3482,6 +3598,29 @@ def write_markdown_report(path: Path, payload: Mapping[str, Any]) -> Path:
             lines.append(f"- `{row['model_id']}` — **unverified**: {row.get('error')}")
     lines.append("")
 
+    shards = list(payload.get("shards") or [])
+    if shards:
+        lines += [
+            "## Shards",
+            "",
+            f"Merged from {len(shards)} shard run(s). Every table above was recomputed from the "
+            "union of the shards' per-subject test errors: no shard's own ranking, paired "
+            "statistics or gate verdict was carried over, and the shards were refused unless "
+            "they agreed on protocol, split, normalisation, code revision and checkpoint bytes.",
+            "",
+            "| shard dir | run id | commit | entrants carried | horizons | result rows |",
+            "|---|---|---|---|---:|---:|",
+        ]
+        for shard in shards:
+            entrants = ", ".join(f"`{name}`" for name in shard.get("entrant_ids") or []) or "—"
+            horizons = ", ".join(str(horizon) for horizon in shard.get("horizons") or []) or "—"
+            lines.append(
+                f"| `{shard.get('shard_dir')}` | `{shard.get('run_id')}` | "
+                f"`{str((shard.get('git') or {}).get('commit') or '')[:12]}` | {entrants} | "
+                f"{horizons} | {shard.get('n_result_rows')} |"
+            )
+        lines.append("")
+
     lines += ["## Caveats", ""] + [f"- {caveat}" for caveat in report_caveats(payload)] + [""]
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -3489,7 +3628,9 @@ def write_markdown_report(path: Path, payload: Mapping[str, Any]) -> Path:
     return path
 
 
-def write_artifacts(out_dir: Path, payload: Mapping[str, Any], ledger: AttemptLedger) -> dict[str, Path]:
+def write_artifacts(
+    out_dir: Path, payload: Mapping[str, Any], ledger: "AttemptLedger | ConcatenatedLedger"
+) -> dict[str, Path]:
     """Write the JSON dossier, the gate, the ledger and the Markdown report."""
 
     out = Path(out_dir)
@@ -3512,6 +3653,645 @@ def write_artifacts(out_dir: Path, payload: Mapping[str, Any], ledger: AttemptLe
 
 
 # ---------------------------------------------------------------------------
+# Shard merge
+#
+# A full-scale run is one process on one GPU (see "Parallelism and devices"), so using
+# four GPUs means four invocations with disjoint ``--models`` and four out-dirs. Each of
+# those dossiers is a fragment of one experiment, and none of its summaries is a partial
+# answer to the merged question: a per-horizon ranking over three entrants is not a
+# sub-ranking of the nine-entrant table, the Holm family over one pair is not the family
+# over eight, and a shard's ``beat_best_baseline`` compared against whichever externals
+# that shard happened to carry.
+#
+# Merging therefore recomputes everything downstream of the per-subject test errors from
+# the union, and asserts the things that must hold for the union to *be* one experiment --
+# same protocol, same split, same normalisation, same code revision, same checkpoint
+# bytes, and no ``(entrant, horizon)`` scored twice. Every one of those is a hard error
+# raised before a single byte is written, because a merged dossier that silently spans two
+# protocols is worse than no dossier at all.
+# ---------------------------------------------------------------------------
+
+
+MERGE_MODE = "merged"
+
+#: Top-level artifact blocks that must be identical across shards for the union to be one
+#: experiment. ``normalization`` and ``split`` are the two that decide whether the numbers
+#: are even commensurable; ``lane`` and ``dataset_id`` decide what they are numbers *about*.
+MERGE_IDENTICAL_TOP_KEYS: tuple[str, ...] = ("lane", "dataset_id", "normalization", "split")
+
+#: ``config`` keys that define the protocol rather than the shard. Anything not listed here
+#: (``models``, ``device``, ``out_dir``, ``include_incumbents``) is expected to differ --
+#: that difference is the whole point of a shard.
+MERGE_IDENTICAL_CONFIG_KEYS: tuple[str, ...] = (
+    "subjects",
+    "stride",
+    "max_windows_per_recording",
+    "seeds",
+    "n_boot",
+    "batch_size",
+    "max_train_epochs",
+    "patience",
+    "horizons",
+)
+
+SMOKE_MERGE_FAILURE_REASON = (
+    "merged from smoke shards: a merged dossier is full-scale by definition, and "
+    "--allow-smoke-merge was passed, so this artifact is a rehearsal of the merge path "
+    "and can never be claim-bearing"
+)
+
+
+class ShardMergeError(RuntimeError):
+    """The given shard dossiers do not describe one experiment, so they cannot be merged.
+
+    Always raised before anything is written. A merge is not a best-effort combination:
+    either the shards agree on the protocol that makes their numbers comparable, or the
+    union is not a benchmark run and no amount of downstream statistics can repair it.
+    """
+
+
+@dataclass(frozen=True)
+class ConcatenatedLedger:
+    """The shard ledgers, appended verbatim into the merged directory.
+
+    Deliberately not an :class:`AttemptLedger`: re-serialising the rows through
+    ``json.dumps`` would rewrite the very evidence the ledger exists to preserve -- key
+    order, float formatting, and any field a future driver version writes that this one
+    does not know to keep. ``write`` is the whole interface :func:`write_artifacts` needs.
+    """
+
+    lines: tuple[str, ...]
+
+    def write(self, path: Path) -> Path:
+        """Append the shard rows, in shard order; never truncate an existing ledger."""
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            for line in self.lines:
+                handle.write(line + "\n")
+        return path
+
+
+@dataclass(frozen=True)
+class ShardDossier:
+    """One shard out-dir: its artifact, and its ledger both raw and parsed."""
+
+    shard_dir: Path
+    payload: dict[str, Any]
+    ledger_lines: tuple[str, ...]
+    ledger_rows: tuple[dict[str, Any], ...]
+
+    @property
+    def config(self) -> dict[str, Any]:
+        return dict(self.payload.get("config") or {})
+
+    @property
+    def run_id(self) -> str:
+        return str((self.payload.get("attempts") or {}).get("run_id") or "unknown-run")
+
+    @property
+    def results(self) -> list[dict[str, Any]]:
+        return [dict(row) for row in self.payload.get("results") or []]
+
+    @property
+    def is_smoke(self) -> bool:
+        return bool(self.config.get("smoke"))
+
+
+def read_ledger_file(path: Path) -> tuple[list[str], list[dict[str, Any]]]:
+    """Raw lines and parsed rows of one shard's append-only ledger.
+
+    A malformed line is carried through verbatim and simply not parsed, matching
+    :func:`read_prior_ledger`'s tolerance of a truncated final line from a killed run:
+    dropping the row from the *parsed* view can only undercount attempts, which every
+    consumer treats conservatively, whereas dropping it from the merged file would destroy
+    evidence.
+    """
+
+    if not Path(path).is_file():
+        return [], []
+    lines = [line for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
+    rows: list[dict[str, Any]] = []
+    for line in lines:
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return lines, rows
+
+
+def load_shard(shard_dir: Path) -> ShardDossier:
+    """Read one shard out-dir, or refuse it as un-mergeable."""
+
+    shard_dir = Path(shard_dir)
+    artifact = shard_dir / "eeg_fm_benchmark.json"
+    if not artifact.is_file():
+        raise ShardMergeError(
+            f"{shard_dir} is not a benchmark out-dir: {artifact.name} is missing. --merge takes "
+            "the --out-dir of a completed shard run, not a parent directory."
+        )
+    try:
+        payload = json.loads(artifact.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ShardMergeError(f"{artifact} is not readable JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ShardMergeError(f"{artifact} is not a JSON object")
+    lines, rows = read_ledger_file(shard_dir / "attempts.log")
+    return ShardDossier(
+        shard_dir=shard_dir,
+        payload=payload,
+        ledger_lines=tuple(lines),
+        ledger_rows=tuple(rows),
+    )
+
+
+def _encode(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, default=str)
+
+
+def _require_identical(
+    shards: Sequence[ShardDossier],
+    getter: Callable[[ShardDossier], Any],
+    label: str,
+    problems: list[str],
+) -> None:
+    """Record a problem when ``getter`` is not the same value in every shard."""
+
+    grouped: dict[str, list[str]] = {}
+    for shard in shards:
+        grouped.setdefault(_encode(getter(shard)), []).append(str(shard.shard_dir))
+    if len(grouped) <= 1:
+        return
+    detail = "; ".join(
+        f"{', '.join(dirs)} -> {value[:160]}" for value, dirs in sorted(grouped.items())
+    )
+    problems.append(f"{label} differs across shards, so they are not one experiment: {detail}")
+
+
+def validate_shards(shards: Sequence[ShardDossier], *, allow_smoke_merge: bool = False) -> None:
+    """Refuse a merge that would fabricate an experiment. Raises before any write.
+
+    Every violation is collected and reported together rather than one per invocation:
+    an operator who mis-sharded a run has usually mis-sharded it in more than one way, and
+    discovering that one error at a time costs a GPU-hour each round.
+    """
+
+    if not shards:
+        raise ShardMergeError("--merge needs at least one shard out-dir")
+
+    problems: list[str] = []
+
+    schemas = {str(shard.payload.get("schema")) for shard in shards}
+    if len(schemas) > 1:
+        problems.append(f"shards carry different artifact schema versions: {sorted(schemas)}")
+    elif schemas != {ARTIFACT_SCHEMA}:
+        problems.append(
+            f"shard artifact schema {sorted(schemas)} is not {ARTIFACT_SCHEMA!r}; this merge "
+            "recomputes v1 statistics and refuses to guess at another layout"
+        )
+
+    for key in MERGE_IDENTICAL_TOP_KEYS:
+        _require_identical(
+            shards, lambda shard, key=key: shard.payload.get(key), f"artifact block {key!r}", problems
+        )
+    for key in MERGE_IDENTICAL_CONFIG_KEYS:
+        _require_identical(
+            shards, lambda shard, key=key: shard.config.get(key), f"config key {key!r}", problems
+        )
+
+    commits = {
+        str(shard.shard_dir): str((shard.payload.get("git") or {}).get("commit") or "") for shard in shards
+    }
+    if len(set(commits.values())) > 1:
+        problems.append(
+            "shards were produced at different git commits, so the merged dossier could not "
+            "name the code that produced it: "
+            + ", ".join(f"{path}={commit[:12] or 'unknown'}" for path, commit in sorted(commits.items()))
+        )
+    dirty = sorted(
+        str(shard.shard_dir)
+        for shard in shards
+        if not bool((shard.payload.get("git") or {}).get("clean_worktree"))
+    )
+    if dirty:
+        problems.append(
+            "shard(s) produced from a dirty worktree, so their commit does not identify the "
+            "code that ran: " + ", ".join(dirty)
+        )
+
+    seen: dict[tuple[str, int], str] = {}
+    duplicates: list[str] = []
+    for shard in shards:
+        for row in shard.results:
+            try:
+                key = (str(row["entrant_id"]), int(row["horizon"]))
+            except (KeyError, TypeError, ValueError):
+                problems.append(f"{shard.shard_dir}: a result row has no usable (entrant_id, horizon)")
+                continue
+            if key in seen:
+                duplicates.append(f"{key[0]}@h{key[1]} ({seen[key]} and {shard.shard_dir})")
+            else:
+                seen[key] = str(shard.shard_dir)
+    if duplicates:
+        listed = sorted(duplicates)
+        problems.append(
+            "the same (entrant, horizon) was scored in more than one shard, which is a second "
+            "held-out test evaluation of one configuration family (plan section 5.3), not a "
+            "merge: "
+            + ", ".join(listed[:10])
+            + (f" (and {len(listed) - 10} more)" if len(listed) > 10 else "")
+            + ". Give exactly one shard each entrant -- e.g. --incumbents off on every shard "
+            "but one -- or merge a different set of directories."
+        )
+
+    smoke = sorted(str(shard.shard_dir) for shard in shards if shard.is_smoke)
+    if smoke and not allow_smoke_merge:
+        problems.append(
+            "smoke shard(s) " + ", ".join(smoke) + ": a merged dossier is full-scale by "
+            "definition, so a reduced-scale rehearsal is refused at the merge rather than "
+            "recorded as a gate reason. --allow-smoke-merge merges them anyway and marks the "
+            "result non-claim-bearing."
+        )
+
+    digests: dict[str, dict[str, list[str]]] = {}
+    for shard in shards:
+        for row in (shard.payload.get("checkpoints") or {}).get("verified") or []:
+            digest = row.get("observed_sha256")
+            if not digest:
+                # An unverifiable checkpoint is already a gate failure in the merged
+                # dossier; it carries no bytes to disagree about, so it is not a merge error.
+                continue
+            digests.setdefault(str(row.get("model_id")), {}).setdefault(str(digest), []).append(
+                str(shard.shard_dir)
+            )
+    for model_id, by_digest in sorted(digests.items()):
+        if len(by_digest) > 1:
+            problems.append(
+                f"shards loaded different checkpoint bytes for {model_id!r}: "
+                + "; ".join(
+                    f"{digest[:16]} in {', '.join(sorted(dirs))}" for digest, dirs in sorted(by_digest.items())
+                )
+            )
+
+    if problems:
+        raise ShardMergeError(
+            f"refusing to merge {len(shards)} shard(s):\n- " + "\n- ".join(problems)
+        )
+
+
+def _entrants_from_logs(rows: Sequence[Mapping[str, Any]]) -> list[Entrant]:
+    """Rebuild the view :func:`budget_symmetry` reads, from artifact entrant logs.
+
+    Only the identity and the ``ranked`` / ``gradient_trained`` flags are load-bearing
+    there. The grid and the factory are not reachable from a JSON artifact, so they are
+    left empty and unreachable rather than guessed at: a merged dossier recomputes
+    statistics, it never re-runs a model.
+    """
+
+    def _unavailable(_config: Mapping[str, Any]) -> EntrantRunner:
+        raise ShardMergeError("a merged entrant carries no runnable factory")
+
+    return [
+        Entrant(
+            entrant_id=str(row.get("entrant_id")),
+            family=str(row.get("family")),
+            model_id=row.get("model_id"),
+            condition=row.get("condition"),
+            pretrained=bool(row.get("pretrained")),
+            grid=(),
+            factory=_unavailable,
+            ranked=bool(row.get("ranked")),
+            gradient_trained=bool(row.get("gradient_trained")),
+            fits_targets=bool(row.get("fits_targets", True)),
+        )
+        for row in rows
+    ]
+
+
+def _dedupe(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Concatenation with exact duplicates removed, in first-seen order."""
+
+    seen: set[str] = set()
+    kept: list[dict[str, Any]] = []
+    for row in rows:
+        key = _encode(row)
+        if key in seen:
+            continue
+        seen.add(key)
+        kept.append(dict(row))
+    return kept
+
+
+def _merged_checkpoints(shards: Sequence[ShardDossier]) -> dict[str, Any]:
+    """One row per model: the verified observation if any shard produced one.
+
+    :func:`validate_shards` has already refused a set in which two shards observed
+    different bytes for the same model, so preferring the verified row cannot hide a
+    disagreement -- it can only avoid letting a shard that never loaded the checkpoint
+    mask a shard that did.
+    """
+
+    by_model: dict[str, dict[str, Any]] = {}
+    for shard in shards:
+        for row in (shard.payload.get("checkpoints") or {}).get("verified") or []:
+            model_id = str(row.get("model_id"))
+            existing = by_model.get(model_id)
+            if existing is None or (not existing.get("verified") and row.get("verified")):
+                by_model[model_id] = {**dict(row), "observed_in_shard": str(shard.shard_dir)}
+    return {
+        "verified": [by_model[model_id] for model_id in sorted(by_model)],
+        "manifest_reference": list(
+            (shards[0].payload.get("checkpoints") or {}).get("manifest_reference") or []
+        ),
+        "note": (
+            "'verified' is the union over shards, one row per model, carrying the shard that "
+            "observed it. Two shards observing different bytes for one model is a merge error, "
+            "not a row here."
+        ),
+    }
+
+
+def _merged_attempts(shards: Sequence[ShardDossier], *, run_id: str) -> dict[str, Any]:
+    """The merged ledger summary, including any family two shards both test-evaluated."""
+
+    def _test_families(rows: Sequence[Mapping[str, Any]]) -> set[str]:
+        return {
+            _family_key(str(row["entrant_id"]), int(row["horizon"]))
+            for row in rows
+            if row.get("phase") == "test" and row.get("entrant_id") and row.get("horizon") is not None
+        }
+
+    counts: dict[str, int] = {}
+    repeated: set[str] = set()
+    prior: dict[str, int] = {}
+    for shard in shards:
+        for family in _test_families(shard.ledger_rows):
+            counts[family] = counts.get(family, 0) + 1
+        attempts = dict(shard.payload.get("attempts") or {})
+        repeated |= {str(family) for family in attempts.get("repeated_test_families") or []}
+        for family, count in dict(attempts.get("prior_test_families") or {}).items():
+            prior[str(family)] = prior.get(str(family), 0) + int(count)
+    # A family whose test rows appear in two shards' ledgers is a second look even when
+    # neither shard emitted a result row for it (a shard that died after the evaluation).
+    repeated |= {family for family, count in counts.items() if count > 1}
+
+    return {
+        "run_id": run_id,
+        "mode": MERGE_MODE,
+        "n_attempts": sum(len(shard.ledger_lines) for shard in shards),
+        "n_attempts_including_prior_runs": sum(
+            int(dict(shard.payload.get("attempts") or {}).get("n_attempts_including_prior_runs") or 0)
+            for shard in shards
+        ),
+        "n_test_evaluations": sum(
+            1 for shard in shards for row in shard.ledger_rows if row.get("phase") == "test"
+        ),
+        "n_test_evaluations_cumulative": sum(
+            int(dict(shard.payload.get("attempts") or {}).get("n_test_evaluations_cumulative") or 0)
+            for shard in shards
+        ),
+        "prior_test_families": dict(sorted(prior.items())),
+        "repeated_test_families": sorted(repeated),
+        "log_file": "attempts.log",
+        "append_only": True,
+        "per_shard": [
+            {
+                "shard_dir": str(shard.shard_dir),
+                "run_id": shard.run_id,
+                "n_ledger_rows": len(shard.ledger_lines),
+                "n_test_evaluations": sum(1 for row in shard.ledger_rows if row.get("phase") == "test"),
+            }
+            for shard in shards
+        ],
+    }
+
+
+def build_merged_payload(
+    shards: Sequence[ShardDossier], *, out_dir: Path, allow_smoke_merge: bool = False
+) -> dict[str, Any]:
+    """Recompute one dossier from validated shard dossiers.
+
+    Everything downstream of the per-subject test errors is recomputed over the union --
+    ranking, paired deltas, Holm families, power, beat-best-baseline, protocol
+    completeness, budget symmetry from the concatenated ledger, and the gate -- because
+    each shard's own version of those was computed over a fragment of the slate and is not
+    a partial answer to the merged question.
+    """
+
+    reference = shards[0].payload
+    config = dict(reference.get("config") or {})
+    horizons = [int(horizon) for horizon in (config.get("horizons") or [])]
+    smoke_shards = sorted(str(shard.shard_dir) for shard in shards if shard.is_smoke)
+
+    results = [row for shard in shards for row in shard.results]
+    ledger_rows = [dict(row) for shard in shards for row in shard.ledger_rows]
+
+    entrant_logs: dict[str, dict[str, Any]] = {}
+    for shard in shards:
+        for row in shard.payload.get("entrants") or []:
+            entrant_logs.setdefault(str(row.get("entrant_id")), dict(row))
+
+    # Controls are concatenated, with the two exceptions that are functions of the union
+    # rather than of a shard: the random-init twin control is a comparison between merged
+    # rows, and the not-implemented list is a constant property of this driver which would
+    # otherwise be repeated once per shard and inflate the gate's reason list.
+    controls: dict[str, list[dict[str, Any]]] = {}
+    for shard in shards:
+        for name, rows in (shard.payload.get("controls") or {}).items():
+            controls.setdefault(str(name), []).extend(dict(row) for row in rows or [])
+    controls["random_init_twin"] = random_twin_controls(results)
+    controls["not_implemented"] = unimplemented_controls()
+
+    determinism_reasons = []
+    for shard in shards:
+        reason = str((shard.payload.get("determinism") or {}).get("reason") or "").strip()
+        if reason:
+            determinism_reasons.append(f"{shard.shard_dir}: {reason}")
+    determinism = {
+        "fully_deterministic": all(
+            bool((shard.payload.get("determinism") or {}).get("fully_deterministic")) for shard in shards
+        ),
+        "reason": "; ".join(determinism_reasons),
+        "merged_over_shards": len(shards),
+        "note": (
+            "the merged verdict is the conjunction over shards: one shard that could not "
+            "enable determinism makes the union non-reproducible, however clean the others were"
+        ),
+    }
+
+    merged_config = {
+        **config,
+        "out_dir": str(out_dir),
+        "mode": MERGE_MODE,
+        "merged_shard_count": len(shards),
+        "models": sorted({str(model) for shard in shards for model in shard.config.get("models") or []}),
+        "smoke": any(shard.is_smoke for shard in shards),
+        "include_incumbents": any(bool(shard.config.get("include_incumbents", True)) for shard in shards),
+        "include_random_twin": all(
+            bool(shard.config.get("include_random_twin", False)) for shard in shards
+        ),
+        "allow_repeat_test": any(bool(shard.config.get("allow_repeat_test")) for shard in shards),
+        "closed_form_grid_truncated": any(
+            bool(shard.config.get("closed_form_grid_truncated")) for shard in shards
+        ),
+        "note": (
+            "protocol-defining keys are identical across shards by construction (the merge "
+            "refuses otherwise); shard-specific keys such as device, data_root and weights_dir "
+            "are the reference shard's, with every shard's full config under 'shards'"
+        ),
+    }
+
+    tuning_budget = dict(reference.get("tuning_budget") or {})
+    notes: list[str] = []
+    for shard in shards:
+        for note in (shard.payload.get("tuning_budget") or {}).get("notes") or []:
+            if note not in notes:
+                notes.append(str(note))
+    tuning_budget["notes"] = notes
+    tuning_budget["closed_form_grid_truncated"] = bool(merged_config["closed_form_grid_truncated"])
+
+    run_id = (
+        f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+        f"-pid{os.getpid()}-merge{len(shards)}"
+    )
+
+    payload: dict[str, Any] = {
+        "schema": ARTIFACT_SCHEMA,
+        "mode": MERGE_MODE,
+        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "dataset_id": reference.get("dataset_id"),
+        "lane": reference.get("lane"),
+        "config": merged_config,
+        "environment": _environment_payload(),
+        "determinism": determinism,
+        "git": dict(reference.get("git") or {}),
+        "recordings": _dedupe([row for shard in shards for row in shard.payload.get("recordings") or []]),
+        "protocol": dict(reference.get("protocol") or {}),
+        "normalization": dict(reference.get("normalization") or {}),
+        "split": dict(reference.get("split") or {}),
+        "tuning_budget": tuning_budget,
+        "entrants": [entrant_logs[key] for key in sorted(entrant_logs)],
+        "incumbent_ladder": ladder_report(results),
+        "results": results,
+        "contamination_table": list(reference.get("contamination_table") or []),
+        "checkpoints": _merged_checkpoints(shards),
+        "controls": controls,
+        "skipped_models": _dedupe([row for shard in shards for row in shard.payload.get("skipped_models") or []]),
+        "unavailable_models": _dedupe(
+            [row for shard in shards for row in shard.payload.get("unavailable_models") or []]
+        ),
+        "failed_entrants": _dedupe(
+            [row for shard in shards for row in shard.payload.get("failed_entrants") or []]
+        ),
+        "attempts": _merged_attempts(shards, run_id=run_id),
+        "merge": {
+            "shard_dirs": [str(shard.shard_dir) for shard in shards],
+            "n_shards": len(shards),
+            "allow_smoke_merge": bool(allow_smoke_merge),
+            "smoke_shards": smoke_shards,
+            "merge_process_git": _git_state(),
+            "identical_top_keys_checked": list(MERGE_IDENTICAL_TOP_KEYS),
+            "identical_config_keys_checked": list(MERGE_IDENTICAL_CONFIG_KEYS),
+            "note": (
+                "the shards' own ranking, paired statistics, powered, beat_best_baseline and "
+                "gate blocks were discarded and recomputed from the union of their per-subject "
+                "test errors; only the per-(entrant, horizon) rows and the controls were carried"
+            ),
+        },
+        "shards": [
+            {
+                "shard_dir": str(shard.shard_dir),
+                "run_id": shard.run_id,
+                "created_utc": shard.payload.get("created_utc"),
+                "git": dict(shard.payload.get("git") or {}),
+                "environment": dict(shard.payload.get("environment") or {}),
+                "determinism": dict(shard.payload.get("determinism") or {}),
+                "recordings": list(shard.payload.get("recordings") or []),
+                "config": shard.config,
+                "entrant_ids": sorted({str(row["entrant_id"]) for row in shard.results}),
+                "model_ids": sorted(
+                    {str(row["model_id"]) for row in shard.results if row.get("model_id")}
+                ),
+                "horizons": sorted({int(row["horizon"]) for row in shard.results}),
+                "n_result_rows": len(shard.results),
+                "n_ledger_rows": len(shard.ledger_lines),
+            }
+            for shard in shards
+        ],
+    }
+    if smoke_shards:
+        payload["additional_failure_reasons"] = [SMOKE_MERGE_FAILURE_REASON]
+
+    payload["tuning_budget_symmetry"] = budget_symmetry(
+        ledger_rows, _entrants_from_logs(payload["entrants"])
+    )
+    payload["paired_statistics"] = build_paired_statistics(
+        results, horizons, n_boot=int(merged_config.get("n_boot") or DEFAULT_N_BOOT), seed=SPLIT_SEED
+    )
+    payload["ranking"] = build_ranking(results, horizons, paired_lookup(payload["paired_statistics"]))
+    payload["protocol_completeness"] = protocol_completeness(payload)
+    payload["powered"] = _powered(payload)
+    payload["beat_best_baseline"] = _beat_best_baseline(payload)
+    payload["caveats"] = report_caveats(payload)
+    payload["gate"] = build_gate_dossier(payload)
+    return payload
+
+
+@dataclass(frozen=True)
+class MergeConfig:
+    """The resolved ``--merge`` invocation."""
+
+    shard_dirs: tuple[Path, ...]
+    out_dir: Path
+    allow_smoke_merge: bool = False
+
+
+def resolve_merge_config(args: argparse.Namespace) -> MergeConfig:
+    """Turn parsed arguments into a merge configuration."""
+
+    shard_dirs = tuple(Path(shard_dir) for shard_dir in (args.merge or ()))
+    if not shard_dirs:
+        raise ValueError("--merge needs at least one shard out-dir")
+    return MergeConfig(
+        shard_dirs=shard_dirs,
+        out_dir=Path(args.out_dir),
+        allow_smoke_merge=bool(getattr(args, "allow_smoke_merge", False)),
+    )
+
+
+def run_merge(config: MergeConfig) -> dict[str, Any]:
+    """Validate, merge and re-gate a set of shard dossiers into one merged dossier."""
+
+    shards = [load_shard(shard_dir) for shard_dir in config.shard_dirs]
+    validate_shards(shards, allow_smoke_merge=config.allow_smoke_merge)
+    payload = build_merged_payload(
+        shards, out_dir=config.out_dir, allow_smoke_merge=config.allow_smoke_merge
+    )
+    ledger = ConcatenatedLedger(
+        lines=tuple(line for shard in shards for line in shard.ledger_lines)
+    )
+    written = write_artifacts(config.out_dir, payload, ledger)
+    for shard in shards:
+        print(
+            f"shard {shard.shard_dir}: run_id {shard.run_id}, "
+            f"{len(shard.results)} result row(s), entrants "
+            f"{sorted({str(row['entrant_id']) for row in shard.results})}",
+            flush=True,
+        )
+    for name, path in sorted(written.items()):
+        print(f"wrote {name}: {path}", flush=True)
+    print(
+        f"merged {len(shards)} shard(s) into {len(payload['results'])} result row(s); "
+        f"scientific_claim_allowed = {payload['gate']['scientific_claim_allowed']}; "
+        f"failure_reasons = {payload['gate']['failure_reasons']}",
+        flush=True,
+    )
+    return payload
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -3525,9 +4305,53 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--data-root", type=Path, required=True, help="Sleep-EDF sleep-cassette directory")
-    parser.add_argument("--weights-dir", type=Path, required=True, help="directory of hand-staged checkpoints")
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        default=None,
+        help="Sleep-EDF sleep-cassette directory (required unless --merge)",
+    )
+    parser.add_argument(
+        "--weights-dir",
+        type=Path,
+        default=None,
+        help="directory of hand-staged checkpoints (required unless --merge)",
+    )
     parser.add_argument("--out-dir", type=Path, required=True, help="artifact output directory")
+    parser.add_argument(
+        "--merge",
+        nargs="+",
+        type=Path,
+        default=None,
+        metavar="SHARD_DIR",
+        help=(
+            "MERGE MODE: instead of running the benchmark, recompute one dossier from these "
+            "shard out-dirs (each a previous --out-dir). The union is re-ranked, re-tested and "
+            "re-gated; --data-root and --weights-dir are neither required nor read. Shards must "
+            "agree on protocol, split, normalisation, git commit and checkpoint bytes, and no "
+            "(entrant, horizon) may appear twice, or the merge is refused"
+        ),
+    )
+    parser.add_argument(
+        "--allow-smoke-merge",
+        action="store_true",
+        help=(
+            "permit --merge over smoke shards. A merged dossier is full-scale by definition, so "
+            "this is a rehearsal switch: it injects a gate failure reason and the result can "
+            "never be claim-bearing"
+        ),
+    )
+    parser.add_argument(
+        "--incumbents",
+        default="on",
+        choices=("on", "off"),
+        help=(
+            "run the incumbent ladder (persistence, tuned_ridge_ar, gbm, kahlus_gru) in this "
+            "invocation. Turn it off on every shard but one: the ladder is cheap, but running "
+            "it twice is two held-out test looks at one configuration family and the merge "
+            "refuses it"
+        ),
+    )
     parser.add_argument(
         "--models",
         default="all",
@@ -3621,6 +4445,7 @@ class RunConfig:
     horizons: tuple[int, ...]
     conditions: tuple[str, ...]
     include_random_twin: bool
+    include_incumbents: bool
     seeds: tuple[int, ...]
     subjects: int
     max_windows_per_recording: int
@@ -3651,6 +4476,7 @@ class RunConfig:
             "horizons": list(self.horizons),
             "conditions": list(self.conditions),
             "include_random_twin": self.include_random_twin,
+            "include_incumbents": self.include_incumbents,
             "seeds": list(self.seeds),
             "subjects": self.subjects,
             "max_windows_per_recording": self.max_windows_per_recording,
@@ -3678,6 +4504,18 @@ def _csv_ints(raw: str, name: str) -> tuple[int, ...]:
 
 def resolve_config(args: argparse.Namespace) -> RunConfig:
     """Turn parsed arguments into the resolved, smoke-adjusted run configuration."""
+
+    missing = [
+        flag
+        for flag, value in (("--data-root", args.data_root), ("--weights-dir", args.weights_dir))
+        if value is None
+    ]
+    if missing:
+        raise ValueError(
+            f"{', '.join(missing)} {'is' if len(missing) == 1 else 'are'} required to run the "
+            "benchmark; they are optional only in --merge mode, which reads no data and loads "
+            "no checkpoint"
+        )
 
     models = FM_MODEL_IDS if str(args.models).strip() == "all" else tuple(
         token.strip() for token in str(args.models).split(",") if token.strip()
@@ -3727,6 +4565,7 @@ def resolve_config(args: argparse.Namespace) -> RunConfig:
         horizons=horizons,
         conditions=conditions,
         include_random_twin=bool(args.include_random_twin),
+        include_incumbents=str(getattr(args, "incumbents", "on")) == "on",
         seeds=seeds,
         subjects=subjects,
         max_windows_per_recording=max_windows,
@@ -3864,7 +4703,14 @@ def run_benchmark(config: RunConfig) -> dict[str, Any]:
         patience=config.patience,
         device=config.device,
         truncate_closed_form=config.closed_form_truncation,
+        include_incumbents=config.include_incumbents,
     )
+    if not config.include_incumbents:
+        print(
+            "incumbents: OFF -- this invocation is a shard; its ladder and protocol "
+            "completeness checks will fail until it is merged with the shard that carries them",
+            flush=True,
+        )
 
     git_state = _git_state()
     run_id = (
@@ -4100,6 +4946,14 @@ def run_benchmark(config: RunConfig) -> dict[str, Any]:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if getattr(args, "merge", None):
+        try:
+            merge_config = resolve_merge_config(args)
+        except ValueError as exc:
+            parser.error(str(exc))
+            return 2
+        run_merge(merge_config)
+        return 0
     try:
         config = resolve_config(args)
     except ValueError as exc:
