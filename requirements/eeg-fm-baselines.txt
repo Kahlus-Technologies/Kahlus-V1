@@ -52,3 +52,7 @@ einops>=0.7
 # BIOT (github.com/ycq091044/BIOT, MIT): checkpoints committed in-repo; upstream uses
 #   linear-attention transformers. (CBraMod needs only einops, covered above.)
 linear-attention-transformer>=0.19
+
+# Incumbent ladder: the gbm rung in scripts/eeg_fm_benchmark.py uses
+# HistGradientBoostingRegressor.
+scikit-learn>=1.4

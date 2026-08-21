@@ -218,6 +218,19 @@ class RunConditionTests(unittest.TestCase):
         )
         self.assertTrue(changed)
 
+    def test_full_ft_tolerates_a_non_float_encoder_parameter(self):
+        # BIOT registers an integer channel-index tensor as an nn.Parameter with
+        # requires_grad=False; unfreezing must skip it, not crash on it.
+        arrays = _forecast_arrays()
+        encoder = _ProjectionEncoder(arrays.n_channels, arrays.n_samples)
+        encoder.index = torch.nn.Parameter(
+            torch.arange(arrays.n_channels), requires_grad=False
+        )
+        result = run_condition(encoder, arrays, self._config(Condition.FULL_FT))
+        self.assertEqual(result.predictions.shape, arrays.test_target_shape)
+        self.assertTrue(np.isfinite(result.predictions).all())
+        self.assertFalse(encoder.index.requires_grad)
+
     def test_full_ft_uses_a_lower_encoder_learning_rate_by_default(self):
         config = self._config(Condition.FULL_FT, lr=1e-2)
         self.assertLess(config.resolved_encoder_lr(), config.lr)

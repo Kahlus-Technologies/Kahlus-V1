@@ -337,7 +337,10 @@ def run_condition(
                 "torch.nn.Module; a plain embedding callable can only be used FROZEN"
             )
         for parameter in encoder.parameters():
-            parameter.requires_grad_(True)
+            # BIOT registers an integer channel-index tensor as an nn.Parameter
+            # (requires_grad=False); non-float dtypes cannot carry gradients.
+            if parameter.is_floating_point() or parameter.is_complex():
+                parameter.requires_grad_(True)
         with torch.no_grad():
             probe = _flatten_embedding(
                 encoder.to(device).eval()(
