@@ -222,10 +222,10 @@ ALPHA_LEVEL = 0.05
 #: *here*, before the data, as roughly a tenth of the z-scored-MSE dynamic range the F8
 #: crossover table spans (``docs/results/forecast_crossover_2026-07-27.md:48-58``).
 #: It is an engineering placeholder standing in for a power calculation, and it is
-#: surfaced in the artifact as ``mde_source`` so a human must ratify or replace it before
-#: any ranking sentence is written.
+#: surfaced in the artifact as ``mde_source``. Ratified at 0.10 by Krish Garg on
+#: 2026-08-21, before any full-scale test evaluation had been merged or read.
 MDE_ZSCORED_MSE = 0.10
-MDE_SOURCE = "declared_in_driver_not_in_design_doc__requires_human_ratification"
+MDE_SOURCE = "declared_in_driver_pre_data__ratified_by_krish_garg_2026-08-21"
 
 #: Preregistered control margins (plan section 4). A control "collapses" only if the
 #: corrupted run is *materially* worse, not merely not-better: an entrant whose shuffled
@@ -3436,9 +3436,10 @@ def report_caveats(payload: Mapping[str, Any]) -> list[str]:
         "masked-infilling encoders and classifiers, not forecasters. A poor number here is "
         "evidence about transfer to strictly-future single-sample forecasting, and is not "
         "evidence about the model's published capabilities.",
-        f"**Declared MDE is a placeholder.** The `powered` gate term uses {MDE_ZSCORED_MSE} "
-        f"z-scored MSE (`{MDE_SOURCE}`). The design document names no MDE; a human must "
-        "ratify or replace this number before any ranking sentence is written.",
+        f"**Declared MDE.** The `powered` gate term uses {MDE_ZSCORED_MSE} z-scored MSE "
+        f"(`{MDE_SOURCE}`). The design document names no MDE; this value was declared in "
+        "the driver before the data and ratified by Krish Garg on 2026-08-21, before any "
+        "full-scale test evaluation had been merged or read.",
     ] + (
         [
             "**This was a smoke run.** Reduced subjects, horizons, configurations and seeds. "
