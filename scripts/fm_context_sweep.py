@@ -111,14 +111,22 @@ def tuned_ridge(xf_tr, y_tr, xf_va, y_va, xf_te):
     return ridge_predict(w, xf_te), (lambda x: ridge_predict(w, x)), best_a
 
 
-def gru_residual(train_seq, train_res, test_seq, *, seed, device, hidden=64,
-                 steps=1500, batch=192):
+def nl_residual(train_seq, train_res, test_seq, *, seed, device, hidden=64,
+                steps=1500, batch=192):
+    """Causal-TCN residual head (repo-canonical TorchTCNBaseline). A TCN is
+    parallel over time, so 900-token mixed-rate sequences train ~30x faster
+    than a GRU on MPS; the sweep's question — does long context feed a
+    nonlinear head — is head-agnostic, and the head choice is recorded in the
+    output payload."""
     import torch
     from torch import nn
 
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    from neurotwin.models.baselines import TorchTCNBaseline
+
     torch.manual_seed(seed)
     c = train_seq.shape[-1]
-    enc = nn.GRU(c, hidden, batch_first=True).to(device)
+    enc = TorchTCNBaseline(c, hidden, hidden_dim=hidden, kernel_size=5).to(device)
     head = nn.Linear(hidden, 1).to(device)
     opt = torch.optim.AdamW(list(enc.parameters()) + list(head.parameters()), lr=2e-3)
     xt = torch.as_tensor(train_seq, dtype=torch.float32, device=device)
@@ -128,7 +136,7 @@ def gru_residual(train_seq, train_res, test_seq, *, seed, device, hidden=64,
     for _ in range(steps):
         idx = torch.as_tensor(rng.integers(0, n, size=min(batch, n)), device=device)
         opt.zero_grad(set_to_none=True)
-        out, _ = enc(xt[idx])
+        out = enc(xt[idx])
         loss = nn.functional.mse_loss(head(out[:, -1]), yt[idx])
         loss.backward()
         opt.step()
@@ -136,7 +144,7 @@ def gru_residual(train_seq, train_res, test_seq, *, seed, device, hidden=64,
     te = torch.as_tensor(test_seq, dtype=torch.float32, device=device)
     with torch.no_grad():
         for i in range(0, te.shape[0], 512):
-            out, _ = enc(te[i:i + 512])
+            out = enc(te[i:i + 512])
             preds.append(head(out[:, -1]).cpu().numpy()[:, 0])
     return np.concatenate(preds)
 
@@ -197,6 +205,22 @@ def main() -> int:
     chsets = [int(x) for x in args.channel_sets.split(",")]
     groups = subject_groups()
     subjects = sorted(groups)[: args.max_subjects]
+
+    # Calibrate before committing: measure the real GRU step rate on this
+    # device and print the total estimate up front. A run may never again be
+    # a black box with a wrong ETA.
+    rng0 = np.random.default_rng(0)
+    cal_seq = rng0.normal(size=(256, 600, 2)).astype(np.float32)
+    cal_res = rng0.normal(size=256).astype(np.float32)
+    t0 = time.time()
+    nl_residual(cal_seq, cal_res, cal_seq[:32], seed=0, device=args.device, steps=50)
+    rate = 50 / (time.time() - t0)
+    n_train = len(contexts) * len(chsets) * len(subjects) * len(H_MS) * args.seeds
+    est_h = n_train * args.gru_steps / rate / 3600
+    print(f"calibration: {rate:.0f} TCN steps/s -> {n_train} trainings x "
+          f"{args.gru_steps} steps ~= {est_h:.1f} h (+ ridge/loading overhead)", flush=True)
+
+    partial_path = args.out.with_suffix(".partial.json")
     results = {}
     for nch in chsets:
         chans = CHANNEL_SETS[nch]
@@ -238,26 +262,30 @@ def main() -> int:
                     res_tr = np.concatenate([y_tr, y_va]) - predict(np.concatenate([xtr, xva]))
                     stack = []
                     for seed in range(args.seeds):
-                        g = gru_residual(np.concatenate([str_tr, str_va]), res_tr, str_te,
+                        g = nl_residual(np.concatenate([str_tr, str_va]), res_tr, str_te,
                                          seed=seed, device=args.device, steps=args.gru_steps)
                         stack.append(mse(y_te, pred_te + g))
-                    r["gru_stack"] = float(np.mean(stack))
+                    r["nl_stack"] = float(np.mean(stack))
                     row[str(ms)] = r
                 folds[held] = row
+                results[key] = {"folds": folds}
+                partial_path.parent.mkdir(parents=True, exist_ok=True)
+                partial_path.write_text(json.dumps(results, indent=1))
+                print(f"  {key} fold {held} done ({len(folds)}/{len(subjects)})", flush=True)
             means = {str(ms): {k: float(np.mean([folds[s][str(ms)][k] for s in subjects]))
-                               for k in ("persist", "tuned_ridge", "gru_stack")}
+                               for k in ("persist", "tuned_ridge", "nl_stack")}
                      for ms in H_MS}
             results[key] = {"folds": folds, "mean_over_folds": means}
             print(f"{key} done in {time.time()-t0:.0f}s:", flush=True)
             for ms in H_MS:
                 m = means[str(ms)]
                 print(f"  {ms:>4}ms persist {m['persist']:.4f} ridge {m['tuned_ridge']:.4f} "
-                      f"stack {m['gru_stack']:.4f}", flush=True)
+                      f"stack {m['nl_stack']:.4f}", flush=True)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(
         {"task": "context x channel capability sweep, isolated forecast, LOSO",
          "contexts": contexts, "channel_sets": chsets, "horizons_ms": list(H_MS),
-         "n_subjects": len(subjects), "results": results}, indent=2))
+         "n_subjects": len(subjects), "nonlinear_head": "causal_tcn_k5_h64", "results": results}, indent=2))
     print("wrote", args.out)
     return 0
 
