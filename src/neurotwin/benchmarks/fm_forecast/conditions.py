@@ -27,14 +27,22 @@ Every run returns a JSON-serialisable log - configuration, per-epoch history, gr
 steps, wall clock, parameter counts - because plan section 5.3 requires every attempt to
 be logged and section 3.4 requires budget symmetry to be checkable from the artifact
 rather than asserted.
+
+That log is also *published* to any sink installed with :func:`capture_condition_logs`.
+Adapters expose only a ``(task, seed, steps) -> predictions`` runner, so a driver that
+calls ``make_runner`` would otherwise lose the per-epoch history and the realised
+gradient-step count -- exactly the numbers plan section 3.4 says a reader must be able to
+check instead of trusting. The sink is a side channel for *observability only*: nothing
+in this module reads it back, and installing no sink changes no behaviour.
 """
 
 from __future__ import annotations
 
 import time
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Callable, Protocol
+from typing import Callable, Iterator, Protocol
 
 import numpy as np
 import torch
@@ -74,6 +82,53 @@ class Condition(str, Enum):
 
 #: Conditions eligible for the ranking claim, in reporting order.
 ADMISSIBLE_CONDITIONS: tuple[Condition, ...] = (Condition.FROZEN, Condition.FULL_FT)
+
+
+#: Installed log sinks, innermost last. Never read by this module's own logic.
+_LOG_SINKS: list[Callable[[dict[str, object]], None]] = []
+
+
+@contextmanager
+def capture_condition_logs(sink: Callable[[dict[str, object]], None]) -> Iterator[None]:
+    """Publish every :func:`run_condition` log to ``sink`` for the duration of the block.
+
+    Sinks nest, and every installed sink receives every log. A sink that raises is not
+    allowed to break the run it is observing: the exception is swallowed, because an
+    observability channel must never change whether a scientific result was produced.
+    """
+
+    _LOG_SINKS.append(sink)
+    try:
+        yield
+    finally:
+        # Remove this exact sink, not merely the last one, so out-of-order exits are safe.
+        for index in range(len(_LOG_SINKS) - 1, -1, -1):
+            if _LOG_SINKS[index] is sink:
+                del _LOG_SINKS[index]
+                break
+
+
+def _publish(log: dict[str, object]) -> None:
+    for sink in tuple(_LOG_SINKS):
+        try:
+            sink(log)
+        except Exception:  # noqa: BLE001 - an observer may not break the observed run
+            pass
+
+
+def _checkpoint_report(encoder: object) -> object:
+    """Whatever load report the adapter attached to its encoder, if any.
+
+    Adapters name it differently (``checkpoint_report`` in the LaBraM/EEGPT adapters,
+    ``checkpoint_load_stats`` in the CBraMod one), and the benchmark driver needs the
+    *observed* load report of the checkpoint that actually ran, so both names are read.
+    """
+
+    for name in ("checkpoint_report", "checkpoint_load_stats"):
+        report = getattr(encoder, name, None)
+        if report is not None:
+            return report
+    return None
 
 
 class EncoderFn(Protocol):
@@ -335,9 +390,12 @@ def run_condition(
         "trainable_parameters": trainable_parameters,
         "wall_clock_seconds": float(time.perf_counter() - started),
         "test_targets_read": False,
+        "encoder_checkpoint_report": _checkpoint_report(encoder),
+        "encoder_input_scale": getattr(encoder, "input_scale", None),
         "fit": fit.as_log(),
         **_parameter_counts(encoder),
     }
+    _publish(log)
     return ConditionResult(condition=config.condition, predictions=predictions, log=log, fit=fit)
 
 

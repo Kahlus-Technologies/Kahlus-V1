@@ -72,6 +72,17 @@ class CBraModAdapterSurfaceTests(unittest.TestCase):
         self.assertFalse(runner.pretrained)
         self.assertIsNone(runner.checkpoint_path)
         self.assertFalse(runner.model_selection_exposure)
+        self.assertEqual(runner.input_scale, 1.0)
+
+    def test_input_scale_is_threaded_from_make_runner(self):
+        runner = cbramod_adapter.make_runner(
+            Path("/checkpoint-resolution-must-not-run"),
+            Condition.FROZEN,
+            pretrained=False,
+            input_scale=0.01,
+        )
+
+        self.assertEqual(runner.input_scale, 0.01)
 
 
 @unittest.skipUnless(VENDORED, "external/vendor/cbramod is not populated (gitignored)")
@@ -93,6 +104,29 @@ class CBraModVendoredTests(unittest.TestCase):
         self.assertEqual(tuple(first.shape), (8, cbramod_adapter.EMBED_DIM))
         self.assertTrue(torch.isfinite(first).all())
         torch.testing.assert_close(first, second, rtol=0.0, atol=0.0)
+
+    def test_input_scale_is_applied_and_defaults_to_no_rescaling(self):
+        # Upstream's /100 microvolt convention is a hyperparameter here, not a silent
+        # default: 1.0 must leave the window untouched, and a non-default scale must
+        # actually change the embedding.
+        import torch
+
+        x = torch.linspace(-1.0, 1.0, 4 * 200).reshape(4, 1, 200)
+
+        torch.manual_seed(5)
+        default = cbramod_adapter.load_encoder(None)
+        torch.manual_seed(5)
+        scaled = cbramod_adapter.load_encoder(None, input_scale=0.01)
+
+        self.assertEqual(default.input_scale, 1.0)
+        self.assertEqual(scaled.input_scale, 0.01)
+        with torch.no_grad():
+            unscaled_embedding = default(x)
+            scaled_embedding = scaled(x)
+            explicit_embedding = default(x * 0.01)
+
+        self.assertFalse(torch.equal(unscaled_embedding, scaled_embedding))
+        torch.testing.assert_close(scaled_embedding, explicit_embedding, rtol=1e-5, atol=1e-6)
 
     def test_loading_vendor_leaves_no_bare_models_modules(self):
         sentinel = object()

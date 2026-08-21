@@ -1,4 +1,14 @@
-"""CBraMod as a Kahlus forecast baseline runner."""
+"""CBraMod as a Kahlus forecast baseline runner.
+
+**Input scaling.** Upstream CBraMod trains on microvolt-scale EEG divided by 100, i.e.
+units of 0.1 mV (``CBraMod/preprocessing/*``, and the same ``/100`` convention LaBraM
+documents in ``engine_for_finetuning.py:64-65``; both upstreams inherit it from the
+TUEG pipeline). The Kahlus harness hands adapters per-recording z-scored, *unitless*
+windows, so there is no honest microvolt conversion factor to apply. ``input_scale`` is
+therefore exposed with default ``1.0`` -- no silent rescaling -- and is a
+*validation-tunable* hyperparameter, mirroring ``labram_adapter``: sweep it on validation
+MSE like any other axis, never on test.
+"""
 
 from __future__ import annotations
 
@@ -107,8 +117,21 @@ def load_encoder(
     n_channels: int = 1,
     n_samples: int = 200,
     device: str = "cpu",
+    input_scale: float = 1.0,
 ) -> torch.nn.Module:
-    """Build the CBraMod encoder or its architecture-matched random twin."""
+    """Build the CBraMod encoder or its architecture-matched random twin.
+
+    Args:
+        checkpoint_path: verified path from ``weights_manifest.resolve_checkpoint``, or
+            ``None`` for the random-init twin.
+        n_channels: channels in the harness window.
+        n_samples: context length at :data:`SR_OUT`; must be a multiple of the 200-sample
+            patch.
+        device: where the encoder is placed; ``run_condition`` may move it again.
+        input_scale: multiplier applied to the window before patching. Default ``1.0``
+            (no rescaling); see the module docstring for why upstream's ``/100``
+            microvolt convention is *not* silently applied to unitless z-scored windows.
+    """
 
     import torch
 
@@ -140,11 +163,12 @@ def load_encoder(
             self.backbone = backbone
             self.n_channels = int(n_channels)
             self.n_samples = int(n_samples)
+            self.input_scale = float(input_scale)
             self.checkpoint_load_stats = load_stats
             self.pretrained = checkpoint_path is not None
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
-            patches = x.to(dtype=torch.float32).reshape(
+            patches = (x.to(dtype=torch.float32) * self.input_scale).reshape(
                 x.shape[0],
                 self.n_channels,
                 self.n_samples // _PATCH_SAMPLES,
@@ -162,8 +186,12 @@ def make_runner(
     *,
     config: ConditionConfig | None = None,
     pretrained: bool = True,
+    input_scale: float = 1.0,
 ) -> Callable[[SupervisedWindowTask, int, int], np.ndarray]:
-    """Return a baseline-suite runner with the standard ``(task, seed, steps)`` API."""
+    """Return a baseline-suite runner with the standard ``(task, seed, steps)`` API.
+
+    ``input_scale`` is threaded to :func:`load_encoder`; see the module docstring.
+    """
 
     if not is_evaluation_permitted(MODEL_ID, SLEEP_EDF_EVAL_DATASET_ID):
         raise RuntimeError(
@@ -195,6 +223,7 @@ def make_runner(
             n_channels=arrays.n_channels,
             n_samples=arrays.n_samples,
             device="cpu",
+            input_scale=float(input_scale),
         )
         run_config = replace(
             base_config,
@@ -212,6 +241,7 @@ def make_runner(
     runner.condition = condition  # type: ignore[attr-defined]
     runner.pretrained = bool(pretrained)  # type: ignore[attr-defined]
     runner.checkpoint_path = checkpoint_path  # type: ignore[attr-defined]
+    runner.input_scale = float(input_scale)  # type: ignore[attr-defined]
     runner.model_selection_exposure = has_model_selection_exposure(  # type: ignore[attr-defined]
         MODEL_ID, SLEEP_EDF_EVAL_DATASET_ID
     )

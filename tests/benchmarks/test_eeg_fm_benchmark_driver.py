@@ -509,6 +509,43 @@ class EntrantSlateTests(unittest.TestCase):
         self.assertEqual(persistence.configs_tried, 1)
         self.assertIn("parameter-free", persistence.budget_note)
 
+    def test_no_tuned_entrant_has_an_axis_too_short_to_detect_an_edge(self):
+        # A two-point axis makes every selection an endpoint, so plan section 3.4's
+        # no-edge rule could neither be satisfied nor checked. Every tuned axis is >= 3.
+        entrants, _ = self._entrants(models=driver.FM_MODEL_IDS)
+
+        tuned = [entrant for entrant in entrants if entrant.axes]
+        self.assertTrue(tuned)
+        for entrant in tuned:
+            for name, values in entrant.axes.items():
+                self.assertGreaterEqual(len(values), 3, f"{entrant.entrant_id}:{name}")
+
+    def test_the_dropped_cell_is_the_fixed_corner_not_a_per_entrant_choice(self):
+        entrants, _ = self._entrants(models=driver.FM_MODEL_IDS)
+
+        for entrant in entrants:
+            if len(entrant.axes) < 2:
+                continue
+            with self.subTest(entrant=entrant.entrant_id):
+                corner = {name: max(values) for name, values in entrant.axes.items()}
+                self.assertEqual(entrant.configs_tried, driver.TUNING_GRID_SIZE)
+                # Exactly the max-on-every-axis cell is missing...
+                self.assertFalse(
+                    [
+                        point
+                        for point in entrant.grid
+                        if all(point[name] == value for name, value in corner.items())
+                    ]
+                )
+                # ...and dropping a corner leaves every axis value present elsewhere, so
+                # per-axis edge detection is untouched by the truncation.
+                for name, values in entrant.axes.items():
+                    self.assertEqual({point[name] for point in entrant.grid}, set(values))
+
+    def test_a_grid_shape_that_misses_the_budget_is_refused_not_padded(self):
+        with self.assertRaises(ValueError):
+            driver._budget_grid({"lr": (1e-4, 1e-3), "hidden": (32, 128)})
+
     def test_entrant_log_carries_contamination_and_exposure_columns(self):
         entrants, _ = self._entrants(models=("eegpt",))
         eegpt = next(entrant for entrant in entrants if entrant.entrant_id == "eegpt__frozen")
@@ -526,118 +563,177 @@ class EntrantSlateTests(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 
-def _passing_payload(**overrides):
+TEST_SUBJECTS = [f"T{index:03d}" for index in range(driver.F8_TEST_SUBJECTS)]
+TRAIN_SUBJECTS = [f"R{index:03d}" for index in range(39)]
+VAL_SUBJECTS = [f"V{index:03d}" for index in range(12)]
+
+#: Per-subject errors are built as ``base + 0.001 * index`` for every entrant, so the
+#: paired delta is a constant and the paired bootstrap CI is tight and excludes zero --
+#: which is what a *powered* passing run looks like. The marginal per-entrant CIs of two
+#: entrants overlap heavily under this construction, which is exactly why the gate keys off
+#: the paired statistics and not off marginal overlap.
+def _per_subject(base: float) -> dict[str, float]:
+    return {subject: base + 0.001 * index for index, subject in enumerate(TEST_SUBJECTS)}
+
+
+def _result_row(entrant_id, *, family, model_id, condition, base, horizon, ranked=True, configs=None):
+    per_subject = _per_subject(base)
+    values = sorted(per_subject.values())
+    return {
+        "entrant_id": entrant_id,
+        "family": family,
+        "model_id": model_id,
+        "condition": condition,
+        "ranked": ranked,
+        "gradient_trained": entrant_id == "kahlus_gru" or model_id is not None,
+        "configs_tried": driver.TUNING_GRID_SIZE if configs is None else configs,
+        "contamination_status": "clean" if model_id else "not_applicable_no_pretraining",
+        "model_selection_exposure": bool(model_id == "eegpt"),
+        "horizon": int(horizon),
+        "claim_eligible_protocol": bool(horizon >= 2),
+        "val_mse": base - 0.01,
+        "test_mse_mean": float(np.mean(values)),
+        "test_mse_ci95_low": float(values[0]),
+        "test_mse_ci95_high": float(values[-1]),
+        "per_subject_test_mse": per_subject,
+        "n_test_subjects": len(TEST_SUBJECTS),
+        "seed_spread": 0.001,
+        "grid_edge_selected": False,
+        "axes_without_edge_detection": [],
+    }
+
+
+def _passing_results(horizons):
+    """One row per (entrant, horizon) for a slate that satisfies every protocol check."""
+
+    rows = []
+    for horizon in horizons:
+        rows.append(_result_row("persistence", family=driver.FAMILY_INCUMBENT, model_id=None, condition=None, base=0.60, horizon=horizon, configs=1))
+        rows.append(_result_row("tuned_ridge_ar", family=driver.FAMILY_INCUMBENT, model_id=None, condition=None, base=0.30, horizon=horizon))
+        rows.append(_result_row("gbm", family=driver.FAMILY_INCUMBENT, model_id=None, condition=None, base=0.35, horizon=horizon))
+        rows.append(_result_row("kahlus_gru", family=driver.FAMILY_INCUMBENT, model_id=None, condition=None, base=0.20, horizon=horizon))
+        for offset, model_id in enumerate(driver.FM_MODEL_IDS):
+            for condition_offset, condition in enumerate(driver.CONDITIONS):
+                base = 0.26 + 0.01 * offset + 0.005 * condition_offset
+                rows.append(
+                    _result_row(
+                        f"{model_id}__{condition}",
+                        family=driver.FAMILY_EXTERNAL,
+                        model_id=model_id,
+                        condition=condition,
+                        base=base,
+                        horizon=horizon,
+                    )
+                )
+                rows.append(
+                    _result_row(
+                        f"{model_id}__{condition}__random_twin",
+                        family=driver.FAMILY_RANDOM_TWIN,
+                        model_id=model_id,
+                        condition=condition,
+                        base=base + 0.10,
+                        horizon=horizon,
+                        ranked=False,
+                    )
+                )
+    return rows
+
+
+def _passing_payload(*, horizons=None, n_boot=driver.MIN_CLAIMABLE_N_BOOT, **overrides):
     from neurotwin.benchmarks.fm_forecast.weights_manifest import manifest_rows
 
-    results = [
-        {
-            "entrant_id": "kahlus_gru",
-            "family": driver.FAMILY_INCUMBENT,
-            "model_id": None,
-            "condition": None,
-            "ranked": True,
-            "configs_tried": driver.TUNING_GRID_SIZE,
-            "contamination_status": "not_applicable_no_pretraining",
-            "model_selection_exposure": False,
-            "horizon": 1,
-            "val_mse": 0.10,
-            "test_mse_mean": 0.11,
-            "test_mse_ci95_low": 0.10,
-            "test_mse_ci95_high": 0.12,
-            "grid_edge_selected": False,
-        },
-        {
-            "entrant_id": "tuned_ridge_ar",
-            "family": driver.FAMILY_INCUMBENT,
-            "model_id": None,
-            "condition": None,
-            "ranked": True,
-            "configs_tried": driver.TUNING_GRID_SIZE,
-            "contamination_status": "not_applicable_no_pretraining",
-            "model_selection_exposure": False,
-            "horizon": 1,
-            "val_mse": 0.12,
-            "test_mse_mean": 0.13,
-            "test_mse_ci95_low": 0.12,
-            "test_mse_ci95_high": 0.14,
-            "grid_edge_selected": False,
-        },
-        {
-            "entrant_id": "persistence",
-            "family": driver.FAMILY_INCUMBENT,
-            "model_id": None,
-            "condition": None,
-            "ranked": True,
-            "configs_tried": 1,
-            "contamination_status": "not_applicable_no_pretraining",
-            "model_selection_exposure": False,
-            "horizon": 1,
-            "val_mse": 0.30,
-            "test_mse_mean": 0.31,
-            "test_mse_ci95_low": 0.30,
-            "test_mse_ci95_high": 0.32,
-            "grid_edge_selected": False,
-        },
-        {
-            "entrant_id": "eegpt__frozen",
-            "family": driver.FAMILY_EXTERNAL,
-            "model_id": "eegpt",
-            "condition": "frozen",
-            "ranked": True,
-            "configs_tried": driver.TUNING_GRID_SIZE,
-            "contamination_status": "clean",
-            "model_selection_exposure": True,
-            "horizon": 1,
-            "val_mse": 0.20,
-            "test_mse_mean": 0.21,
-            "test_mse_ci95_low": 0.20,
-            "test_mse_ci95_high": 0.22,
-            "grid_edge_selected": False,
-        },
-        {
-            "entrant_id": "eegpt__frozen__random_twin",
-            "family": driver.FAMILY_RANDOM_TWIN,
-            "model_id": "eegpt",
-            "condition": "frozen",
-            "ranked": False,
-            "configs_tried": driver.TUNING_GRID_SIZE,
-            "contamination_status": "clean",
-            "model_selection_exposure": True,
-            "horizon": 1,
-            "val_mse": 0.40,
-            "test_mse_mean": 0.41,
-            "test_mse_ci95_low": 0.40,
-            "test_mse_ci95_high": 0.42,
-            "grid_edge_selected": False,
-        },
-    ]
+    horizons = list(driver.HORIZONS if horizons is None else horizons)
+    results = _passing_results(horizons)
+    ranked_ids = sorted({row["entrant_id"] for row in results if row["ranked"] and row["model_id"] is None})
+
     payload = {
         "schema": driver.ARTIFACT_SCHEMA,
         "created_utc": "2026-08-20T00:00:00+00:00",
         "dataset_id": driver.DATASET_ID,
         "lane": "lane_a_single_channel_fpz_cz",
-        "config": {"smoke": False},
+        "config": {
+            "smoke": False,
+            "horizons": horizons,
+            "seeds": [0, 1, 2],
+            "n_boot": n_boot,
+            "n_configs": driver.TUNING_GRID_SIZE,
+            "closed_form_grid_truncated": False,
+        },
         "environment": {"python": "3.11"},
+        "determinism": {"fully_deterministic": True, "reason": ""},
         "git": {"commit": "deadbeef", "clean_worktree": True, "dirty_paths": []},
-        "protocol": {"horizons": [1]},
+        "recordings": [
+            {"record_id": "SC4001E0-PSG", "resolved_channel": driver.CHANNEL, "sampling_rate_hz": 100.0}
+        ],
+        "protocol": {"horizons": horizons},
         "normalization": driver.plan_normalization().as_log(),
-        "split": {"seed": 0, "train": ["a", "b"], "val": ["c"], "test": ["d", "e"]},
-        "tuning_budget": {"n_configs_per_entrant": driver.TUNING_GRID_SIZE, "seeds": [0], "max_train_epochs": 2},
+        "split": {
+            "seed": 0,
+            "train": list(TRAIN_SUBJECTS),
+            "val": list(VAL_SUBJECTS),
+            "test": list(TEST_SUBJECTS),
+        },
+        "tuning_budget": {
+            "n_configs_per_entrant": driver.TUNING_GRID_SIZE,
+            "seeds": [0, 1, 2],
+            "max_train_epochs": 50,
+        },
+        "tuning_budget_symmetry": {"symmetric": True, "per_entrant": {}},
         "entrants": [],
+        "incumbent_ladder": driver.ladder_report(results),
         "results": results,
         "contamination_table": driver.contamination_dump(),
-        "checkpoints": manifest_rows(),
+        "checkpoints": {
+            "verified": [
+                {
+                    "model_id": model_id,
+                    "verified": True,
+                    "digest_matches": True,
+                    "observed_sha256": "0" * 64,
+                    "path": f"/tmp/weights/{model_id}.ckpt",
+                    "load_report": {"missing_keys": []},
+                }
+                for model_id in driver.FM_MODEL_IDS
+            ],
+            "manifest_reference": manifest_rows(),
+        },
         "controls": {
-            "index_audit": [{"horizon": 1, "passed": True, "windows_with_shared_samples": 0}],
-            "label_shuffle": [{"entrant_id": "tuned_ridge_ar", "horizon": 1, "passed": True}],
+            "index_audit": [{"horizon": h, "passed": True, "windows_with_shared_samples": 0} for h in horizons],
+            "label_shuffle": [
+                {"control": "label_shuffle", "entrant_id": entrant_id, "horizon": horizons[-1], "passed": True}
+                for entrant_id in ranked_ids
+            ],
+            "time_shift": [
+                {"control": "time_shift", "entrant_id": entrant_id, "horizon": horizons[-1], "passed": True}
+                for entrant_id in ranked_ids
+            ],
+            "harness_sanity": [
+                {"control": "ar2_sanity", "passed": True},
+                {"control": "synthetic_null", "passed": True},
+            ],
             "random_init_twin": driver.random_twin_controls(results),
+            "not_implemented": [],
         },
         "skipped_models": [],
         "unavailable_models": [],
         "failed_entrants": [],
-        "attempts": {"n_attempts": 10, "n_test_evaluations": 5, "log_file": "attempts.log"},
+        "attempts": {
+            "run_id": "test-run",
+            "n_attempts": 10,
+            "n_test_evaluations": 5,
+            "n_test_evaluations_cumulative": 5,
+            "repeated_test_families": [],
+            "log_file": "attempts.log",
+        },
     }
-    payload["ranking"] = driver.build_ranking(results, [1])
+    payload["paired_statistics"] = driver.build_paired_statistics(results, horizons, n_boot=n_boot)
+    payload["ranking"] = driver.build_ranking(
+        results, horizons, driver.paired_lookup(payload["paired_statistics"])
+    )
+    payload["protocol_completeness"] = driver.protocol_completeness(payload)
+    payload["powered"] = driver._powered(payload)
+    payload["beat_best_baseline"] = driver._beat_best_baseline(payload)
+    payload["caveats"] = driver.report_caveats(payload)
     payload.update(overrides)
     return payload
 
@@ -658,45 +754,204 @@ class ContaminationDumpTests(unittest.TestCase):
 
 
 class RankingTests(unittest.TestCase):
-    def test_ranking_uses_validation_to_pick_a_model_condition(self):
-        results = _passing_payload()["results"] + [
-            {
-                "entrant_id": "eegpt__full_ft",
-                "family": driver.FAMILY_EXTERNAL,
-                "model_id": "eegpt",
-                "condition": "full_ft",
-                "ranked": True,
-                "configs_tried": driver.TUNING_GRID_SIZE,
-                "contamination_status": "clean",
-                "model_selection_exposure": True,
-                "horizon": 1,
-                # Worse on validation but better on test: must NOT be the selected row,
-                # because selecting on test would be tuning on test.
-                "val_mse": 0.25,
-                "test_mse_mean": 0.05,
-                "test_mse_ci95_low": 0.04,
-                "test_mse_ci95_high": 0.06,
-                "grid_edge_selected": False,
-            }
-        ]
-        ranking = driver.build_ranking(results, [1])
+    def test_every_model_condition_is_its_own_entrant_row(self):
+        # The single-look rule (plan section 5.3) is enforced by never letting validation
+        # pick *between* conditions: frozen and full_ft each spend their own 14-config
+        # budget and each get exactly one test look, so both must appear in the table.
+        payload = _passing_payload(horizons=[2])
+        ranking = driver.build_ranking(payload["results"], [2])
         entrant_ids = [row["entrant_id"] for row in ranking[0]["rows"]]
 
-        self.assertIn("eegpt__frozen", entrant_ids)
-        self.assertNotIn("eegpt__full_ft", entrant_ids)
+        for model_id in driver.FM_MODEL_IDS:
+            for condition in driver.CONDITIONS:
+                self.assertIn(f"{model_id}__{condition}", entrant_ids)
         self.assertNotIn("eegpt__frozen__random_twin", entrant_ids)
         for row in ranking[0]["rows"]:
-            self.assertEqual(row["condition_selected_on"], "validation_mse")
+            self.assertEqual(
+                row["condition_selected_on"],
+                "not_selected__both_conditions_ranked_separately",
+            )
             self.assertIn("model_selection_exposure", row)
             self.assertIn("contamination_status", row)
 
-    def test_random_twin_control_reports_the_pretraining_gap(self):
-        controls = driver.random_twin_controls(_passing_payload()["results"])
+    def test_ranking_is_ordered_by_test_mse_and_carries_the_paired_verdict(self):
+        payload = _passing_payload(horizons=[2], n_boot=200)
+        rows = payload["ranking"][0]["rows"]
 
-        self.assertEqual(len(controls), 1)
-        self.assertEqual(controls[0]["model_id"], "eegpt")
-        self.assertTrue(controls[0]["pretraining_helped"])
-        self.assertAlmostEqual(controls[0]["gap_random_minus_pretrained"], 0.20, places=6)
+        means = [row["test_mse_mean"] for row in rows]
+        self.assertEqual(means, sorted(means))
+        self.assertEqual(rows[0]["entrant_id"], "kahlus_gru")
+        external = next(row for row in rows if row["entrant_id"] == "eegpt__frozen")
+        self.assertIsNotNone(external["paired_vs_reference"])
+        self.assertTrue(external["paired_vs_reference"]["significant_after_holm"])
+        self.assertFalse(external["paired_vs_reference"]["statistical_tie"])
+
+    def test_random_twin_control_reports_the_pretraining_gap(self):
+        results = _passing_payload(horizons=[2], n_boot=200)["results"]
+        controls = driver.random_twin_controls(results)
+
+        self.assertEqual(len(controls), len(driver.FM_MODEL_IDS) * len(driver.CONDITIONS))
+        for control in controls:
+            self.assertTrue(control["pretraining_helped"])
+            self.assertTrue(control["passed"])
+            self.assertAlmostEqual(control["gap_random_minus_pretrained"], 0.10, places=6)
+
+
+class PairedStatisticsTests(unittest.TestCase):
+    def test_wilcoxon_matches_known_exact_and_approximate_values(self):
+        # Cross-checked against scipy.stats.wilcoxon; the driver keeps a scipy-free
+        # implementation so the gate never depends on an optional dependency.
+        exact = driver.wilcoxon_signed_rank([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, -0.5])
+        self.assertIn("exact", exact["method"])
+        self.assertAlmostEqual(exact["p_value"], 0.015625, places=9)
+        self.assertAlmostEqual(exact["statistic"], 1.0, places=9)
+
+        approx = driver.wilcoxon_signed_rank([0.1] * 27)
+        self.assertIn("normal approximation", approx["method"])
+        self.assertAlmostEqual(approx["statistic"], 0.0, places=9)
+        self.assertLess(approx["p_value"], 1e-5)
+
+    def test_zero_deltas_are_reported_not_silently_dropped(self):
+        result = driver.wilcoxon_signed_rank([0.0, 0.0, 1.0, 2.0])
+
+        self.assertEqual(result["n_pairs"], 4)
+        self.assertEqual(result["n_zero_pairs"], 2)
+        self.assertEqual(result["n_nonzero_pairs"], 2)
+
+    def test_all_zero_deltas_are_an_undefined_test_not_a_pass(self):
+        result = driver.wilcoxon_signed_rank([0.0, 0.0, 0.0])
+
+        self.assertEqual(result["p_value"], 1.0)
+        self.assertEqual(result["n_nonzero_pairs"], 0)
+
+    def test_holm_is_monotone_and_never_shrinks_a_p_value(self):
+        adjusted = driver.holm_adjust([0.01, 0.02, 0.03])
+
+        self.assertEqual(adjusted, sorted(adjusted))
+        for raw, corrected in zip([0.01, 0.02, 0.03], adjusted):
+            self.assertGreaterEqual(corrected, raw)
+        self.assertAlmostEqual(adjusted[0], 0.03, places=9)
+
+    def test_paired_bootstrap_uses_common_random_numbers(self):
+        rng = np.random.default_rng(0)
+        index = rng.integers(0, 27, size=(500, 27))
+        deltas = [0.05 + 0.001 * i for i in range(27)]
+
+        first = driver.paired_bootstrap(deltas, index)
+        second = driver.paired_bootstrap(deltas, index)
+
+        self.assertEqual(first, second)
+        self.assertGreater(first["ci95_low"], 0.0)
+
+    def test_paired_statistics_only_cover_claim_eligible_horizons(self):
+        payload = _passing_payload(horizons=[1, 2], n_boot=200)
+        blocks = payload["paired_statistics"]["by_horizon"]
+
+        self.assertEqual({block["horizon"] for block in blocks}, {1, 2})
+        by_horizon = {block["horizon"]: block for block in blocks}
+        self.assertFalse(by_horizon[1]["claim_eligible"])
+        self.assertTrue(by_horizon[2]["claim_eligible"])
+        for comparison in by_horizon[1]["comparisons"]:
+            self.assertFalse(comparison["significant_after_holm"])
+
+
+class HarnessSanityTests(unittest.TestCase):
+    def test_the_harness_finds_ar2_structure_and_finds_nothing_in_noise(self):
+        ledger = driver.AttemptLedger()
+        rows = {row["control"]: row for row in driver.harness_sanity_controls(ledger=ledger)}
+
+        self.assertTrue(rows["ar2_sanity"]["passed"])
+        self.assertTrue(rows["synthetic_null"]["passed"])
+        # The preregistered margin must sit well inside the theoretical ceiling, or a
+        # healthy harness would fail the control for arithmetic reasons.
+        self.assertLess(
+            driver.AR2_SANITY_MIN_IMPROVEMENT,
+            rows["ar2_sanity"]["theoretical_max_improvement"] - 0.2,
+        )
+        self.assertLess(rows["synthetic_null"]["improvement"], driver.SYNTHETIC_NULL_MAX_IMPROVEMENT)
+        self.assertTrue(any(row["phase"] == "control" for row in ledger.rows))
+
+    def test_every_unimplemented_plan_control_is_named(self):
+        rows = driver.unimplemented_controls()
+        named = {row["control"] for row in rows}
+
+        self.assertEqual(named, set(driver.PLAN_SECTION_4_CONTROLS) - set(driver.IMPLEMENTED_CONTROLS))
+        for row in rows:
+            self.assertTrue(row["reason"])
+
+
+class AxisEdgeTests(unittest.TestCase):
+    def test_two_point_axis_is_reported_as_undetectable_not_as_a_pass(self):
+        report = driver.axis_edge_report(
+            {"lr": (1e-4, 1e-3, 1e-2), "head_hidden": (0, 64)},
+            {"lr": 1e-3, "head_hidden": 0},
+        )
+
+        self.assertEqual(report["axes_without_edge_detection"], ["head_hidden"])
+        self.assertIn(driver.AXIS_TOO_SMALL_NOTE, report["per_axis"]["head_hidden"]["note"])
+        self.assertFalse(report["per_axis"]["lr"]["at_edge"])
+        self.assertFalse(report["any_axis_at_edge"])
+
+    def test_interior_and_edge_selections_are_distinguished(self):
+        axes = {"lr": (1e-4, 1e-3, 1e-2)}
+
+        self.assertFalse(driver.axis_edge_report(axes, {"lr": 1e-3})["any_axis_at_edge"])
+        self.assertTrue(driver.axis_edge_report(axes, {"lr": 1e-4})["any_axis_at_edge"])
+        self.assertTrue(driver.axis_edge_report(axes, {"lr": 1e-2})["any_axis_at_edge"])
+
+
+class DataStrictnessTests(unittest.TestCase):
+    def test_exact_alias_resolves(self):
+        self.assertEqual(driver.resolve_channel(["EEG Fpz-Cz", "EEG Pz-Oz"]), "EEG Fpz-Cz")
+
+    def test_a_near_miss_channel_is_a_hard_error_not_a_fallback(self):
+        with self.assertRaises(driver.DataStrictnessError):
+            driver.resolve_channel(["EEG Pz-Oz", "EOG horizontal"])
+
+    def test_ambiguous_aliases_are_refused(self):
+        with self.assertRaises(driver.DataStrictnessError):
+            driver.resolve_channel(["EEG Fpz-Cz", "Fpz-Cz"])
+
+
+class LedgerTests(unittest.TestCase):
+    def test_ledger_appends_across_invocations_and_carries_a_run_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            first = driver.open_ledger(out, run_id="run-a", planned_families=set(), allow_repeat_test=False)
+            first.record(phase="test", entrant_id="stub", horizon=2)
+            first.write(out / "attempts.log")
+
+            second = driver.open_ledger(out, run_id="run-b", planned_families=set(), allow_repeat_test=False)
+            second.record(phase="validation", entrant_id="stub", horizon=2)
+            second.write(out / "attempts.log")
+
+            lines = [
+                json.loads(line)
+                for line in (out / "attempts.log").read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+
+        self.assertEqual(len(lines), 2)
+        self.assertEqual([line["run_id"] for line in lines], ["run-a", "run-b"])
+
+    def test_a_second_test_look_at_the_same_family_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            first = driver.open_ledger(out, run_id="run-a", planned_families=set(), allow_repeat_test=False)
+            first.record(phase="test", entrant_id="stub", horizon=2)
+            first.write(out / "attempts.log")
+
+            planned = {driver._family_key("stub", 2)}
+            with self.assertRaises(driver.RepeatTestEvaluation):
+                driver.open_ledger(out, run_id="run-b", planned_families=planned, allow_repeat_test=False)
+
+            allowed = driver.open_ledger(
+                out, run_id="run-b", planned_families=planned, allow_repeat_test=True
+            )
+            allowed.record(phase="test", entrant_id="stub", horizon=2)
+
+        self.assertEqual(allowed.n_test_evaluations_cumulative, 2)
+        self.assertEqual(allowed.repeated_test_families(), [driver._family_key("stub", 2)])
 
 
 class GateDossierTests(unittest.TestCase):
@@ -721,64 +976,186 @@ class GateDossierTests(unittest.TestCase):
             self.assertIn(key, gate)
 
     def test_dossier_fails_closed_on_each_precondition(self):
+        controls = _passing_payload(horizons=[2], n_boot=200)["controls"]
         cases = {
-            "legacy normalisation": {
-                "normalization": driver.plan_normalization(legacy=True).as_log()
-            },
-            "index audit": {
-                "controls": {
-                    **_passing_payload()["controls"],
-                    "index_audit": [{"horizon": 1, "passed": False}],
-                }
-            },
-            "label shuffle": {
-                "controls": {
-                    **_passing_payload()["controls"],
-                    "label_shuffle": [{"entrant_id": "tuned_ridge_ar", "horizon": 1, "passed": False}],
-                }
-            },
-            "missing random twin": {
-                "controls": {**_passing_payload()["controls"], "random_init_twin": []}
-            },
-            "unavailable model": {"unavailable_models": [{"model_id": "labram_base", "reason": "no vendor"}]},
-            "failed entrant": {
-                "failed_entrants": [{"entrant_id": "labram_base__full_ft", "horizon": 1, "reason": "diverged"}]
-            },
-            "dirty worktree": {"git": {"commit": "x", "clean_worktree": False, "dirty_paths": ["a"]}},
-            "overlapping split": {
-                "split": {"seed": 0, "train": ["a"], "val": ["a"], "test": ["b"]}
-            },
+            "legacy normalisation": (
+                {"normalization": driver.plan_normalization(legacy=True).as_log()},
+                "transductive",
+            ),
+            "index audit": (
+                {"controls": {**controls, "index_audit": [{"horizon": 2, "passed": False}]}},
+                "index audit",
+            ),
+            "label shuffle": (
+                {
+                    "controls": {
+                        **controls,
+                        "label_shuffle": [{"entrant_id": "tuned_ridge_ar", "horizon": 2, "passed": False}],
+                    }
+                },
+                "label-shuffle",
+            ),
+            "time shift": (
+                {
+                    "controls": {
+                        **controls,
+                        "time_shift": [{"entrant_id": "tuned_ridge_ar", "horizon": 2, "passed": False}],
+                    }
+                },
+                "time-shift",
+            ),
+            "harness sanity": (
+                {"controls": {**controls, "harness_sanity": [{"control": "ar2_sanity", "passed": False}]}},
+                "harness sanity",
+            ),
+            "missing random twin": ({"controls": {**controls, "random_init_twin": []}}, "random-init"),
+            "unimplemented control": (
+                {
+                    "controls": {
+                        **controls,
+                        "not_implemented": [{"control": "subject_identity_probe", "reason": "x"}],
+                    }
+                },
+                "control not implemented: subject_identity_probe",
+            ),
+            "unavailable model": (
+                {"unavailable_models": [{"model_id": "labram_base", "reason": "no vendor"}]},
+                "unavailable",
+            ),
+            "failed entrant": (
+                {"failed_entrants": [{"entrant_id": "labram_base__full_ft", "horizon": 2, "reason": "diverged"}]},
+                "no finite validation MSE",
+            ),
+            "dirty worktree": (
+                {"git": {"commit": "x", "clean_worktree": False, "dirty_paths": ["a"]}},
+                "dirty worktree",
+            ),
+            "overlapping split": (
+                {"split": {"seed": 0, "train": ["a"], "val": ["a"], "test": ["b"]}},
+                None,
+            ),
+            "asymmetric budget": (
+                {"tuning_budget_symmetry": {"symmetric": False, "per_entrant": {}}},
+                "symmetric",
+            ),
+            "non-deterministic": (
+                {"determinism": {"fully_deterministic": False, "reason": "cuda unavailable"}},
+                "determinism",
+            ),
+            "unverified checkpoint": (
+                {"checkpoints": {"verified": [], "manifest_reference": []}},
+                "checkpoint provenance",
+            ),
+            "repeated test look": (
+                {
+                    "attempts": {
+                        "run_id": "r",
+                        "n_test_evaluations_cumulative": 2,
+                        "repeated_test_families": ["eegpt__frozen@h2"],
+                    }
+                },
+                "test-evaluated more than once",
+            ),
+            "underpowered": (
+                {"powered": {"powered": False, "reasons": ["too few subjects"]}},
+                "not powered",
+            ),
+            "does not beat the best baseline": (
+                {"beat_best_baseline": {"beat_best_baseline": False, "reasons": []}},
+                "best external entrant",
+            ),
+            "smoke run": (
+                {"protocol_completeness": {"non_smoke": False}},
+                "smoke run",
+            ),
         }
-        for name, override in cases.items():
+        for name, (override, expected) in cases.items():
             with self.subTest(case=name):
-                gate = driver.build_gate_dossier(_passing_payload(**override))
+                gate = driver.build_gate_dossier(
+                    _passing_payload(horizons=[2], n_boot=200, **override)
+                )
                 self.assertFalse(gate["scientific_claim_allowed"], name)
                 self.assertTrue(gate["failure_reasons"], name)
+                if expected is not None:
+                    self.assertTrue(
+                        any(expected in reason for reason in gate["failure_reasons"]),
+                        f"{name}: {gate['failure_reasons']}",
+                    )
+
+    def test_a_two_point_axis_is_flagged_rather_than_quietly_accepted(self):
+        payload = _passing_payload(horizons=[2], n_boot=200)
+        for row in payload["results"]:
+            if row["entrant_id"] == "eegpt__frozen":
+                row["axes_without_edge_detection"] = ["head_hidden"]
+
+        gate = driver.build_gate_dossier(payload)
+        self.assertEqual(gate["grid_edge_undetectable_axes"], ["eegpt__frozen:head_hidden"])
+        self.assertFalse(gate["scientific_claim_allowed"])
+        self.assertTrue(
+            any("two-point axis" in reason for reason in gate["failure_reasons"])
+        )
+
+    def test_a_random_twin_that_matches_its_pretrained_model_blocks_the_claim(self):
+        payload = _passing_payload(horizons=[2], n_boot=200)
+        controls = list(payload["controls"]["random_init_twin"])
+        controls[0] = {**controls[0], "pretraining_helped": False, "passed": False}
+        payload["controls"] = {**payload["controls"], "random_init_twin": controls}
+
+        gate = driver.build_gate_dossier(payload)
+        self.assertFalse(gate["pretraining_helped_every_fm"])
+        self.assertFalse(gate["scientific_claim_allowed"])
+        self.assertTrue(
+            any("pretraining bought nothing" in reason for reason in gate["failure_reasons"])
+        )
+
+    def test_a_missing_model_or_condition_is_a_protocol_failure(self):
+        payload = _passing_payload(horizons=[2], n_boot=200)
+        payload["results"] = [
+            row for row in payload["results"] if row["entrant_id"] != "biot_prest16__full_ft"
+        ]
+        payload["protocol_completeness"] = driver.protocol_completeness(payload)
+
+        gate = driver.build_gate_dossier(payload)
+        self.assertFalse(gate["protocol_ran_as_declared"])
+        self.assertTrue(
+            any("both admissible conditions" in reason for reason in gate["failure_reasons"])
+        )
 
     def test_incomplete_incumbent_ladder_blocks_the_claim(self):
-        payload = _passing_payload()
-        payload["results"] = [row for row in payload["results"] if row["entrant_id"] != "persistence"]
-        payload["ranking"] = driver.build_ranking(payload["results"], [1])
+        payload = _passing_payload(horizons=[2], n_boot=200)
+        payload["results"] = [row for row in payload["results"] if row["entrant_id"] != "gbm"]
+        payload["incumbent_ladder"] = driver.ladder_report(payload["results"])
 
         gate = driver.build_gate_dossier(payload)
         self.assertFalse(gate["scientific_claim_allowed"])
         self.assertTrue(any("incumbent ladder" in reason for reason in gate["failure_reasons"]))
 
     def test_contaminated_entrant_blocks_the_claim(self):
-        payload = _passing_payload()
+        payload = _passing_payload(horizons=[2], n_boot=200)
         for row in payload["results"]:
             if row["entrant_id"] == "eegpt__frozen":
                 row["contamination_status"] = "unverified"
-        payload["ranking"] = driver.build_ranking(payload["results"], [1])
 
         gate = driver.build_gate_dossier(payload)
         self.assertFalse(gate["scientific_claim_allowed"])
         self.assertTrue(any("clean" in reason for reason in gate["failure_reasons"]))
 
+    def test_a_smoke_run_can_never_be_claim_bearing(self):
+        payload = _passing_payload(horizons=[1, 2], n_boot=driver.SMOKE_N_BOOT)
+        payload["config"] = {**payload["config"], "smoke": True}
+        payload["protocol_completeness"] = driver.protocol_completeness(payload)
+
+        gate = driver.build_gate_dossier(payload)
+        reasons = " | ".join(gate["failure_reasons"])
+        self.assertFalse(gate["scientific_claim_allowed"])
+        self.assertIn("smoke run", reasons)
+        self.assertIn("bootstrap draws below", reasons)
+        self.assertIn("horizon grid", reasons)
+
 
 class ArtifactWriterTests(unittest.TestCase):
     def test_writer_emits_the_full_artifact_set(self):
-        payload = _passing_payload()
+        payload = _passing_payload(horizons=[1, 2], n_boot=200)
         payload["gate"] = driver.build_gate_dossier(payload)
         ledger = driver.AttemptLedger()
         ledger.record(phase="validation", entrant_id="stub", horizon=1, val_mse=0.1)
@@ -797,6 +1174,7 @@ class ArtifactWriterTests(unittest.TestCase):
                 "environment_json",
                 "git_state_json",
                 "attempts_log",
+                "paired_statistics_json",
                 "report_md",
             ):
                 self.assertIn(name, written)
@@ -829,18 +1207,53 @@ class ArtifactWriterTests(unittest.TestCase):
             "controls",
             "attempts",
             "gate",
+            "determinism",
+            "paired_statistics",
+            "protocol_completeness",
+            "powered",
+            "beat_best_baseline",
+            "incumbent_ladder",
+            "tuning_budget_symmetry",
+            "recordings",
+            "caveats",
         ):
             self.assertIn(key, document)
 
         self.assertEqual(document["schema"], driver.ARTIFACT_SCHEMA)
         self.assertIn("model_selection_exposure", document["contamination_table"][0])
         self.assertIn("model_selection_exposure", document["ranking"][0]["rows"][0])
-        self.assertIn("sha256", document["checkpoints"][0])
+        # Expected-manifest rows stay available, but the claim-bearing block is what was
+        # actually loaded off disk during this run.
+        self.assertIn("sha256", document["checkpoints"]["manifest_reference"][0])
+        self.assertIn("observed_sha256", document["checkpoints"]["verified"][0])
         self.assertEqual(gate["claim_scope"], driver.CLAIM_SCOPE)
         self.assertEqual(len(attempts), 2)
         self.assertIn("Claim scope", report)
         self.assertIn(driver.CLAIM_SCOPE, report)
         self.assertIn("nothing clinical", report)
+
+    def test_report_documents_the_statistics_and_the_caveats(self):
+        payload = _passing_payload(horizons=[1, 2], n_boot=200)
+        payload["gate"] = driver.build_gate_dossier(payload)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            driver.write_artifacts(out, payload, driver.AttemptLedger())
+            report = (out / "EEG_FM_BENCHMARK_REPORT.md").read_text(encoding="utf-8")
+
+        # A reader must not be able to eyeball ranks off the overlapping marginal CIs.
+        self.assertIn("Caveats", report)
+        self.assertIn("percentile", report)
+        self.assertIn("Holm", report)
+        self.assertIn("paired", report.lower())
+        self.assertIn("Controls", report)
+        for fragment in (
+            "model-selection exposure",
+            "FP1-F7",
+            "fc_norm",
+            "seed variance",
+        ):
+            self.assertIn(fragment, report)
 
 
 if __name__ == "__main__":
