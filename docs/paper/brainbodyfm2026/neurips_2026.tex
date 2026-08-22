@@ -119,45 +119,49 @@
 
 \section{Introduction}
 
-A device that knew what the brain was about to do could act before the event
-rather than after it. Predicting the next fraction of a second of brain
-activity is the shared requirement behind a responsive neurostimulator that
-aborts a seizure before it spreads, a prosthetic limb that moves without the
-lag users describe as the reason they abandon the device, and an alertness
-monitor that warns a driver before attention lapses rather than once it has.
-Each of these is a closed loop, and a closed loop needs a forecast: an
-estimate of a signal at a time that has not happened yet. The same
-requirement now drives interest in large pretrained models of brain activity,
-which promise a single system that transfers across people and tasks instead
-of a bespoke model per clinic. Whether such models can forecast at all is
-therefore a question about what the whole approach can support.
+Electroencephalography (EEG) records the small electrical voltages produced
+by populations of neurons through electrodes placed on the scalp. Because the
+measurement is noninvasive, resolves activity on the order of milliseconds,
+and is inexpensive relative to other means of observing the brain, it is the
+signal most widely used for brain--computer interfaces, real-time
+neurotechnology, and continuous monitoring of brain state. Each of those
+applications is a closed loop, and a closed loop is limited by delay: a
+system that can only react to an event it has already observed acts too late.
+Forecasting the signal a short time ahead is what removes that delay, and it
+would enable stimulation delivered before a seizure spreads rather than after
+it is detected, prosthetic control without the lag users cite when they
+abandon a device, and interfaces that respond as a user acts rather than once
+they have. The same promise motivates current interest in foundation models
+for EEG, which aim to replace a bespoke model per clinic or per task with one
+pretrained system that transfers. Whether such models can forecast at all
+bears directly on what that programme can support.
 
-The measurement makes this hard in a specific way. Electroencephalography
-records voltage at the scalp, outside the skull, so each electrode sees the
-summed activity of many millions of neurons after it has been blurred and
-attenuated by intervening tissue. The result is a signal with poor spatial
-resolution, a low ratio of brain activity to noise, and contamination from
-eye movement, muscle tension, and line interference that can exceed the
-activity of interest. It is also non-stationary: the statistics change within
-a session and differ between people, so a representation learned on one
-recording need not hold on the next. Existing work addresses this mainly by
-pretraining on large volumes of unlabelled recordings and transferring the
-learned representation to a downstream task. That strategy has produced
-strong reported numbers, but recent independent evaluations find that frozen
-pretrained representations often fail to beat well-tuned classical baselines,
-which suggests the reported gains may owe more to how they are measured than
-to what was learned.
+What makes this hard is the measurement. Because the electrodes sit outside
+the skull, each one records the summed activity of many millions of neurons
+after it has been blurred and attenuated by intervening tissue, which yields
+poor spatial resolution and a low ratio of brain activity to everything else.
+Muscle tension, eye movement, and line interference routinely exceed the
+activity of interest. The signal is also non-stationary: its statistics drift
+within a recording and differ substantially between people, so a
+representation fitted to one session need not hold on the next. The dominant
+response has been to pretrain a large model on many hours of unlabelled
+recordings and transfer the learned representation to a downstream task, on
+the argument that scale supplies the invariances that hand-designed features
+lack. That approach has produced strong reported numbers, but recent
+independent evaluations find frozen pretrained representations often fail to
+beat well-tuned classical baselines, which suggests some reported gains may
+owe more to how they are measured than to what was learned.
 
-We find that the way forecasting is currently scored can manufacture the
-appearance of skill. When a model is scored on a window that overlaps the
-window it was given as input, it can achieve a strong score by copying its
-input forward, and published protocols routinely permit this overlap. The
-effect is large enough to make a model look nearly perfect on data that
-contains no predictable structure at all. Compounding this, deep models are
-often compared against baselines weaker than a properly tuned linear map, and
-trained and tested on recordings from the same person, so nothing in the
-protocol requires the model to generalise to a new subject or to a genuinely
-future sample.
+Forecasting is especially exposed to this, because the standard way of
+scoring it can manufacture the appearance of skill. When a model is scored on
+a window that overlaps the window it was given as input, it can score well by
+copying its input forward, and published protocols routinely permit that
+overlap; the effect is large enough to make a model appear nearly perfect on
+data containing no predictable structure whatsoever. Deep models are also
+frequently compared against baselines weaker than a properly tuned linear
+map, and trained and tested on recordings from the same person. Nothing in
+such a protocol requires a model to generalise to a new subject, or to a
+sample that genuinely lies in the future.
 
 This paper does three things. We derive exactly how much overlap inflates the
 two scores reported in this literature, mean squared error and correlation,
