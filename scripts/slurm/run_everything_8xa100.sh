@@ -38,6 +38,12 @@ PY
 
 mkdir -p logs runs/fm_ft runs/ctx evidence_out
 
+echo "== job A0: embedding cache warmup (single process, avoids write races) =="
+CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" -u scripts/fm_probe_local.py \
+  --device cuda --max-subjects 0 --max-windows 1200 \
+  --models cbramod,cbramod-rand --embed-only \
+  > logs/fm_embed_warmup.log 2>&1
+
 echo "== job A: fine-tune factorial, $NW fold-shards =="
 pids=()
 for i in $(seq 0 $((NW - 1))); do
@@ -67,6 +73,7 @@ for i in "${!cfgs[@]}"; do
   pids+=($!)
 done
 for p in "${pids[@]}"; do wait "$p"; done
+rm -f runs/ctx/*.partial.json    # per-fold checkpoints; would trip the duplicate-config assert
 "$PYTHON_BIN" scripts/fm_ctx_merge.py runs/ctx/ctx*_ch*.json \
   --out runs/ctx/context_sweep_merged.json
 

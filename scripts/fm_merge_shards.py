@@ -26,9 +26,12 @@ def main() -> int:
         assert not overlap, f"duplicate folds across shards: {sorted(overlap)}"
         folds.update(d["folds"])
     subs = sorted(folds)
+    assert len(subs) == base["n_subjects"], \
+        f"merged {len(subs)} folds but n_subjects={base['n_subjects']}: missing shard file(s)"
     means = {}
     for ms in map(str, base["horizons_ms"]):
-        keys = [k for k, v in folds[subs[0]][ms].items() if isinstance(v, float)]
+        keys = [k for k, v in folds[subs[0]][ms].items()
+                if isinstance(v, float) and not k.endswith("_alpha")]
         means[ms] = {k: float(np.mean([folds[s][ms][k] for s in subs]))
                      for k in keys if all(k in folds[s][ms] for s in subs)}
     out = dict(base, shard="merged", scored_folds=len(subs), folds=folds,

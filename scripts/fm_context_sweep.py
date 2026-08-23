@@ -65,9 +65,11 @@ def load_multi(path: Path, channels, *, skip=1_000_000, take=300_000):
     raw.pick(picks)
     raw.load_data(verbose="ERROR")
     sig = raw.get_data().astype(np.float64)[:, skip:skip + take]         # [C, T] 100 Hz
-    sig = (sig - sig.mean(1, keepdims=True)) / (sig.std(1, keepdims=True) + 1e-8)
+    # Past-only normalization: stats from the first 300 s, windows drawn after.
+    head = sig[:, :30_000]
+    sig = (sig - head.mean(1, keepdims=True)) / (head.std(1, keepdims=True) + 1e-8)
     up = np.stack([resample_poly(ch, 2, 1) for ch in sig])               # 200 Hz
-    return up.T.astype(np.float32)                                       # [T, C]
+    return up.T[60_000:].astype(np.float32)                              # [T, C]
 
 
 def make_windows(sig, ctx_len, *, stride, max_windows, rng):
@@ -204,7 +206,9 @@ def main() -> int:
     contexts = [int(x) for x in args.contexts.split(",")]
     chsets = [int(x) for x in args.channel_sets.split(",")]
     groups = subject_groups()
-    subjects = sorted(groups)[: args.max_subjects]
+    subjects = sorted(groups)
+    if args.max_subjects:                    # 0 = all subjects
+        subjects = subjects[: args.max_subjects]
 
     # Calibrate before committing: measure the real GRU step rate on this
     # device and print the total estimate up front. A run may never again be

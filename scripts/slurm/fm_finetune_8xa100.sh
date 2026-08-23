@@ -8,7 +8,7 @@ cd "$ROOT"
 mkdir -p logs runs/fm_ft
 : "${PYTHON_BIN:=python3}"
 : "${MODELS:=gru-stack,cbramod,cbramod-rand,cbramod-ft,cbramod-ft-rand}"
-: "${SEEDS:=3}"
+: "${SEEDS:=5}"   # matches run_everything_8xa100.sh; artifact records the value
 : "${STEPS:=2000}"
 : "${NW:=8}"
 export PYTHONPATH="$ROOT/scripts${PYTHONPATH:+:$PYTHONPATH}"

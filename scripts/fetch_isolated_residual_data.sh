@@ -21,7 +21,8 @@ if ! ls "$BNCI_DEST"/A0*T.mat >/dev/null 2>&1; then
 from pathlib import Path
 import os
 dest = Path(os.environ.get("BNCI_DEST", Path.home() / ".cache/kahlus/moabb/MNE-bnci-data/~bci/database/001-2014"))
-os.environ.setdefault("MNE_DATA", str(dest.parents[2]))
+# moabb writes to $MNE_DATA/MNE-bnci-data/..., so MNE_DATA is the moabb dir
+os.environ.setdefault("MNE_DATA", str(dest.parents[3]))
 from moabb.datasets import BNCI2014_001
 BNCI2014_001().download()
 print("moabb download done")
