@@ -33,8 +33,11 @@ from _forecast_common import load_sleep_edf_channel, ridge_fit, ridge_predict  #
 
 FS = 200.0
 CTX = 200                       # 1 s context at 200 Hz = one CBraMod patch
-H_MS = (10, 80, 160, 320)
-H_SAMP = {ms: int(round(ms * FS / 1000)) for ms in H_MS}   # {2,16,32,64}
+# 10 ms dropped: resample_poly's non-causal anti-imaging filter writes future
+# originals into interpolated context samples; a 127-lag ridge scores 0.087 MSE
+# on WHITE NOISE at h=2 (see selftest null gate). Leak reach ~<=50 ms.
+H_MS = (80, 160, 320)
+H_SAMP = {ms: int(round(ms * FS / 1000)) for ms in H_MS}   # {16,32,64}
 RIDGE_LAGS = 127
 ALPHAS = (0.3, 1.0, 3.0, 10.0, 30.0, 100.0, 300.0)
 DATA = Path(os.environ.get("KAHLUS_SLEEP_ROOT",
@@ -64,12 +67,19 @@ def make_windows(sig200: np.ndarray, *, stride: int, max_windows: int, rng):
     return ctx, tgt
 
 
+NORM_SAMP = 30_000              # 300 s @100 Hz: z-score stats region, past-only
+
+
 def load_subject(paths: list[Path], *, stride: int, max_windows: int, rng):
     ctxs, tgts = [], {ms: [] for ms in H_MS}
     for p in paths:
-        sig, _ = load_sleep_edf_channel(p)                       # ~100 Hz, z-scored
+        sig, _ = load_sleep_edf_channel(p, zscore=False)         # ~100 Hz, raw
+        mu = float(sig[:NORM_SAMP].mean())
+        sd = float(sig[:NORM_SAMP].std()) + 1e-8
+        sig = (sig - mu) / sd                                    # stats precede all windows
         sig200 = resample_poly(sig, 2, 1).astype(np.float32)     # -> 200 Hz
-        c, t = make_windows(sig200, stride=stride, max_windows=max_windows, rng=rng)
+        c, t = make_windows(sig200[2 * NORM_SAMP:], stride=stride,
+                            max_windows=max_windows, rng=rng)
         ctxs.append(c)
         for ms in H_MS:
             tgts[ms].append(t[ms])
@@ -204,6 +214,18 @@ def cbramod_finetune_pred(train_ctx, train_y, test_ctx, *, seed: int, device: st
     return np.concatenate(preds)
 
 
+def _cached_embeddings(cf: Path, ctx, *, device: str, pretrained: bool):
+    """Atomic embedding cache: temp file + os.replace so 8 concurrent shard
+    workers can never expose a half-written .npy to a reader."""
+    if cf.exists():
+        return np.load(cf)
+    e = cbramod_embeddings(ctx, device=device, pretrained=pretrained)
+    tmp = cf.with_name(cf.name + f".tmp{os.getpid()}")
+    np.save(tmp, e)
+    os.replace(tmp, cf)
+    return e
+
+
 def probe_pred(train_emb, train_y, val_emb, val_y, test_emb):
     """Linear probe with the SAME fairness the baseline ridge gets: features
     standardized on train stats, alpha tuned on the val split."""
@@ -232,7 +254,20 @@ def selftest() -> int:
     pred, _ = tuned_ridge_pred(c[:cut], t[80][:cut], c[cut:], t[80][cut:], c[cut:])
     persist = c[cut:, -1]
     assert mse(t[80][cut:], pred) < mse(t[80][cut:], persist), "ridge must beat persistence on AR(1)"
-    assert H_SAMP == {10: 2, 80: 16, 160: 32, 320: 64}, H_SAMP
+    assert H_SAMP == {80: 16, 160: 32, 320: 64}, H_SAMP
+
+    # Resampling-leak null gate: white noise at 100 Hz is unforecastable, so
+    # after the exact production pipeline (resample_poly x2 -> windows -> tuned
+    # ridge) every reported horizon must stay at chance. h=2 (the dropped
+    # 10 ms row) scores ~0.09 here -- that is the leak this gate pins down.
+    wn = rng.standard_normal(120_000).astype(np.float32)
+    wn200 = resample_poly(wn, 2, 1).astype(np.float32)
+    c, t = make_windows(wn200, stride=100, max_windows=3000, rng=rng)
+    cut = int(0.7 * len(c))
+    for ms in H_MS:
+        pred, _ = tuned_ridge_pred(c[:cut], t[ms][:cut], c[cut:], t[ms][cut:], c[cut:])
+        rel = mse(t[ms][cut:], pred) / (float(np.var(t[ms][cut:])) + 1e-12)
+        assert rel > 0.9, f"resampling leak at h={ms}ms: ridge/var={rel:.3f} on white noise"
     print("selftest ok")
     return 0
 
@@ -251,6 +286,8 @@ def main() -> int:
     ap.add_argument("--max-subjects", type=int, default=6)
     ap.add_argument("--max-windows", type=int, default=600)
     ap.add_argument("--out", type=Path, default=Path("artifacts/fm_probe/scores.json"))
+    ap.add_argument("--embed-only", action="store_true",
+                    help="populate the embedding cache, score nothing (launcher warmup)")
     args = ap.parse_args()
     if args.selftest:
         return selftest()
@@ -269,18 +306,18 @@ def main() -> int:
         ctx, tgt = load_subject(groups[s], stride=args.stride, max_windows=args.max_windows, rng=rng)
         data[s] = (ctx, tgt)
         if "cbramod" in models:
-            cf = CACHE / f"cbramod_{s}_{ctx.shape[0]}.npy"
-            emb[s] = np.load(cf) if cf.exists() else cbramod_embeddings(ctx, device=args.device)
-            if not cf.exists():
-                np.save(cf, emb[s])
+            cf = CACHE / f"cbramod_{s}_n{ctx.shape[0]}_st{args.stride}_v2.npy"
+            emb[s] = _cached_embeddings(cf, ctx, device=args.device, pretrained=True)
         if "cbramod-rand" in models:
-            cf = CACHE / f"cbramodrand_{s}_{ctx.shape[0]}.npy"
+            cf = CACHE / f"cbramodrand_{s}_n{ctx.shape[0]}_st{args.stride}_v2.npy"
             emb.setdefault("rand", {})
-            emb["rand"][s] = np.load(cf) if cf.exists() else cbramod_embeddings(
-                ctx, device=args.device, pretrained=False)
-            if not cf.exists():
-                np.save(cf, emb["rand"][s])
+            emb["rand"][s] = _cached_embeddings(cf, ctx, device=args.device,
+                                                pretrained=False)
         print(f"subject {s}: {ctx.shape[0]} windows  ({time.time()-t:.1f}s)", flush=True)
+
+    if args.embed_only:
+        print("embed-only: cache populated, exiting")
+        return 0
 
     score_subjects = subjects
     if args.shard:
@@ -347,6 +384,9 @@ def main() -> int:
                 r["cbramod_ft_rand"] = float(np.mean(ft))
             row[str(ms)] = r
         folds[held] = row
+        partial = Path(str(args.out) + ".partial")
+        partial.parent.mkdir(parents=True, exist_ok=True)
+        partial.write_text(json.dumps(folds, indent=1))
         print(f"fold {held}: " + "  ".join(
             f"{ms}ms persist {row[str(ms)]['persist']:.3f} ridge {row[str(ms)]['tuned_ridge']:.3f}"
             + (f" cbramod {row[str(ms)]['cbramod_probe']:.3f}" if 'cbramod_probe' in row[str(ms)] else "")
@@ -360,7 +400,23 @@ def main() -> int:
                 if k in first]
         means[str(ms)] = {k: float(np.mean([folds[s][str(ms)][k] for s in score_subjects]))
                           for k in keys}
+    try:
+        import subprocess
+        sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                             capture_output=True, text=True,
+                             cwd=Path(__file__).resolve().parent).stdout.strip() or "unknown"
+    except Exception:  # noqa: BLE001 - provenance is best-effort
+        sha = "unknown"
     payload = {"task": "isolated forecast, 200 Hz, 1 s context, LOSO",
+               "claim_scope": "single-channel Fpz-Cz Sleep-EDF isolated forecasting, "
+                              "LOSO, horizons 80-320 ms on the resampled 200 Hz task; "
+                              "past-only per-recording normalization; not clinical; "
+                              "80 ms carries <=~5% residual interpolation advantage",
+               "stop_reason": "completed configured folds",
+               "config": {"stride": args.stride, "seeds": args.seeds,
+                          "gru_steps": args.gru_steps, "max_windows": args.max_windows,
+                          "max_subjects": args.max_subjects, "device": args.device,
+                          "git_sha": sha},
                "horizons_ms": list(H_MS), "n_subjects": len(subjects),
                "shard": args.shard, "scored_folds": len(score_subjects),
                "models": models, "folds": folds, "mean_over_folds": means}
