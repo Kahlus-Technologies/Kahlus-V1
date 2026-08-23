@@ -168,6 +168,8 @@ two scores reported in this literature, mean squared error and correlation,
 and show the correction is not the same for both: for squared error the
 inflation is a closed-form ratio of window length to horizon, $W/H$, which we
 verify is never violated across $286$ configurations, while correlation
+% NOTE: the 223-cell / r=0.984-vs-0.014 correlation numbers are the F10
+% artifact on PR #77 (finding/correlation-inflation-law); cite only once merged.
 carries an additional shrinkage term that makes $W/H$ understate the
 inflation on $223$ of those cells, always in the flattering direction. The
 sharpest case is white noise scored at $W{=}32$, $H{=}1$, which reports
@@ -178,10 +180,11 @@ evaluation in which splits are frozen before windowing, subjects are held
 out, and the scored sample is never in the input, with persistence, ridge,
 and mean as mandatory baselines. Finally we run our own model through it.
 After subtracting what ridge can predict and stripping narrowband
-oscillations, a residual recurrent stack retains an $11$--$18\%$ MSE
+oscillations, a residual recurrent stack retains a $10.5$--$17.6\%$ MSE
 advantage over a per-fold-tuned $127$-lag ridge on $78$-subject Sleep-EDF
-leave-one-subject-out, with confidence intervals excluding zero on $72$--$78$
-of $78$ held-out subjects. We treat this as a powered preliminary positive
+leave-one-subject-out, with per-horizon bootstrap confidence intervals
+excluding zero and the advantage holding on $72$--$78$ of $78$ held-out
+subjects. We treat this as a powered preliminary positive
 rather than a result: one seed, one channel of one corpus, an unreproduced
 normalisation change, and a $9$-subject BNCI arm on which the same protocol
 cannot separate the model from tuned ridge at any horizon. What we claim is

@@ -92,12 +92,16 @@ Challenge 2026.
 \lead{The problem.}
 EEG forecasting papers report scores that look close to solved. Ours did too:
 MSE 3.116 and $r = 0.972$ from a 100{,}000-step recurrent model on
-BNCI2014\_001, against ridge at 7.745. That number is not forecasting. The
-input window and the scored window overlapped by 127 of 128 samples, so a model
+BNCI2014\_001, against ridge at 7.745 (the forecast sidecar of a multitask
+model whose aggregate score was MSE 28.55, $r = 0.48$). That number is not
+forecasting. The recovered target shared 126 of its 127 samples with the
+input window, so a model
 that copies its own input scores well. For squared error the inflation has a
 closed form, $W/H$, where $W$ is the scored window and $H$ the horizon. We
 checked 286 configurations and found no violations, and the bound predicts the
-$126\times$ gap we actually measured. Correlation is worse and does not obey
+$126\times$ gap we actually measured. % NOTE: correlation-law numbers (223 cells, s_pred~0.70, r=0.984 vs 0.014)
+% are the F10 artifact on PR #77; not yet merged to main.
+Correlation is worse and does not obey
 that shortcut: the exact factor is
 $1 + \frac{W-H}{H}\left(s_{\mathrm{pred}} s_{\mathrm{targ}}\right)^{-1/2}$,
 and because models shrink toward the mean where signal is absent
@@ -153,8 +157,8 @@ horizon & weak ridge & tuned ridge & GRU stack & gap [95\% CI] & folds won \\
 \end{tabular}
 \end{center}
 
-An 11--18\% MSE advantage survives a tuned baseline at every horizon, CIs
-excluding zero, on 72--78 of 78 held-out subjects. I am calling it a
+A 10.5--17.6\% MSE advantage survives a tuned baseline at every horizon,
+per-horizon CIs excluding zero, better on 72--78 of 78 held-out subjects. I am calling it a
 \emph{powered preliminary positive}, not a result, because five things are open:
 one seed where our own standard is three; an undisclosed normalisation change in
 the run script that I have not reproduced from repo code; one channel of one
