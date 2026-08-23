@@ -1,0 +1,80 @@
+{
+  "baseline_table_present": true,
+  "beat_best_baseline": false,
+  "branch": "v1",
+  "calibration_checked": true,
+  "checkpoint_provenance_verified": true,
+  "claim_scope": "external_pretrained_eeg_baseline_ranking_sleep_edf_forecast",
+  "contamination_audit_passed": true,
+  "control_coverage": {
+    "claim_eligible_horizons": [
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256
+    ],
+    "complete": false,
+    "label_shuffle_missing": [
+      "biot_prest16__frozen",
+      "biot_prest16__full_ft"
+    ],
+    "ranked_entrants": [
+      "biot_prest16__frozen",
+      "biot_prest16__full_ft",
+      "cbramod__frozen",
+      "cbramod__full_ft",
+      "eegpt__frozen",
+      "eegpt__full_ft",
+      "gbm",
+      "kahlus_gru",
+      "labram_base__frozen",
+      "labram_base__full_ft",
+      "persistence",
+      "tuned_ridge_ar"
+    ],
+    "time_shift_missing": [
+      "biot_prest16__frozen",
+      "biot_prest16__full_ft"
+    ]
+  },
+  "controls_not_implemented": [
+    "cluster_permutation_null",
+    "subject_identity_probe"
+  ],
+  "controls_pass": false,
+  "dataset": "sleep-edf-expanded-sleep-cassette",
+  "determinism_enabled": true,
+  "failure_reasons": [
+    "label-shuffle control did not collapse for every ranked entrant by the preregistered 20% margin; no passing row at a claim-eligible horizon for: biot_prest16__frozen, biot_prest16__full_ft",
+    "time-shift control did not collapse for every ranked entrant by the preregistered 20% margin; no passing row at a claim-eligible horizon for: biot_prest16__frozen, biot_prest16__full_ft",
+    "pretraining bought nothing on this task for biot_prest16:frozen@h1, biot_prest16:frozen@h128, biot_prest16:frozen@h2, biot_prest16:frozen@h256, biot_prest16:frozen@h32, biot_prest16:frozen@h4, biot_prest16:frozen@h64, biot_prest16:full_ft@h1, biot_prest16:full_ft@h128, biot_prest16:full_ft@h2, biot_prest16:full_ft@h256, biot_prest16:full_ft@h32, biot_prest16:full_ft@h64, cbramod:frozen@h32, eegpt:frozen@h256, eegpt:full_ft@h1, eegpt:full_ft@h128, eegpt:full_ft@h2, eegpt:full_ft@h256, eegpt:full_ft@h4, eegpt:full_ft@h64, eegpt:full_ft@h8, labram_base:full_ft@h128, labram_base:full_ft@h2, labram_base:full_ft@h64 (random-init twin at least as good as the pretrained model): plan section 5 kill criterion, so the ranking claim is blocked, not merely annotated",
+    "control not implemented: cluster_permutation_null",
+    "control not implemented: subject_identity_probe",
+    "a selected hyperparameter sits on a grid edge; extend the grid and re-run",
+    "incumbents do not beat the best external entrant at every claim-eligible horizon on the Holm-corrected paired delta"
+  ],
+  "finite_metrics": true,
+  "grid_edge_undetectable_axes": [],
+  "harness_sanity_passed": true,
+  "human_sign_off": "claim scope approved by Krish Garg 2026-08-19",
+  "incumbent_ladder_complete": true,
+  "index_audit_passed": true,
+  "label_shuffle_collapsed": false,
+  "no_grid_edge_selected": false,
+  "normalization_causal": true,
+  "powered": true,
+  "pretraining_helped_every_fm": false,
+  "protocol_ran_as_declared": true,
+  "random_twin_control_present": true,
+  "schema": "kahlus.unified_evidence_gate.v1",
+  "scientific_claim_allowed": false,
+  "single_test_look_per_family": true,
+  "split_audit_passed": true,
+  "stop_reason": "EEG-FM benchmark dossier written; read it before writing any ranking sentence. This scope permits a leakage-controlled Sleep-EDF forecasting ranking only -- never SOTA, clinical, or generic-superiority language.",
+  "time_shift_collapsed": false,
+  "tuning_budget_symmetric": true
+}

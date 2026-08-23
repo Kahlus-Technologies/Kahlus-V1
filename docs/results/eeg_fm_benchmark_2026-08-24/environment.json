@@ -1,0 +1,10 @@
+{
+  "executable": "/raid/scratch/kgarg/eeg-fm-bench/kahlus/../venv/bin/python",
+  "package_versions": {
+    "mne": "1.12.1",
+    "numpy": "2.2.6",
+    "torch": "2.6.0+cu124"
+  },
+  "platform": "Linux-5.15.0-1079-nvidia-x86_64-with-glibc2.35",
+  "python": "3.10.12 (main, Feb  4 2025, 14:57:36) [GCC 11.4.0]"
+}
