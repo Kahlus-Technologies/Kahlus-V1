@@ -1,0 +1,107 @@
+[
+  {
+    "dataset_id": "sleep-edf-expanded-sleep-cassette",
+    "model_id": "eegpt",
+    "model_selection_exposure": true,
+    "reason": "Published pretraining corpus (PhysioNet-MI, HGD, TSU-Benchmark, SEED, M3CV) contains no sleep-staging data and does not include Sleep-EDF. Caveat (see MODEL_SELECTION_EXPOSURE_PAIRS): Sleep-EDFx was in EEGPT's published downstream evaluation suite, so its architecture/HPs were selected with Sleep-EDF in view.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "chb_mit_physionet",
+    "model_id": "eegpt",
+    "model_selection_exposure": false,
+    "reason": "Published pretraining corpus (PhysioNet-MI, HGD, TSU-Benchmark, SEED, M3CV) contains no seizure corpora and does not include CHB-MIT.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "tuh_eeg",
+    "model_id": "eegpt",
+    "model_selection_exposure": false,
+    "reason": "Published pretraining corpus (PhysioNet-MI, HGD, TSU-Benchmark, SEED, M3CV) contains no TUH-family data, so TUSZ is disjoint.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "sleep-edf-expanded-sleep-cassette",
+    "model_id": "cbramod",
+    "model_selection_exposure": false,
+    "reason": "Pretrained only on TUEG clinical EEG (>9,000h); Sleep-EDF is a separate PhysioNet sleep corpus not included in TUEG. TUEG does contain unscored sleep-state recordings, so CBraMod is not sleep-naive - just Sleep-EDF-disjoint.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "chb_mit_physionet",
+    "model_id": "cbramod",
+    "model_selection_exposure": false,
+    "reason": "Pretrained only on TUEG; CHB-MIT is a Boston Children's Hospital corpus that is not part of the TUH collection.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "tuh_eeg",
+    "model_id": "cbramod",
+    "model_selection_exposure": false,
+    "reason": "Pretrained on TUEG (>9,000h), and TUEG is a superset of TUSZ, so TUSZ evaluation recordings were seen during pretraining.",
+    "status": "contaminated"
+  },
+  {
+    "dataset_id": "sleep-edf-expanded-sleep-cassette",
+    "model_id": "labram_base",
+    "model_selection_exposure": false,
+    "reason": "Sleep-EDF does not appear in the published ~2,500h pretraining corpus list.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "chb_mit_physionet",
+    "model_id": "labram_base",
+    "model_selection_exposure": false,
+    "reason": "The published corpus list (Appendix D, 2534.78h) is fully enumerated and does not name CHB-MIT; the only opaque component is 342.23h (~13.5%) of proprietary self-collected EEG. Overlap can be excluded for the public 86.5% but not for that remainder without contacting the authors.",
+    "status": "unverified"
+  },
+  {
+    "dataset_id": "tuh_eeg",
+    "model_id": "labram_base",
+    "model_selection_exposure": false,
+    "reason": "The published ~2,500h pretraining mix includes TUH corpora, which cover TUSZ recordings.",
+    "status": "contaminated"
+  },
+  {
+    "dataset_id": "sleep-edf-expanded-sleep-cassette",
+    "model_id": "biot_prest16",
+    "model_selection_exposure": false,
+    "reason": "The EEG-PREST-16-channels checkpoint is pretrained on MGH resting EEG only; Sleep-EDF is not included.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "chb_mit_physionet",
+    "model_id": "biot_prest16",
+    "model_selection_exposure": false,
+    "reason": "The EEG-PREST-16-channels checkpoint is pretrained on MGH resting EEG only; CHB-MIT is not included.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "tuh_eeg",
+    "model_id": "biot_prest16",
+    "model_selection_exposure": false,
+    "reason": "The EEG-PREST-16-channels checkpoint is pretrained on MGH resting EEG only; no TUH-family data is included.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "sleep-edf-expanded-sleep-cassette",
+    "model_id": "biot_six_datasets",
+    "model_selection_exposure": false,
+    "reason": "The six-datasets pretraining mix (5M PREST/MGH + 5M SHHS samples, the bulk, plus TUAB/TUEV/CHB-MIT/IIIC train sets) does not include Sleep-EDF. SHHS is a distinct sleep cohort, so the model is sleep-domain in-domain without exact-recording overlap; report that domain exposure alongside the clean status.",
+    "status": "clean"
+  },
+  {
+    "dataset_id": "chb_mit_physionet",
+    "model_id": "biot_six_datasets",
+    "model_selection_exposure": false,
+    "reason": "CHB-MIT is directly part of the six-datasets pretraining mix, so this checkpoint must never be evaluated on CHB-MIT.",
+    "status": "contaminated"
+  },
+  {
+    "dataset_id": "tuh_eeg",
+    "model_id": "biot_six_datasets",
+    "model_selection_exposure": false,
+    "reason": "Pretraining includes TUAB and TUEV, which are TUH-family corpora drawn from the same clinical population as TUSZ; patient overlap with TUSZ is not excluded by the authors, so this is treated as contaminated.",
+    "status": "contaminated"
+  }
+]

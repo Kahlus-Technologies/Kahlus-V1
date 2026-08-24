@@ -1,0 +1,147 @@
+{
+  "manifest_reference": [
+    {
+      "filename": "eegpt_mcae_58chs_4s_large4E.ckpt",
+      "license_note": "Weights CC BY 4.0 (figshare item); upstream code Apache-2.0. Attribution is required when redistributing or deriving from the weights. Hosted only as a figshare share link with no redundancy, so this benchmark runs against a locally mirrored copy pinned by the digest above (plan section 8).",
+      "model_id": "eegpt",
+      "sha256": "9d63ebc80bba1ad5e3277df4eecfa05d2745e6243a12ff743c4c0a93930dfac0",
+      "source_url": "https://figshare.com/s/e37df4f8a907a866df4b",
+      "upstream_id": "eegpt",
+      "upstream_relpath": ""
+    },
+    {
+      "filename": "cbramod_pretrained_weights.pth",
+      "license_note": "Weights Apache-2.0 per the model card; upstream code MIT. Hosted off-repo on Hugging Face and staged by hand - huggingface_hub is quarantined in this repo and must not be used to fetch it.",
+      "model_id": "cbramod",
+      "sha256": "0792cb808c14e6b7a2bb2ce1dff379bc47bc54c49a779825bdfeb33bf8157178",
+      "source_url": "https://huggingface.co/weighting666/CBraMod",
+      "upstream_id": "cbramod",
+      "upstream_relpath": ""
+    },
+    {
+      "filename": "labram-base.pth",
+      "license_note": "MIT (upstream repo licence covers the in-repo checkpoint). Only the Base checkpoint is public; Large and Huge are withheld by the authors.",
+      "model_id": "labram_base",
+      "sha256": "7c50583826afac76c4ab18f43d958df40496c8229accc09ed6a227c9bb57c37c",
+      "source_url": "https://github.com/935963004/LaBraM/tree/c431221e6cfd23dbfa9950e0180682fb322b0548/checkpoints",
+      "upstream_id": "labram",
+      "upstream_relpath": "checkpoints/labram-base.pth"
+    },
+    {
+      "filename": "biot-EEG-PREST-16-channels.ckpt",
+      "license_note": "MIT (upstream repo licence covers the in-repo checkpoints). Staged under a 'biot-' prefixed filename so the admissible PREST-16 checkpoint cannot be confused with the slate-excluded six-datasets checkpoint that ships beside it.",
+      "model_id": "biot_prest16",
+      "sha256": "40f55f5d23e83796495616c8145c8336fcff2b901c42e8ba5115223081c2ad70",
+      "source_url": "https://github.com/ycq091044/BIOT/tree/d138e32634e52ae9fa6ec98ac9c4087b14ca869a/pretrained-models",
+      "upstream_id": "biot",
+      "upstream_relpath": "pretrained-models/EEG-PREST-16-channels.ckpt"
+    }
+  ],
+  "note": "'verified' is the union over shards, one row per model, carrying the shard that observed it. Two shards observing different bytes for one model is a merge error, not a row here.",
+  "verified": [
+    {
+      "digest_matches": true,
+      "expected_sha256": "40f55f5d23e83796495616c8145c8336fcff2b901c42e8ba5115223081c2ad70",
+      "filename": "biot-EEG-PREST-16-channels.ckpt",
+      "license_note": "MIT (upstream repo licence covers the in-repo checkpoints). Staged under a 'biot-' prefixed filename so the admissible PREST-16 checkpoint cannot be confused with the slate-excluded six-datasets checkpoint that ships beside it.",
+      "load_report": {
+        "matched_keys": 57,
+        "missing_keys": [],
+        "unexpected_keys": []
+      },
+      "load_report_captured": true,
+      "model_id": "biot_prest16",
+      "observed_in_shard": "/raid/scratch/kgarg/eeg-fm-bench/runs/full-frozen-inc",
+      "observed_sha256": "40f55f5d23e83796495616c8145c8336fcff2b901c42e8ba5115223081c2ad70",
+      "path": "/raid/scratch/kgarg/eeg-fm-bench/weights/biot-EEG-PREST-16-channels.ckpt",
+      "verified": true
+    },
+    {
+      "digest_matches": true,
+      "expected_sha256": "0792cb808c14e6b7a2bb2ce1dff379bc47bc54c49a779825bdfeb33bf8157178",
+      "filename": "cbramod_pretrained_weights.pth",
+      "license_note": "Weights Apache-2.0 per the model card; upstream code MIT. Hosted off-repo on Hugging Face and staged by hand - huggingface_hub is quarantined in this repo and must not be used to fetch it.",
+      "load_report": {
+        "matched_keys": 211,
+        "missing_keys": [],
+        "unexpected_keys": []
+      },
+      "load_report_captured": true,
+      "model_id": "cbramod",
+      "observed_in_shard": "/raid/scratch/kgarg/eeg-fm-bench/runs/full-frozen-inc",
+      "observed_sha256": "0792cb808c14e6b7a2bb2ce1dff379bc47bc54c49a779825bdfeb33bf8157178",
+      "path": "/raid/scratch/kgarg/eeg-fm-bench/weights/cbramod_pretrained_weights.pth",
+      "verified": true
+    },
+    {
+      "digest_matches": true,
+      "expected_sha256": "9d63ebc80bba1ad5e3277df4eecfa05d2745e6243a12ff743c4c0a93930dfac0",
+      "filename": "eegpt_mcae_58chs_4s_large4E.ckpt",
+      "license_note": "Weights CC BY 4.0 (figshare item); upstream code Apache-2.0. Attribution is required when redistributing or deriving from the weights. Hosted only as a figshare share link with no redundancy, so this benchmark runs against a locally mirrored copy pinned by the digest above (plan section 8).",
+      "load_report": null,
+      "load_report_captured": false,
+      "model_id": "eegpt",
+      "observed_in_shard": "/raid/scratch/kgarg/eeg-fm-bench/runs/full-frozen-inc",
+      "observed_sha256": "9d63ebc80bba1ad5e3277df4eecfa05d2745e6243a12ff743c4c0a93930dfac0",
+      "path": "/raid/scratch/kgarg/eeg-fm-bench/weights/eegpt_mcae_58chs_4s_large4E.ckpt",
+      "verified": true
+    },
+    {
+      "digest_matches": true,
+      "expected_sha256": "7c50583826afac76c4ab18f43d958df40496c8229accc09ed6a227c9bb57c37c",
+      "filename": "labram-base.pth",
+      "license_note": "MIT (upstream repo licence covers the in-repo checkpoint). Only the Base checkpoint is public; Large and Huge are withheld by the authors.",
+      "load_report": {
+        "checkpoint_entries": 229,
+        "checkpoint_key": "model",
+        "checkpoint_path": "/raid/scratch/kgarg/eeg-fm-bench/weights/labram-base.pth",
+        "dropped_keys": [
+          "lm_head.bias",
+          "lm_head.weight",
+          "mask_token",
+          "norm.bias",
+          "norm.weight"
+        ],
+        "loaded_entries": 219,
+        "missing_keys": [
+          "blocks.0.attn.q_bias",
+          "blocks.0.attn.v_bias",
+          "blocks.1.attn.q_bias",
+          "blocks.1.attn.v_bias",
+          "blocks.10.attn.q_bias",
+          "blocks.10.attn.v_bias",
+          "blocks.11.attn.q_bias",
+          "blocks.11.attn.v_bias",
+          "blocks.2.attn.q_bias",
+          "blocks.2.attn.v_bias",
+          "blocks.3.attn.q_bias",
+          "blocks.3.attn.v_bias",
+          "blocks.4.attn.q_bias",
+          "blocks.4.attn.v_bias",
+          "blocks.5.attn.q_bias",
+          "blocks.5.attn.v_bias",
+          "blocks.6.attn.q_bias",
+          "blocks.6.attn.v_bias",
+          "blocks.7.attn.q_bias",
+          "blocks.7.attn.v_bias",
+          "blocks.8.attn.q_bias",
+          "blocks.8.attn.v_bias",
+          "blocks.9.attn.q_bias",
+          "blocks.9.attn.v_bias",
+          "fc_norm.bias",
+          "fc_norm.weight"
+        ],
+        "model_entries": 245,
+        "pretrained": true,
+        "student_entries": 224,
+        "unexpected_keys": []
+      },
+      "load_report_captured": true,
+      "model_id": "labram_base",
+      "observed_in_shard": "/raid/scratch/kgarg/eeg-fm-bench/runs/full-frozen-inc",
+      "observed_sha256": "7c50583826afac76c4ab18f43d958df40496c8229accc09ed6a227c9bb57c37c",
+      "path": "/raid/scratch/kgarg/eeg-fm-bench/weights/labram-base.pth",
+      "verified": true
+    }
+  ]
+}

@@ -88,6 +88,82 @@ def competitor_registry() -> tuple[CompetitorSpec, ...]:
             implementation_status="approximation",
         ),
         CompetitorSpec(
+            competitor_id="eegpt",
+            display_name="EEGPT",
+            family="pretrained EEG foundation model",
+            role="External pretrained EEG baseline; the only frontier-scale transformer entrant whose published pretraining corpus is disjoint from our Sleep-EDF/CHB-MIT/TUSZ eval sets (BIOT PREST-16 is likewise disjoint).",
+            upstream_url="https://github.com/BINE022/EEGPT",
+            license_status="Apache-2.0 code (NeurIPS 2024); weights hosted off-repo on figshare under CC BY 4.0, verify terms before reuse",
+            notes=(
+                "Pretrained by dual self-supervised spatio-temporal masking (80% channel mask) for representation "
+                "learning, not forecasting; downstream use is classification/masked infill. Window length is a "
+                "constructor argument (no temporal positional parameters); the released checkpoint runs at 2-30s. "
+                "Pretraining corpus is PhysioNet-MI, HGD, TSU-Benchmark, SEED, M3CV; Sleep-EDFx was in the paper's "
+                "downstream suite (model-selection exposure, see pretraining_contamination). Checkpoint is "
+                "distributed only via a figshare share link, which is fragile and must be mirrored and hashed before "
+                "any benchmark run. No weights vendored. "
+                "Executable adapter: neurotwin.benchmarks.fm_forecast.adapters.eegpt_adapter, driven by "
+                "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned "
+                "checkpoint and fails closed without one."
+            ),
+            implementation_status="executable_adapter",
+        ),
+        CompetitorSpec(
+            competitor_id="labram",
+            display_name="LaBraM",
+            family="pretrained EEG foundation model",
+            role="External pretrained EEG baseline; field reference point for neural-tokenizer EEG pretraining.",
+            upstream_url="https://github.com/935963004/LaBraM",
+            license_status="MIT code (ICLR 2024); base checkpoint committed in-repo, Large/Huge weights withheld by authors",
+            notes=(
+                "Pretrained with vector-quantized neural-token masked prediction for classification; there is no "
+                "raw-waveform decoder, so it is not a forecaster and any forecasting comparison needs a bolted-on "
+                "head. Pretraining is ~2,500h across ~20 corpora including TUH corpora, so TUSZ evaluation is "
+                "contaminated. Only the Base checkpoint is publicly available (committed in the upstream repo); "
+                "Large and Huge are withheld. No weights vendored. "
+                "Executable adapter: neurotwin.benchmarks.fm_forecast.adapters.labram_adapter, driven by "
+                "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned "
+                "checkpoint and fails closed without one."
+            ),
+            implementation_status="executable_adapter",
+        ),
+        CompetitorSpec(
+            competitor_id="cbramod",
+            display_name="CBraMod",
+            family="pretrained EEG foundation model",
+            role="External pretrained EEG baseline; strongest reported cross-subject EEG foundation model at small parameter count.",
+            upstream_url="https://github.com/wjq-learning/CBraMod",
+            license_status="MIT code (ICLR 2025); weights hosted off-repo on Hugging Face (weighting666/CBraMod), verify model-card terms before reuse",
+            notes=(
+                "Criss-cross transformer pretrained by masked patch reconstruction/infill, not forecasting; released "
+                "weights do include a raw-patch reconstruction head. Pretraining corpus is TUEG (>9,000h), which is a "
+                "superset of TUSZ, so TUSZ evaluation is contaminated. No weights vendored. "
+                "Executable adapter: neurotwin.benchmarks.fm_forecast.adapters.cbramod_adapter, driven by "
+                "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned "
+                "checkpoint and fails closed without one."
+            ),
+            implementation_status="executable_adapter",
+        ),
+        CompetitorSpec(
+            competitor_id="biot",
+            display_name="BIOT",
+            family="pretrained biosignal transformer",
+            role="External pretrained EEG baseline; native bipolar montage matches CHB-MIT without channel remapping.",
+            upstream_url="https://github.com/ycq091044/BIOT",
+            license_status="MIT code (NeurIPS 2023); checkpoints committed in-repo, no external weight host",
+            notes=(
+                "Biosignal transformer pretrained by masked/supervised classification objectives, not forecasting. "
+                "Checkpoints ship inside the upstream repo. The EEG-PREST-16-channels checkpoint is MGH resting EEG "
+                "only and is clean for our eval sets; the six-datasets checkpoint was pretrained on CHB-MIT (plus "
+                "TUAB/TUEV/IIIC) and is FORBIDDEN for CHB-MIT evaluation and unsafe for TUSZ. Checkpoint identity "
+                "must be recorded per run. No weights vendored. "
+                "Executable adapter: neurotwin.benchmarks.fm_forecast.adapters.biot_adapter, driven by "
+                "scripts/eeg_fm_benchmark.py; it resolves a hand-staged, SHA-256-pinned "
+                "checkpoint and fails closed without one."
+            ),
+            implementation_status="executable_adapter",
+        ),
+        CompetitorSpec(
             competitor_id="modality_specialist",
             display_name="Modality-specialist baselines",
             family="specialist models",

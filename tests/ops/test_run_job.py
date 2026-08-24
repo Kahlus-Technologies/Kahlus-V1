@@ -63,7 +63,7 @@ class JobRunnerRefusalTests(unittest.TestCase):
         import yaml
 
         reg = yaml.safe_load((REPO / "ops" / "jobs.yaml").read_text())["jobs"]
-        self.assertEqual(sorted(reg), ["extract_c18", "seal_holdout", "smoke"])
+        self.assertEqual(sorted(reg), ["eeg_fm_benchmark", "extract_c18", "seal_holdout", "smoke"])
 
     def test_worker_ceiling_is_64(self) -> None:
         import yaml
