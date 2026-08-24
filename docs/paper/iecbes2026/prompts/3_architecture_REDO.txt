@@ -1,0 +1,100 @@
+### REGENERATION, PASTE EVERYTHING BELOW INTO FIGURELABS
+### save the result as: architecture.png  (overwrite the old one)
+### into: docs/paper/iecbes2026/art/
+------------------------------------------------------------------------
+
+CONTEXT (you have no other information about this project, so read this first):
+This is a panel for a peer-reviewed biomedical engineering paper submitted to IEEE
+IECBES 2026. The paper asks whether a short window of past EEG (scalp
+electroencephalography) can predict the immediately following window of EEG. The
+model is called Kahlus-V1. It treats measured EEG as an observation of a hidden
+"latent neural field" that it evolves forward in time, then reads out a predicted
+future EEG window. The paper's honest finding is that the model beats trivial
+baselines but does not clearly beat linear ridge regression, and the paper is
+explicit about that limit. Nothing in this panel should imply a stronger result.
+
+AUDIENCE: engineers and clinicians reading a two-column IEEE paper in print.
+The panel will be printed about 1.7 inches wide, so every label must stay legible
+when reduced. Prefer fewer, larger labels over many small ones.
+
+WHAT THIS PANEL MUST COMMUNICATE:
+The path a signal takes through the model: an observed EEG window is encoded into
+a latent field, the field is evolved forward in time, and an observation operator
+reads out the predicted future EEG window. A separate, greyed-out region shows
+capabilities that exist in the framework but were NOT evaluated in this paper.
+That greyed region is important; it is how the paper avoids overclaiming.
+
+LAYOUT:
+Portrait, roughly 2 wide by 3 tall. A single main column on the left, and one
+narrow secondary column on the right.
+
+MAIN COLUMN, four boxes stacked top to bottom, connected by downward teal arrows:
+
+Box 1, rounded rectangle, pale blue fill, navy outline:
+    bold: Observed EEG window
+    below: [B, 127, 22]
+    below: past EEG samples
+
+Between box 1 and box 2, no box, just five short centred lines of plain dark text:
+    Linear 22 -> 384
+    Conv1d k=3
+    Conv1d k=1
+    GELU + residual
+    LayerNorm(384)
+then one bold dark line reading: Field inference
+
+Box 2, rounded rectangle, pale green fill, teal outline:
+    bold: Latent neural field
+    below: 384-d hidden state
+    below: + modality embedding
+    below: input-conditioned latent representation
+
+Box 3, rounded rectangle, pale green fill, teal outline:
+    bold: Field dynamics
+    below: 12-layer GRU
+    below: hidden size 384
+    below: no dropout
+
+Box 4, rounded rectangle, pale amber fill, amber outline:
+    bold: Observation operator
+    below: Linear 384 -> 22
+    below: future EEG window
+
+SECONDARY COLUMN, to the right, spanning roughly the full height of the stack:
+one tall narrow rounded rectangle with a dashed grey outline and very pale grey
+fill, containing, all in grey:
+    bold: Future operators
+    smaller: not evaluated here
+    then three words stacked vertically: fMRI, fNIRS, behavior
+
+This right-hand column must read as clearly inactive compared with the main
+column: no colour, no solid border, no arrows connecting it to the main path.
+
+HARD REQUIREMENTS:
+- Output a single flat illustration on a pure white background, no page framing,
+  no caption, no panel letter (A/B/C are added later by the typesetting script).
+- No numbers, no metrics, no statistics, no percentages, no axis values anywhere.
+- Sans-serif type only (Inter or Helvetica), medium or bold weight, no hairline
+  or light weights, no italic, no serif, no condensed faces.
+- Flat vector styling: 1.5 px strokes, rounded-corner rectangles, pale fills with
+  saturated outlines of the same hue. No gradients, no drop shadows, no 3D bevels,
+  no glow, no texture, no photographic elements, no stock icons, no emoji.
+- Palette, use exactly these: teal #0F766E, deep blue #1E4E9C, green #15803D,
+  amber #B45309, warm red #B3261E, neutral grey #5F6368, text near-black #1A1A1A.
+- Spell every label exactly as written below. Do not paraphrase, translate,
+  abbreviate, or add labels that are not listed.
+- Export at the maximum resolution available, at least 2100 px on the long edge.
+  This is a print figure; anything smaller reproduces blurred.
+
+CRITICAL, THIS IS A REGENERATION, THE PREVIOUS ATTEMPT WAS REJECTED:
+The drawing itself was correct. It was rejected only for output size, so keep
+the same design, same labels, same colours, same layout, and change only these:
+
+1. FILL THE CANVAS. The previous output placed the drawing in the middle of a
+   much wider canvas, so most of the image was empty white margin and the
+   drawing itself carried too few pixels to print. Make the artwork occupy the
+   full frame edge to edge, with only a thin uniform margin around it.
+2. MATCH THE CANVAS SHAPE TO THE DRAWING. The drawing is a tall flowchart. Keep the PORTRAIT canvas, roughly 2 wide by
+   3 tall, which was correct.
+3. MAXIMUM RESOLUTION. Export at least 2400 px on the long edge. This is a
+   print figure at 600 dpi; below this it reproduces blurred and is unusable.
