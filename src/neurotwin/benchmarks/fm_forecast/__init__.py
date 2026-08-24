@@ -56,7 +56,6 @@ from neurotwin.benchmarks.fm_forecast.head import (
 from neurotwin.benchmarks.fm_forecast.vendor_import import (
     VENDORED_UPSTREAM_IDS,
     VendoredUpstreamMissing,
-    ensure_on_sys_path,
     is_vendored,
     require_vendored,
     vendored_root,
@@ -96,7 +95,6 @@ __all__ = [
     "VendoredUpstreamMissing",
     "WeightsManifestError",
     "checkpoint_spec",
-    "ensure_on_sys_path",
     "fit_head",
     "flatten_targets",
     "is_vendored",

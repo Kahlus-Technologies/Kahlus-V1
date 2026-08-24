@@ -193,10 +193,19 @@ def load_pretrained_state(transformer: torch.nn.Module, checkpoint_path: Path | 
 
     import torch
 
-    # ``weights_only=False`` is required: this is a PyTorch-Lightning checkpoint whose
-    # loop/callback state pickles non-tensor objects. It is safe here because the caller
-    # obtains ``checkpoint_path`` from ``weights_manifest.resolve_checkpoint``, which
-    # refuses to return a path whose SHA-256 differs from the frozen digest.
+    # ``weights_only=False`` is unavoidable here, and the exposure is documented rather
+    # than hand-waved. The Lightning checkpoint pickles optimizer/scheduler training
+    # state next to the weights, and the stream contains a ``POP`` opcode (from
+    # ``OneCycleLR``'s pickled ``anneal_func`` bound method) that torch's weights-only
+    # unpickler structurally rejects ("Unsupported operand 48") regardless of any
+    # ``safe_globals`` allowlist - so the safe path cannot parse this file at all.
+    # Mitigations: (1) the SHA-256 pin in ``weights_manifest.resolve_checkpoint`` has
+    # already run by now, so only the byte-exact mirrored file reaches this line;
+    # (2) that exact file's pickle GLOBAL opcodes were audited via ``pickletools`` -
+    # beyond the default tensor rebuilders it references only ``AdamW``, ``OneCycleLR``,
+    # ``defaultdict``, ``dict``, and ``getattr``, i.e. no code-execution imports.
+    # The residual trust is trust-on-first-use of the 2026-08-19 mirror: upstream
+    # publishes no digest to anchor against (figshare share link only).
     checkpoint = torch.load(Path(checkpoint_path), map_location="cpu", weights_only=False)
     if not isinstance(checkpoint, dict) or "state_dict" not in checkpoint:
         raise ValueError(

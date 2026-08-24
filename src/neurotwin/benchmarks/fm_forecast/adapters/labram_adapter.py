@@ -310,11 +310,34 @@ def _load_pretrained_state(model, checkpoint_path: Path) -> dict[str, Any]:
 
     import torch
 
-    # ``weights_only=False``: the checkpoint is a training bundle containing argparse
-    # namespaces and numpy scalars, so the safe unpickler rejects it. This is only
-    # acceptable because ``weights_manifest.resolve_checkpoint`` has already verified the
-    # file's SHA-256 against the frozen digest before we get here.
-    raw = torch.load(str(checkpoint_path), map_location="cpu", weights_only=False)
+    # ``weights_only=True`` with a closed allowlist: the checkpoint is a training bundle
+    # whose non-tensor pickled objects are an ``argparse.Namespace``, numpy scalars, and
+    # their reconstruction helpers - the complete set of GLOBAL opcodes in the pickle,
+    # all of which rebuild data rather than run code. The SHA-256 pin in
+    # ``weights_manifest.resolve_checkpoint`` still runs first; this keeps a tampered
+    # file from reaching the full pickle VM even if that pin were ever bypassed.
+    import _codecs
+    import argparse
+
+    import numpy
+
+    try:  # numpy >= 2 moved the module; the pickle still says ``numpy.core.multiarray``
+        from numpy._core.multiarray import scalar as _numpy_scalar
+    except ImportError:  # pragma: no cover - numpy < 2
+        from numpy.core.multiarray import scalar as _numpy_scalar
+
+    with torch.serialization.safe_globals(
+        [
+            numpy.dtype,
+            # The pickled ``numpy.dtype`` instances rebuild as concrete DType-class
+            # objects, whose type must itself be allowlisted (numpy >= 2 class layout).
+            numpy.dtypes.Float64DType,
+            _codecs.encode,
+            argparse.Namespace,
+            (_numpy_scalar, "numpy.core.multiarray.scalar"),
+        ]
+    ):
+        raw = torch.load(str(checkpoint_path), map_location="cpu", weights_only=True)
 
     checkpoint_model = None
     selected_key = None
