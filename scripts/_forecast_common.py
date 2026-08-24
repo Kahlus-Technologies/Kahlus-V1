@@ -27,11 +27,15 @@ def ridge_predict(w: np.ndarray, x: np.ndarray) -> np.ndarray:
 
 def load_sleep_edf_channel(
     path: Path, *, channel: str = "EEG Fpz-Cz", skip: int = 1_000_000,
-    take: int = 300_000,
+    take: int = 300_000, zscore: bool = True,
 ) -> tuple[np.ndarray, str]:
-    """Load one z-scored EEG channel from a Sleep-EDF PSG EDF. Returns (signal,
+    """Load one EEG channel from a Sleep-EDF PSG EDF. Returns (signal,
     resolved channel name). Falls back to the first channel whose name contains
-    'EEG' if the requested one is absent."""
+    'EEG' if the requested one is absent.
+
+    zscore=True uses the whole loaded clip, including future samples. Isolated
+    forecast paths must pass zscore=False and normalize from train-split stats.
+    """
     import mne
 
     raw = mne.io.read_raw_edf(path, preload=False, verbose="ERROR")
@@ -40,7 +44,9 @@ def load_sleep_edf_channel(
     raw.pick([channel])
     raw.load_data(verbose="ERROR")
     sig = raw.get_data()[0].astype(np.float64)[skip:skip + take]
-    return ((sig - sig.mean()) / (sig.std() + 1e-8)).astype(np.float32), channel
+    if zscore:
+        sig = (sig - sig.mean()) / (sig.std() + 1e-8)
+    return sig.astype(np.float32), channel
 
 
 def ar1_sequences(n: int, length: int, *, coef: float = 0.8, seed: int = 0) -> np.ndarray:

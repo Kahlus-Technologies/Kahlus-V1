@@ -1,0 +1,2377 @@
+{
+  "task": "isolated forecast, 200 Hz, 1 s context, LOSO",
+  "horizons_ms": [
+    10,
+    80,
+    160,
+    320
+  ],
+  "n_subjects": 78,
+  "models": [
+    "cbramod"
+  ],
+  "folds": {
+    "00": {
+      "10": {
+        "persist": 0.1882074922323227,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.006651175097264906,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3373958438479106
+      },
+      "80": {
+        "persist": 0.6981388330459595,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.40703866761834284,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6597834534993897
+      },
+      "160": {
+        "persist": 1.1336829662322998,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7555000319712948,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8401062090513275
+      },
+      "320": {
+        "persist": 1.5400280952453613,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8435240538735772,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7848433914313807
+      }
+    },
+    "01": {
+      "10": {
+        "persist": 0.023040056228637695,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.0020944883482324817,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3087044519467672
+      },
+      "80": {
+        "persist": 0.4302297830581665,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.26997798488928565,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5383637207652735
+      },
+      "160": {
+        "persist": 0.9652125239372253,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6425064843873832,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7297812700259092
+      },
+      "320": {
+        "persist": 1.6489330530166626,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9396565905018883,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8565640569088518
+      }
+    },
+    "02": {
+      "10": {
+        "persist": 0.042618848383426666,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.0025654308523369762,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3362593061871905
+      },
+      "80": {
+        "persist": 0.45578715205192566,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.27012642628968775,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5285800317814701
+      },
+      "160": {
+        "persist": 1.089918613433838,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6761432360122206,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7389504203600595
+      },
+      "320": {
+        "persist": 1.751580834388733,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9652308892901169,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8740534068716166
+      }
+    },
+    "03": {
+      "10": {
+        "persist": 0.3516966700553894,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.011287296624442666,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5113750212419196
+      },
+      "80": {
+        "persist": 1.1479730606079102,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5444096047402179,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7733565867797044
+      },
+      "160": {
+        "persist": 1.7242435216903687,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9162084895918796,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9273754483303595
+      },
+      "320": {
+        "persist": 1.9599204063415527,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9652704157174887,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9387924637182337
+      }
+    },
+    "04": {
+      "10": {
+        "persist": 0.09903734922409058,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.004954905066087246,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.27054217573024925
+      },
+      "80": {
+        "persist": 0.7910231351852417,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.44219034699817145,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6872742969853011
+      },
+      "160": {
+        "persist": 1.3662155866622925,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8022494935165646,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8618842010990087
+      },
+      "320": {
+        "persist": 1.787635326385498,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9519411942033547,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8736282634994232
+      }
+    },
+    "05": {
+      "10": {
+        "persist": 0.06524001061916351,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.003551943471411192,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.264866700168472
+      },
+      "80": {
+        "persist": 0.6889883875846863,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.3972138360879715,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6462469796690213
+      },
+      "160": {
+        "persist": 1.320351243019104,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7606577385619059,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8330050344195239
+      },
+      "320": {
+        "persist": 1.8830163478851318,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9380940006693459,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.87785392285009
+      }
+    },
+    "06": {
+      "10": {
+        "persist": 0.25384819507598877,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.00789314909155331,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3892018249658509
+      },
+      "80": {
+        "persist": 0.890370786190033,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.46922249970632945,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7114741964715328
+      },
+      "160": {
+        "persist": 1.4688559770584106,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8164386224186266,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8497523700939683
+      },
+      "320": {
+        "persist": 1.937711238861084,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9694087141145634,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8947758823061167
+      }
+    },
+    "07": {
+      "10": {
+        "persist": 0.309001088142395,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.010052012488692743,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4316527853814881
+      },
+      "80": {
+        "persist": 0.7589566707611084,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4214505465111323,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6964098354587206
+      },
+      "160": {
+        "persist": 1.279154896736145,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7224361925937276,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7657725506734533
+      },
+      "320": {
+        "persist": 1.8161704540252686,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9663564936284792,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8969336172306756
+      }
+    },
+    "08": {
+      "10": {
+        "persist": 0.11969906836748123,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.005327819991821709,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.2990043949440449
+      },
+      "80": {
+        "persist": 0.6060219407081604,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.34851202105390505,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6098515579216841
+      },
+      "160": {
+        "persist": 1.08292818069458,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6917780929477959,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7687634523419028
+      },
+      "320": {
+        "persist": 1.5621038675308228,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8481525828923803,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7839352554152229
+      }
+    },
+    "09": {
+      "10": {
+        "persist": 0.4585525393486023,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.014333803074990149,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5672194154295112
+      },
+      "80": {
+        "persist": 0.8981225490570068,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.47649632872027997,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7986252383913629
+      },
+      "160": {
+        "persist": 1.269061803817749,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7624041993535716,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8687082419863384
+      },
+      "320": {
+        "persist": 1.658537745475769,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9295381645789618,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.907080906521882
+      }
+    },
+    "10": {
+      "10": {
+        "persist": 0.055710263550281525,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.0034922633604283883,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.33289466491139547
+      },
+      "80": {
+        "persist": 0.7094841003417969,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.3997278442381745,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6709469659825745
+      },
+      "160": {
+        "persist": 1.3964147567749023,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7977254942122647,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8458039039973663
+      },
+      "320": {
+        "persist": 1.9689152240753174,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9896056738685614,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8920995677820451
+      }
+    },
+    "11": {
+      "10": {
+        "persist": 0.2777719497680664,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.009989669298447176,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3720410901638447
+      },
+      "80": {
+        "persist": 0.8608275055885315,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.46093330634698937,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6925408161089279
+      },
+      "160": {
+        "persist": 1.3285402059555054,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7959214985555525,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.850620841303337
+      },
+      "320": {
+        "persist": 1.7111985683441162,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9216065348997781,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.865179745370993
+      }
+    },
+    "12": {
+      "10": {
+        "persist": 0.09720614552497864,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.0048520572790170385,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3129620358349954
+      },
+      "80": {
+        "persist": 0.7611693739891052,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4155882314434738,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6773774414386111
+      },
+      "160": {
+        "persist": 1.4298651218414307,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8072662771451455,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8503562455193954
+      },
+      "320": {
+        "persist": 1.795738697052002,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9509676188583542,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8732545281315788
+      }
+    },
+    "13": {
+      "10": {
+        "persist": 0.36341726779937744,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.011350182297736723,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5174080509406718
+      },
+      "80": {
+        "persist": 0.852367639541626,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4524624438498391,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.734334752613204
+      },
+      "160": {
+        "persist": 1.3981300592422485,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7705671207861265,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8194766028270568
+      },
+      "320": {
+        "persist": 1.99107825756073,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.958659299972653,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9127010869206671
+      }
+    },
+    "14": {
+      "10": {
+        "persist": 0.33201169967651367,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.009704706476809105,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.41848658113063436
+      },
+      "80": {
+        "persist": 0.839877188205719,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4329764225495248,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6805951357171487
+      },
+      "160": {
+        "persist": 1.2815914154052734,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.765843713659026,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8453333979685201
+      },
+      "320": {
+        "persist": 1.6524821519851685,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8634704284724108,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8283743226493433
+      }
+    },
+    "15": {
+      "10": {
+        "persist": 0.3226832151412964,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.012700304526711007,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5577886713647605
+      },
+      "80": {
+        "persist": 0.8454119563102722,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.45390594302397347,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8613237289828964
+      },
+      "160": {
+        "persist": 1.3881957530975342,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8126560434307101,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9669128967508207
+      },
+      "320": {
+        "persist": 1.755336046218872,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8351814041686386,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8115080286345898
+      }
+    },
+    "16": {
+      "10": {
+        "persist": 0.175924614071846,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.006807169319147747,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.48254956585425535
+      },
+      "80": {
+        "persist": 0.777664303779602,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4206388377280049,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7624046220434327
+      },
+      "160": {
+        "persist": 1.395134449005127,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8200867388256105,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9259671417434322
+      },
+      "320": {
+        "persist": 1.9043415784835815,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0064522638012732,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.971365917387659
+      }
+    },
+    "17": {
+      "10": {
+        "persist": 0.147390678524971,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.00771269172527862,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3530542187326909
+      },
+      "80": {
+        "persist": 0.980154812335968,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5461325444994045,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8045520249166203
+      },
+      "160": {
+        "persist": 1.4371360540390015,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8177462349995628,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8929417437202096
+      },
+      "320": {
+        "persist": 2.064883232116699,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0132742319416863,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9432681228311466
+      }
+    },
+    "18": {
+      "10": {
+        "persist": 0.14406615495681763,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.005776877187333563,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.36505054890937366
+      },
+      "80": {
+        "persist": 0.7758243680000305,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.41992713915952046,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6813105359033684
+      },
+      "160": {
+        "persist": 1.4700349569320679,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8396583892660782,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8739729342817668
+      },
+      "320": {
+        "persist": 1.9772883653640747,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9625162780900485,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8747633295510269
+      }
+    },
+    "19": {
+      "10": {
+        "persist": 0.5061841607093811,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.017652904104861727,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5875932636335842
+      },
+      "80": {
+        "persist": 1.0394117832183838,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5625012707991022,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8414843797261917
+      },
+      "160": {
+        "persist": 1.476253628730774,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.835942189953363,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9045074635335758
+      },
+      "320": {
+        "persist": 1.8777408599853516,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.938443955932179,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9127082391979341
+      }
+    },
+    "20": {
+      "10": {
+        "persist": 0.10737045109272003,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.004413353783759842,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3963597828566103
+      },
+      "80": {
+        "persist": 0.571476936340332,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.36732538964081535,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6372676412461429
+      },
+      "160": {
+        "persist": 1.0492188930511475,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6839026406790861,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7818255576005393
+      },
+      "320": {
+        "persist": 1.4171379804611206,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8463907034918224,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8004115163271085
+      }
+    },
+    "21": {
+      "10": {
+        "persist": 0.15960906445980072,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.006119398787491998,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.35542976063929405
+      },
+      "80": {
+        "persist": 0.7846410870552063,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4255094611998786,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.687018166304126
+      },
+      "160": {
+        "persist": 1.452573299407959,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8497144356809264,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.904814931011991
+      },
+      "320": {
+        "persist": 1.8386720418930054,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9918167584549397,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9140807836110088
+      }
+    },
+    "22": {
+      "10": {
+        "persist": 0.32379817962646484,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.010500197822848879,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4723402635431044
+      },
+      "80": {
+        "persist": 0.8587758541107178,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.43426217550449925,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.723608855953037
+      },
+      "160": {
+        "persist": 1.4734234809875488,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8209964623180945,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8943019348798883
+      },
+      "320": {
+        "persist": 1.7260059118270874,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8480670197176966,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8282486034195655
+      }
+    },
+    "23": {
+      "10": {
+        "persist": 0.15602754056453705,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.005147052252118095,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.33538658904779955
+      },
+      "80": {
+        "persist": 0.6032356023788452,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.3434540548660587,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5863659993815653
+      },
+      "160": {
+        "persist": 1.0919171571731567,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.676181688925715,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7240300314246066
+      },
+      "320": {
+        "persist": 1.5448830127716064,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8717885195824082,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7995884875930691
+      }
+    },
+    "24": {
+      "10": {
+        "persist": 0.2117728292942047,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.008183559957468006,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4534369157534165
+      },
+      "80": {
+        "persist": 1.0209591388702393,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5313001695054648,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8083612675731208
+      },
+      "160": {
+        "persist": 1.6449135541915894,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8348860712407999,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8713942613306884
+      },
+      "320": {
+        "persist": 2.017298698425293,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9571096625176813,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8908268716861448
+      }
+    },
+    "25": {
+      "10": {
+        "persist": 0.2694404125213623,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.00951603059944304,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5077056327708358
+      },
+      "80": {
+        "persist": 0.955914318561554,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5136749184875475,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.773131118297122
+      },
+      "160": {
+        "persist": 1.5115171670913696,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8713325169342465,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9201143706507796
+      },
+      "320": {
+        "persist": 1.8293575048446655,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9619575701847896,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9026543331026096
+      }
+    },
+    "26": {
+      "10": {
+        "persist": 0.2028239369392395,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.00786068856173321,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3319626425823501
+      },
+      "80": {
+        "persist": 0.9318064451217651,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5104563379214007,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.757641565245391
+      },
+      "160": {
+        "persist": 1.3871254920959473,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8021986884915382,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8471924632210802
+      },
+      "320": {
+        "persist": 1.859503984451294,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0327060268848525,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9579812012820897
+      }
+    },
+    "27": {
+      "10": {
+        "persist": 0.24065755307674408,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.009140941436162762,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3958201524216773
+      },
+      "80": {
+        "persist": 0.867487370967865,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4572215627783723,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6951565410360302
+      },
+      "160": {
+        "persist": 1.3303309679031372,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7854085424691881,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8459162807717613
+      },
+      "320": {
+        "persist": 1.8177024126052856,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.979045422844438,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.921889221216809
+      }
+    },
+    "28": {
+      "10": {
+        "persist": 0.11389794945716858,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.005207524059085697,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.383724424557556
+      },
+      "80": {
+        "persist": 0.6044101715087891,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.34978098673578,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6630397920597665
+      },
+      "160": {
+        "persist": 1.250510334968567,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7386740688465918,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8030086369764359
+      },
+      "320": {
+        "persist": 1.7923074960708618,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9619591217404542,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8858777091902761
+      }
+    },
+    "29": {
+      "10": {
+        "persist": 0.08968918770551682,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.004324322723550395,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.2950843351184546
+      },
+      "80": {
+        "persist": 0.5201748609542847,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.30916316077871303,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5523471809701893
+      },
+      "160": {
+        "persist": 1.056215524673462,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6865832907554082,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7782342032071043
+      },
+      "320": {
+        "persist": 1.6623364686965942,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9375910371666523,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8422359767697875
+      }
+    },
+    "30": {
+      "10": {
+        "persist": 0.683214545249939,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.020504243768453386,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6570952560752534
+      },
+      "80": {
+        "persist": 1.0591356754302979,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5330008204661779,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7561483543514248
+      },
+      "160": {
+        "persist": 1.5101079940795898,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8422974568657485,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8994041599502332
+      },
+      "320": {
+        "persist": 1.7630373239517212,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8837198798378051,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8788337761216723
+      }
+    },
+    "31": {
+      "10": {
+        "persist": 0.3233810365200043,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.01053594017033667,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.49966097885136
+      },
+      "80": {
+        "persist": 0.783734142780304,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4458520587941438,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7312286785398914
+      },
+      "160": {
+        "persist": 1.3201196193695068,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7941096958149071,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8796150129122173
+      },
+      "320": {
+        "persist": 1.6625887155532837,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9240471245523433,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8984372525451776
+      }
+    },
+    "32": {
+      "10": {
+        "persist": 0.21581685543060303,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.008806036202495163,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.43837001800639325
+      },
+      "80": {
+        "persist": 0.7050402760505676,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.41129234346419036,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7265462195098495
+      },
+      "160": {
+        "persist": 1.1721822023391724,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7211780356509896,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8128412557424054
+      },
+      "320": {
+        "persist": 1.6655529737472534,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9438802761989901,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8834505054665666
+      }
+    },
+    "33": {
+      "10": {
+        "persist": 0.39343464374542236,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.009901715570526676,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4737011204039147
+      },
+      "80": {
+        "persist": 0.8259037137031555,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.44736562221987874,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7298252589851636
+      },
+      "160": {
+        "persist": 1.3788676261901855,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8045654665750196,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8701372237165806
+      },
+      "320": {
+        "persist": 1.6984612941741943,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8608396980600038,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8464252554795308
+      }
+    },
+    "34": {
+      "10": {
+        "persist": 0.045445170253515244,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.0031644500429620294,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.38927512581275947
+      },
+      "80": {
+        "persist": 0.7348194122314453,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.39899453038395033,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6805504333915118
+      },
+      "160": {
+        "persist": 1.5628212690353394,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.893150929457557,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9225368282387315
+      },
+      "320": {
+        "persist": 1.9055216312408447,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9822850194583763,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8911319955815532
+      }
+    },
+    "35": {
+      "10": {
+        "persist": 0.45130473375320435,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.013892575562926794,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5950298039761956
+      },
+      "80": {
+        "persist": 0.9171345829963684,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.49640571576168857,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7743337515094183
+      },
+      "160": {
+        "persist": 1.5843687057495117,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8906455129859027,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9597897382605095
+      },
+      "320": {
+        "persist": 2.003304958343506,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0455686411492413,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9786616022029087
+      }
+    },
+    "36": {
+      "10": {
+        "persist": 0.37976208329200745,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.009707800684382449,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6808759214369913
+      },
+      "80": {
+        "persist": 0.819264829158783,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4598224493647185,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9293648726198421
+      },
+      "160": {
+        "persist": 1.300478458404541,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8269862442986867,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 1.0301967281087563
+      },
+      "320": {
+        "persist": 1.736517310142517,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9668683495846809,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9777458725091257
+      }
+    },
+    "37": {
+      "10": {
+        "persist": 0.3872973322868347,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.009684416645917042,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5374810059804276
+      },
+      "80": {
+        "persist": 0.8296677470207214,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5001978238707783,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7478063489158042
+      },
+      "160": {
+        "persist": 1.2946099042892456,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.814646930878885,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.887660224114802
+      },
+      "320": {
+        "persist": 1.7593282461166382,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9724172331859056,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9386558961077713
+      }
+    },
+    "38": {
+      "10": {
+        "persist": 0.5488927960395813,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.01878022901751714,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6637187805748792
+      },
+      "80": {
+        "persist": 1.0043786764144897,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5337410489097411,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8480174961796016
+      },
+      "160": {
+        "persist": 1.4115608930587769,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8274986455151178,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9434864109391015
+      },
+      "320": {
+        "persist": 1.7463051080703735,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9650359153779774,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9770832361401361
+      }
+    },
+    "40": {
+      "10": {
+        "persist": 0.1622944176197052,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.006723256390194696,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3535557859609376
+      },
+      "80": {
+        "persist": 0.7183287739753723,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.43337589071558236,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7287686129004763
+      },
+      "160": {
+        "persist": 1.2199548482894897,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.770748505321594,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8747886898344351
+      },
+      "320": {
+        "persist": 1.5695428848266602,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9889316289067335,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9802156862031685
+      }
+    },
+    "41": {
+      "10": {
+        "persist": 0.7334406971931458,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.019477743144347026,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6792383727669592
+      },
+      "80": {
+        "persist": 1.038500189781189,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5295361614896825,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8205185698846602
+      },
+      "160": {
+        "persist": 1.3944809436798096,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7762206890439729,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8519245141108109
+      },
+      "320": {
+        "persist": 1.8439314365386963,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9433720961545229,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9346637436674385
+      }
+    },
+    "42": {
+      "10": {
+        "persist": 0.15147417783737183,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.006416223302910642,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3180374121901704
+      },
+      "80": {
+        "persist": 0.7056408524513245,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.38444071748580744,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6292964668310274
+      },
+      "160": {
+        "persist": 1.341260552406311,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7984798879507667,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8624806593526987
+      },
+      "320": {
+        "persist": 1.870104193687439,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0277402612922122,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9487436214830612
+      }
+    },
+    "43": {
+      "10": {
+        "persist": 0.3669464886188507,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.011821537938044727,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4914929390990244
+      },
+      "80": {
+        "persist": 1.0707120895385742,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5455365148121217,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8289331290439222
+      },
+      "160": {
+        "persist": 1.6686393022537231,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9113577305291214,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.956007747304378
+      },
+      "320": {
+        "persist": 1.8919378519058228,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0191162443063688,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9931367309979638
+      }
+    },
+    "44": {
+      "10": {
+        "persist": 0.9928002953529358,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.027755361168090395,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7325486456070138
+      },
+      "80": {
+        "persist": 1.2629996538162231,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6124035887228477,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8414354809542738
+      },
+      "160": {
+        "persist": 1.590119481086731,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8708427553135669,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9146764836160899
+      },
+      "320": {
+        "persist": 1.9025087356567383,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9355344646329843,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.913130165701131
+      }
+    },
+    "45": {
+      "10": {
+        "persist": 0.7766139507293701,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.020573691629463917,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6915103780640978
+      },
+      "80": {
+        "persist": 1.137603521347046,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5986312258617429,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8283477302517606
+      },
+      "160": {
+        "persist": 1.4970494508743286,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8495733229998027,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8935657052795171
+      },
+      "320": {
+        "persist": 1.7516510486602783,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8705191588957848,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8546619691148921
+      }
+    },
+    "46": {
+      "10": {
+        "persist": 0.1344885677099228,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.0060751161039219416,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.40014522087106646
+      },
+      "80": {
+        "persist": 0.8075559735298157,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4262989083264681,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7138672211657994
+      },
+      "160": {
+        "persist": 1.4983733892440796,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8105775687489203,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8296907016529235
+      },
+      "320": {
+        "persist": 1.9736193418502808,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0613305475840356,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9841513187466531
+      }
+    },
+    "47": {
+      "10": {
+        "persist": 0.20523524284362793,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.009193062634172817,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3805862238715181
+      },
+      "80": {
+        "persist": 0.8251210451126099,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4472672994374545,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7413773236084898
+      },
+      "160": {
+        "persist": 1.4809476137161255,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8612667370820316,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9113570227875092
+      },
+      "320": {
+        "persist": 1.8387247323989868,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9568466962525816,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8933555530470856
+      }
+    },
+    "48": {
+      "10": {
+        "persist": 0.3480088710784912,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.010773087393507822,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4432688338242142
+      },
+      "80": {
+        "persist": 0.6193371415138245,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.36038944801379574,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6507423575108874
+      },
+      "160": {
+        "persist": 0.9664538502693176,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6793745069714323,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8452653474089455
+      },
+      "320": {
+        "persist": 1.3220856189727783,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9647392077800981,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 1.02740814092207
+      }
+    },
+    "49": {
+      "10": {
+        "persist": 0.3844250440597534,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.013684762412436177,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5706515096740034
+      },
+      "80": {
+        "persist": 1.0972917079925537,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6004652532683562,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9083906444121796
+      },
+      "160": {
+        "persist": 1.4433863162994385,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7985799943411802,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8847677819773329
+      },
+      "320": {
+        "persist": 1.8470784425735474,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9283196947310887,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9023200358415295
+      }
+    },
+    "50": {
+      "10": {
+        "persist": 0.14170117676258087,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.006719176598773413,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3503037152710652
+      },
+      "80": {
+        "persist": 0.7769596576690674,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.41980210483613883,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7018280183410693
+      },
+      "160": {
+        "persist": 1.4811880588531494,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8330993963832163,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9007569623002458
+      },
+      "320": {
+        "persist": 2.0590596199035645,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0343211071657343,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9626676986906735
+      }
+    },
+    "51": {
+      "10": {
+        "persist": 0.18974027037620544,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.006414527764952057,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4438007440981784
+      },
+      "80": {
+        "persist": 0.6101277470588684,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.3596859419738203,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7089108236109912
+      },
+      "160": {
+        "persist": 1.1008838415145874,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7391804559650904,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8813191481925045
+      },
+      "320": {
+        "persist": 1.5847275257110596,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9544752931965683,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.897814954400241
+      }
+    },
+    "52": {
+      "10": {
+        "persist": 0.23008689284324646,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.0072965823241733264,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.35420104576647093
+      },
+      "80": {
+        "persist": 0.6925936341285706,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.38606626381063774,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.642954743765139
+      },
+      "160": {
+        "persist": 1.310916781425476,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8108971980774113,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8791504964614701
+      },
+      "320": {
+        "persist": 1.807279109954834,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.990886734235989,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9385961802192401
+      }
+    },
+    "53": {
+      "10": {
+        "persist": 0.48060494661331177,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.012473824404384938,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5378190606501743
+      },
+      "80": {
+        "persist": 0.6833121180534363,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.38514661592172933,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6974866969167124
+      },
+      "160": {
+        "persist": 0.9522786736488342,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6812658386851533,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8226200427441618
+      },
+      "320": {
+        "persist": 1.3410590887069702,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9129098070929538,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9341622034723567
+      }
+    },
+    "54": {
+      "10": {
+        "persist": 0.7216851115226746,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.018358933428545027,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.698378543029404
+      },
+      "80": {
+        "persist": 0.9155680537223816,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4669865196363825,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7810407733216377
+      },
+      "160": {
+        "persist": 1.3286068439483643,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7678850973040016,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8721402257941793
+      },
+      "320": {
+        "persist": 1.5767136812210083,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9339779084443172,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9259625840581913
+      }
+    },
+    "55": {
+      "10": {
+        "persist": 0.2149551957845688,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.007950195516283532,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4259158178972897
+      },
+      "80": {
+        "persist": 0.6691771149635315,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.35832293821052874,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6220714775244585
+      },
+      "160": {
+        "persist": 1.0534179210662842,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6780228553112002,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7640061769794251
+      },
+      "320": {
+        "persist": 1.4502482414245605,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.82322163797104,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8090387534259552
+      }
+    },
+    "56": {
+      "10": {
+        "persist": 0.18120570480823517,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.007075098609939442,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4426492161298982
+      },
+      "80": {
+        "persist": 0.7404893040657043,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.41783180055879465,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7249738229283524
+      },
+      "160": {
+        "persist": 1.2933995723724365,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.775838254221682,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8751411871959306
+      },
+      "320": {
+        "persist": 1.763952374458313,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9440278284433968,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.895722247138245
+      }
+    },
+    "57": {
+      "10": {
+        "persist": 0.6900221705436707,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.020851465965481118,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.635481621947088
+      },
+      "80": {
+        "persist": 1.0651435852050781,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5747675784767917,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8660909185240979
+      },
+      "160": {
+        "persist": 1.388838529586792,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8416599964718177,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9366570266819514
+      },
+      "320": {
+        "persist": 1.6943447589874268,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9573963669342929,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9401199916114868
+      }
+    },
+    "58": {
+      "10": {
+        "persist": 0.39238935708999634,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.011128102491723685,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5416820539358406
+      },
+      "80": {
+        "persist": 0.7877860069274902,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4218993259918564,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7406286151565556
+      },
+      "160": {
+        "persist": 1.5104868412017822,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8584038594131391,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9597138787014085
+      },
+      "320": {
+        "persist": 1.9925410747528076,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9945304447472798,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9446353442432972
+      }
+    },
+    "59": {
+      "10": {
+        "persist": 0.18530406057834625,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.007501050197328058,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.48967735937482054
+      },
+      "80": {
+        "persist": 0.728083610534668,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.3858219954118751,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7108683222738481
+      },
+      "160": {
+        "persist": 1.1440293788909912,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6950366736207623,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8175581340729605
+      },
+      "320": {
+        "persist": 1.6530754566192627,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8919841666503802,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8526855232387578
+      }
+    },
+    "60": {
+      "10": {
+        "persist": 0.35086438059806824,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.011615240388357458,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.48959354719241654
+      },
+      "80": {
+        "persist": 0.982518196105957,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5454014476384227,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8027309075172472
+      },
+      "160": {
+        "persist": 1.4217064380645752,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8419162690740789,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9205369637383967
+      },
+      "320": {
+        "persist": 1.7178153991699219,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9311735767910789,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9090124486925295
+      }
+    },
+    "61": {
+      "10": {
+        "persist": 0.649508535861969,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.020736962044970938,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6009678232281049
+      },
+      "80": {
+        "persist": 1.188010811805725,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5897350134486445,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8143256829523483
+      },
+      "160": {
+        "persist": 1.7827502489089966,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9535393176572768,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9465945091387107
+      },
+      "320": {
+        "persist": 2.133211374282837,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0269950901971021,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9756888208747295
+      }
+    },
+    "62": {
+      "10": {
+        "persist": 0.23804143071174622,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.00833675431009416,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3553152591422659
+      },
+      "80": {
+        "persist": 0.6142704486846924,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.36030390191135436,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6069863587210459
+      },
+      "160": {
+        "persist": 1.0944856405258179,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6989312411558658,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7759955090742011
+      },
+      "320": {
+        "persist": 1.5485690832138062,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8752669465392254,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8029278657951007
+      }
+    },
+    "63": {
+      "10": {
+        "persist": 0.5494582056999207,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.015950516641129543,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6301853023861262
+      },
+      "80": {
+        "persist": 0.9009063839912415,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.48743383642919563,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7858176547057897
+      },
+      "160": {
+        "persist": 1.4970567226409912,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8218136485106655,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8896580300059365
+      },
+      "320": {
+        "persist": 1.705321192741394,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9171264337674355,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8894820699066612
+      }
+    },
+    "64": {
+      "10": {
+        "persist": 0.22221575677394867,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.007553336352652456,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.3428746187509908
+      },
+      "80": {
+        "persist": 0.8554853200912476,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.46071844864769407,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6825375011511926
+      },
+      "160": {
+        "persist": 1.4138621091842651,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8337286402849982,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.866847966310661
+      },
+      "320": {
+        "persist": 1.7716090679168701,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9539428989643377,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.874565925270889
+      }
+    },
+    "65": {
+      "10": {
+        "persist": 0.2471785992383957,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.008386914897107207,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.45555605894718126
+      },
+      "80": {
+        "persist": 0.6766744256019592,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.3840068595964372,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6724115154620794
+      },
+      "160": {
+        "persist": 1.3543294668197632,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7902725340565787,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8668910963030254
+      },
+      "320": {
+        "persist": 1.9827722311019897,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9540982486134492,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8823943944480008
+      }
+    },
+    "66": {
+      "10": {
+        "persist": 0.4953383505344391,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.017434853734837753,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5194212665101574
+      },
+      "80": {
+        "persist": 1.1172831058502197,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6059405720199225,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8433224452246204
+      },
+      "160": {
+        "persist": 1.5312798023223877,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8747841748245707,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.944636990435171
+      },
+      "320": {
+        "persist": 1.674289584159851,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.949470277207705,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.937029280759252
+      }
+    },
+    "67": {
+      "10": {
+        "persist": 0.373699426651001,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.01077358621691864,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.48965351662058915
+      },
+      "80": {
+        "persist": 0.9803051948547363,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5017947133562121,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7815322267069678
+      },
+      "160": {
+        "persist": 1.389581561088562,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7658927865452029,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8388325589854737
+      },
+      "320": {
+        "persist": 1.7353547811508179,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8527303428290717,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8257178775094806
+      }
+    },
+    "70": {
+      "10": {
+        "persist": 0.7097339630126953,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.020069681537410563,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.606243955573389
+      },
+      "80": {
+        "persist": 1.0036640167236328,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5408739951426609,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7901914291619844
+      },
+      "160": {
+        "persist": 1.3754116296768188,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8417824112844113,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.927941706506323
+      },
+      "320": {
+        "persist": 1.7640303373336792,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9835028525340088,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9751078181464912
+      }
+    },
+    "71": {
+      "10": {
+        "persist": 0.4256656765937805,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.01412178312599124,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5454501032006767
+      },
+      "80": {
+        "persist": 0.7131491899490356,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.40734928673351833,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6824586364909108
+      },
+      "160": {
+        "persist": 1.0683813095092773,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7036627881223738,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8134313117410631
+      },
+      "320": {
+        "persist": 1.4267736673355103,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8704362934810524,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8742255307131295
+      }
+    },
+    "72": {
+      "10": {
+        "persist": 0.8991960883140564,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.02191642602821094,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6660433248420115
+      },
+      "80": {
+        "persist": 1.1180886030197144,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.5730911197619304,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8344350473183507
+      },
+      "160": {
+        "persist": 1.4853739738464355,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8296258725819653,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8907599501996679
+      },
+      "320": {
+        "persist": 1.6528464555740356,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8832420980700916,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8722281549633927
+      }
+    },
+    "73": {
+      "10": {
+        "persist": 0.3105495274066925,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.010168138955411367,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.45677457082777245
+      },
+      "80": {
+        "persist": 0.8146231174468994,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4296208936832892,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6952252828838018
+      },
+      "160": {
+        "persist": 1.3319220542907715,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7801536701242378,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8446359623266683
+      },
+      "320": {
+        "persist": 1.7824668884277344,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9958276030315797,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9232189564015217
+      }
+    },
+    "74": {
+      "10": {
+        "persist": 0.21681243181228638,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.008010394123877615,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.5252018570070216
+      },
+      "80": {
+        "persist": 0.6937990188598633,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.38812066236798787,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.738682014963583
+      },
+      "160": {
+        "persist": 1.286258578300476,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.783874434258122,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8851082921608956
+      },
+      "320": {
+        "persist": 1.9348835945129395,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 1.0379637604573708,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.960359979420654
+      }
+    },
+    "75": {
+      "10": {
+        "persist": 0.3285934031009674,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.011400377076482528,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.500258477794216
+      },
+      "80": {
+        "persist": 0.7271086573600769,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.43766049645847543,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7503398364129114
+      },
+      "160": {
+        "persist": 1.153056025505066,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7077436582084045,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7874916854602705
+      },
+      "320": {
+        "persist": 1.737057089805603,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9695411956472657,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9543897141753007
+      }
+    },
+    "76": {
+      "10": {
+        "persist": 0.48733535408973694,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.01243702599540169,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4748398550240937
+      },
+      "80": {
+        "persist": 0.8914446830749512,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.45541634904569606,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7292728868470347
+      },
+      "160": {
+        "persist": 1.376251220703125,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7860164389600013,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8589402417728532
+      },
+      "320": {
+        "persist": 1.863610029220581,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9403543235726732,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8791804180681747
+      }
+    },
+    "77": {
+      "10": {
+        "persist": 0.9764866232872009,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.027692694270281457,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7552240113664563
+      },
+      "80": {
+        "persist": 1.2257061004638672,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.6634125596204,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8923696338925255
+      },
+      "160": {
+        "persist": 1.3980320692062378,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8123584764182322,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9034217196852573
+      },
+      "320": {
+        "persist": 1.7646052837371826,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9281615778797321,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9268580455439079
+      }
+    },
+    "80": {
+      "10": {
+        "persist": 0.2030719518661499,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.007700600413436579,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.4512840773420795
+      },
+      "80": {
+        "persist": 0.8452643156051636,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.46961467774250193,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7772149431184471
+      },
+      "160": {
+        "persist": 1.5418108701705933,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8824908827084156,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9292636721319646
+      },
+      "320": {
+        "persist": 1.9828208684921265,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9952136921261385,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.949929522303565
+      }
+    },
+    "81": {
+      "10": {
+        "persist": 0.28593194484710693,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.0105653132399928,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.45424685320144714
+      },
+      "80": {
+        "persist": 0.8109829425811768,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4610892484579919,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.7437480562868721
+      },
+      "160": {
+        "persist": 1.1924575567245483,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.7196160444727514,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8188750258991
+      },
+      "320": {
+        "persist": 1.620545506477356,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8613935245906974,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.8089986610694534
+      }
+    },
+    "82": {
+      "10": {
+        "persist": 0.16151569783687592,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.007754225263428074,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.37197323019476886
+      },
+      "80": {
+        "persist": 0.7860500812530518,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.4375208011177754,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.6975445551991223
+      },
+      "160": {
+        "persist": 1.355644941329956,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.8042572294329093,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.887452888120441
+      },
+      "320": {
+        "persist": 1.7740976810455322,
+        "ridge_alpha": 0.3,
+        "tuned_ridge": 0.9969725849554891,
+        "cbramod_alpha": 0.3,
+        "cbramod_probe": 0.9636888410114814
+      }
+    }
+  },
+  "mean_over_folds": {
+    "10": {
+      "persist": 0.32630209944760186,
+      "tuned_ridge": 0.010577294248287837,
+      "cbramod_probe": 0.4685969401398704
+    },
+    "80": {
+      "persist": 0.8346593918708655,
+      "tuned_ridge": 0.4537696647826879,
+      "cbramod_probe": 0.7317214641944693
+    },
+    "160": {
+      "persist": 1.3486942136899018,
+      "tuned_ridge": 0.7925059672949968,
+      "cbramod_probe": 0.867530726096545
+    },
+    "320": {
+      "persist": 1.7691965225415351,
+      "tuned_ridge": 0.9454876844377009,
+      "cbramod_probe": 0.9013602682418017
+    }
+  }
+}
