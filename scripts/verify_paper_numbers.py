@@ -117,3 +117,20 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def check_anonymization(pdf_or_tex: Path) -> list[str]:
+    """Fail if a double-blind submission carries identifying terms.
+
+    The model name is the likely failure: 'Kahlus' is unique and the repo is
+    public, so it de-anonymizes the submission the moment the results table
+    lands. Call this on the BUILT PDF text, not just the .tex.
+    """
+    terms = ["Amrith", "Lotlikar", "Aayushya", "Patel", "Krish", "Garg",
+             "Zaidi", "Kahlus", "NeuroTwin", "Cupertino", "Stanford", "SJSU",
+             "ptlnextdoor", "kgarg", "github.com", "Kahlus-Technologies"]
+    if not pdf_or_tex.exists():
+        return [f"missing: {pdf_or_tex}"]
+    text = pdf_or_tex.read_text(errors="ignore")
+    return [f"identifying term in {pdf_or_tex.name}: {t}"
+            for t in terms if t.lower() in text.lower()]
