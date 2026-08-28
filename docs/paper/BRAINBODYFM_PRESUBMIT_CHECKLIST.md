@@ -94,3 +94,59 @@ identify the author. They will disappear with the boilerplate.
 
 The one lesson this project keeps re-learning: the deadline that slips is the
 one with no external reminder. Sept 4 gives a day of margin against exactly that.
+
+---
+
+## ACCEPTANCE PATH EXERCISED 2026-08-28 — the paper actually builds
+
+Everything above was inspection. This is the real thing: the draft compiled to a
+PDF with the generated tables in it, and the PDF was checked the way a reviewer
+or the submission system would encounter it.
+
+**What was run:** extracted `neurips_2026.tex` and `neurips_2026.sty` from commit
+`1c13179e`, generated the tables with `scripts/emit_paper_tables.py`, wired them
+in with `\input{tables.tex}`, and compiled with `pdflatex -halt-on-error`.
+
+| check | result |
+|---|---|
+| compiles | **yes**, exit 0, no LaTeX errors |
+| PDF produced | 214 KB |
+| generated tables render | **yes** — both the paired-comparison table and the gate table appear in the PDF text |
+| **anonymization of the rendered PDF** | **CLEAN** — zero hits across 15 identifying terms in the extracted text |
+| page count, as-is | **8 pages** |
+| page count, template deleted | **3 pages** |
+
+### The page finding, which is good news
+
+As-is the document is 8 pages against a 5-page limit — but pages 2 through 6 are
+**NeurIPS template boilerplate** ("Sample figure caption", "Note that amsfonts is
+automatically loaded…"). Deleting the 372 lines of template leaves:
+
+**3 pages: the written intro plus both generated tables.**
+
+So the real budget is **2 pages of content already written, ~3 pages free** for
+methods, the gate-failure section, discussion, and limitations. That is a
+comfortable fit rather than a squeeze, which was not knowable before compiling.
+
+### What this changes
+
+- The "count pages before the final day" warning above is now **resolved in
+  advance**: there is room.
+- Deleting the template is not cosmetic, it is the difference between 8 pages
+  and 3. Do it first, before writing anything else.
+- The anonymization check now has a real target. Re-run it on the final PDF:
+
+```
+pdftotext paper.pdf - | grep -icE 'kahlus|neurotwin|aayushya|patel|zaidi|sjsu|stanford'
+```
+
+Must return 0. It currently does, because the tables use the blind alias.
+
+### Honest limit
+
+This built against the **stock** `neurips_2026.sty` committed alongside the
+draft. The CFP requires the workshop's own modified style
+(`brainbodyfm-neurips-2026-style.zip`), which I have not downloaded. Margins and
+the header may differ slightly, so **rebuild and re-count pages against their
+style** before submitting. The 3-vs-8 conclusion will not change; the exact
+line breaks might.
