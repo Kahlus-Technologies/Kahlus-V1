@@ -156,13 +156,32 @@ stripped and the generated tables inserted:
 | check | result |
 |---|---|
 | compiles | exit 0 |
-| **pages** | **4 of 5 allowed** |
+| **pages** | **3 of 5 allowed** (see correction below) |
 | anonymization of rendered PDF | **CLEAN** |
 | both tables render | yes |
 
-So the real state is **4 pages used, 1 page free**, with the intro and both
-tables in place. Tighter than the 3-page figure from the earlier build (which
-also stripped the references section), and the honest number to plan against.
+### Page budget, measured properly
+
+I got this wrong twice before measuring it correctly. `pdftotext | grep -c $'\f'`
+counts form feeds, not pages, and `mdls` returns null on these files. The
+authoritative source is **pdflatex's own log line**, `Output written on ... (N pages)`:
+
+| build | pages |
+|---|---|
+| intro + references, template stripped | **2** |
+| intro + both generated tables + references | **3** |
+| tables cost | **1 page** |
+
+**So: 3 of 5 used, 2 pages free** for methods, the gate-failure section,
+discussion, and limitations. That is comfortable, not tight — my earlier "4 of 5,
+one page of slack" was a counting error, and the correction is in the generous
+direction.
+
+To re-measure after any edit:
+
+```
+grep -oE 'Output written on .*\(([0-9]+) pages' paper.log
+```
 
 **Note on the separate `brainbodyfm2026.zip` in the repo:** that is a submission
 bundle (tex + sty + README), not the style distribution. Do not confuse the two.
