@@ -142,11 +142,27 @@ pdftotext paper.pdf - | grep -icE 'kahlus|neurotwin|aayushya|patel|zaidi|sjsu|st
 
 Must return 0. It currently does, because the tables use the blind alias.
 
-### Honest limit
+### Honest limit — RESOLVED 2026-08-28
 
-This built against the **stock** `neurips_2026.sty` committed alongside the
-draft. The CFP requires the workshop's own modified style
-(`brainbodyfm-neurips-2026-style.zip`), which I have not downloaded. Margins and
-the header may differ slightly, so **rebuild and re-count pages against their
-style** before submitting. The 3-vs-8 conclusion will not change; the exact
-line breaks might.
+I previously flagged that the build used the `.sty` committed with the draft
+rather than the workshop's required style. **Downloaded the official
+`brainbodyfm-neurips-2026-style.zip` and diffed it: the committed
+`neurips_2026.sty` is BYTE-IDENTICAL to the workshop's.** The draft was already
+on the right style; there is nothing to swap.
+
+Rebuilt against the downloaded official copy to confirm, with the template
+stripped and the generated tables inserted:
+
+| check | result |
+|---|---|
+| compiles | exit 0 |
+| **pages** | **4 of 5 allowed** |
+| anonymization of rendered PDF | **CLEAN** |
+| both tables render | yes |
+
+So the real state is **4 pages used, 1 page free**, with the intro and both
+tables in place. Tighter than the 3-page figure from the earlier build (which
+also stripped the references section), and the honest number to plan against.
+
+**Note on the separate `brainbodyfm2026.zip` in the repo:** that is a submission
+bundle (tex + sty + README), not the style distribution. Do not confuse the two.
