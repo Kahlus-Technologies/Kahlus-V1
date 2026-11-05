@@ -43,6 +43,10 @@ class PropofolPciTests(unittest.TestCase):
             self.assertIn("stop_reason", gate)
 
     def test_loader_on_synthetic_bids_stub(self) -> None:
+        try:
+            import pybv  # noqa: F401  (writes the BrainVision stub)
+        except ImportError:
+            self.skipTest("pybv not installed")
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "participants.tsv").write_text(
