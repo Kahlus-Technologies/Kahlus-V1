@@ -1,0 +1,930 @@
+{
+  "bootstrap_mode": "smoke",
+  "claim_scope": "autonomic_residual_forecastability_micro_arousal_beyond_cortical_spectral_subject_held_out_nsrr_mesa_shhs_not_gastric_egg_not_coleman_data_not_clinical",
+  "epoch_seconds": 30.0,
+  "estimand": {
+    "b": "cortical_spectral_plus_cycle_history",
+    "split": "subject_held_out_primary_dataset_held_out_secondary",
+    "y": "micro_arousal_within_horizon_epochs",
+    "z": "autonomic_hrv_resp_eog_emg_infraslow"
+  },
+  "gate_passed": false,
+  "horizons_epochs": [
+    1,
+    2,
+    4
+  ],
+  "mesa_failures": [],
+  "mesa_real": {
+    "channels_used": {
+      "ecg": [
+        "EKG"
+      ],
+      "eeg": [
+        "EEG3"
+      ],
+      "emg": [
+        "EMG"
+      ],
+      "eog": [
+        "EOG-L",
+        "EOG-R"
+      ],
+      "ppg": [
+        "Pleth"
+      ],
+      "resp": [
+        "Flow",
+        "Thor",
+        "Abdo"
+      ]
+    },
+    "horizons": [
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 25,
+          "n_permutations": 300,
+          "null_ci_high": 0.0054367579713524355,
+          "null_ci_low": -0.005724390808222282,
+          "null_mean_rfs_bits": 0.00011279540216181762,
+          "observed_rfs_bits": 0.0061010477813887515,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.016611295681063124,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 207,
+          "significant": true,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.3268895098349862,
+            "rfs_bits": -0.0002966920625848604,
+            "rfs_ci_high": 0.0011294768896032785,
+            "rfs_ci_low": -0.0023690387538282823
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.40823172456369855,
+            "rfs_bits": -0.11764870186662335,
+            "rfs_ci_high": -0.08259204657027992,
+            "rfs_ci_low": -0.16446618238973235
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.32517273519200285,
+            "rfs_bits": 0.0021800902011711613,
+            "rfs_ci_high": 0.008306209270086488,
+            "rfs_ci_low": -0.00383507734788117
+          }
+        },
+        "horizon_epochs": 1,
+        "nested_cv": {
+          "delta_rfs_bits": 0.006323024052056822,
+          "delta_rfs_bits_std": 0.004027596747028945,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 4379,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.32245493450017987,
+          "rfs_bits": 0.006101047781388769,
+          "rfs_ci_high": 0.010317515402674485,
+          "rfs_ci_low": -0.0006838333570455215,
+          "rfs_p_value_two_sided": 0.016611295681063124
+        },
+        "subject_probe": {
+          "accuracy": 0.12903538536112458,
+          "chance": 0.04
+        }
+      },
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 25,
+          "n_permutations": 300,
+          "null_ci_high": 0.00831573278086133,
+          "null_ci_low": -0.008400704949747794,
+          "null_mean_rfs_bits": 0.00011299584102520434,
+          "observed_rfs_bits": 0.010188920434647007,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.013289036544850499,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 208,
+          "significant": true,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.40293273916297584,
+            "rfs_bits": 0.0003716090167760786,
+            "rfs_ci_high": 0.0024785069585901687,
+            "rfs_ci_low": -0.0012364822737862375
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.5294494173411666,
+            "rfs_bits": -0.18215337518064464,
+            "rfs_ci_high": -0.13460401728246038,
+            "rfs_ci_low": -0.24386249521360479
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.40657267652255286,
+            "rfs_bits": -0.004879710561032151,
+            "rfs_ci_high": 0.0071597083052152245,
+            "rfs_ci_low": -0.01423695432952513
+          }
+        },
+        "horizon_epochs": 2,
+        "nested_cv": {
+          "delta_rfs_bits": 0.010421039809200604,
+          "delta_rfs_bits_std": 0.004189365685606035,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 6794,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.3961278974329997,
+          "rfs_bits": 0.010188920434646932,
+          "rfs_ci_high": 0.015749792762439936,
+          "rfs_ci_low": 0.0010061822813857834,
+          "rfs_p_value_two_sided": 0.013289036544850499
+        },
+        "subject_probe": {
+          "accuracy": 0.12903538536112458,
+          "chance": 0.04
+        }
+      },
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 25,
+          "n_permutations": 300,
+          "null_ci_high": 0.010228559413356842,
+          "null_ci_low": -0.009955075532766984,
+          "null_mean_rfs_bits": -0.00010695573851100628,
+          "observed_rfs_bits": 0.020001383149082872,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.0033222591362126247,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 210,
+          "significant": true,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.4645796253522832,
+            "rfs_bits": 0.000864764857350374,
+            "rfs_ci_high": 0.0029877799275567153,
+            "rfs_ci_low": -0.0011796589268551108
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.6264812601524321,
+            "rfs_bits": -0.23270992078064048,
+            "rfs_ci_high": -0.18114111126977306,
+            "rfs_ci_low": -0.29325489300383517
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.4717507874859224,
+            "rfs_bits": -0.009481035190261645,
+            "rfs_ci_high": 0.008499877146970798,
+            "rfs_ci_low": -0.026637447564337443
+          }
+        },
+        "horizon_epochs": 4,
+        "nested_cv": {
+          "delta_rfs_bits": 0.020097193202336792,
+          "delta_rfs_bits_std": 0.0026467751867620707,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 9692,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.4513151323379169,
+          "rfs_bits": 0.020001383149082896,
+          "rfs_ci_high": 0.02751626101170877,
+          "rfs_ci_low": 0.012568729895126652,
+          "rfs_p_value_two_sided": 0.0033222591362126247
+        },
+        "subject_probe": {
+          "accuracy": 0.12903538536112458,
+          "chance": 0.04
+        }
+      }
+    ],
+    "n_datasets": 1,
+    "n_subjects": 25,
+    "n_windows": 30945,
+    "positive_events": 20865
+  },
+  "mesa_status": "evaluated",
+  "milestone": "autonomic_rfs_arousal",
+  "min_subjects": 8,
+  "schema": "kahlus.forecastability.autonomic_rfs.v1",
+  "shhs_dataset_held_out": {
+    "channels_used": {
+      "ecg": [
+        "ECG"
+      ],
+      "eeg": [
+        "EEG",
+        "EEG(sec)"
+      ],
+      "emg": [
+        "EMG"
+      ],
+      "eog": [
+        "EOG(L)",
+        "EOG(R)"
+      ],
+      "resp": [
+        "THOR RES",
+        "ABDO RES"
+      ]
+    },
+    "horizons": [
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 25,
+          "n_permutations": 300,
+          "null_ci_high": 0.005163473128080917,
+          "null_ci_low": -0.005697034349659053,
+          "null_mean_rfs_bits": -0.0002452131784384225,
+          "observed_rfs_bits": 0.004769099925074808,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.036544850498338874,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 307,
+          "significant": true,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.3517920268556886,
+            "rfs_bits": -0.0014180455889099125,
+            "rfs_ci_high": 0.00021888500121955884,
+            "rfs_ci_low": -0.0034156115151778733
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.445270528528322,
+            "rfs_bits": -0.13627901638174877,
+            "rfs_ci_high": -0.10669546913778925,
+            "rfs_ci_low": -0.1699327163983206
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.3636676662867224,
+            "rfs_bits": -0.018550971703447827,
+            "rfs_ci_high": -0.010798450274704757,
+            "rfs_ci_low": -0.02630683990825063
+          }
+        },
+        "horizon_epochs": 1,
+        "nested_cv": {
+          "delta_rfs_bits": 0.00505472517297734,
+          "delta_rfs_bits_std": 0.005233100130021148,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 4121,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.347503424386956,
+          "rfs_bits": 0.004769099925074831,
+          "rfs_ci_high": 0.009572378478841223,
+          "rfs_ci_low": -0.00046345665273711425,
+          "rfs_p_value_two_sided": 0.036544850498338874
+        },
+        "subject_probe": {
+          "accuracy": 0.19934140891450075,
+          "chance": 0.04
+        }
+      },
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 25,
+          "n_permutations": 300,
+          "null_ci_high": 0.007603931499197936,
+          "null_ci_low": -0.0074807994450202375,
+          "null_mean_rfs_bits": 6.85615625308784e-05,
+          "observed_rfs_bits": 0.008305431461463196,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.016611295681063124,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 308,
+          "significant": true,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.42986934114658615,
+            "rfs_bits": -0.0009287151474006747,
+            "rfs_ci_high": -3.11681146345218e-05,
+            "rfs_ci_low": -0.001955764936065083
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.5535351944354111,
+            "rfs_bits": -0.17934082841449056,
+            "rfs_ci_high": -0.14679419792624618,
+            "rfs_ci_low": -0.22285394363665828
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.4450587265754556,
+            "rfs_bits": -0.022842366179781696,
+            "rfs_ci_high": -0.013123783564753026,
+            "rfs_ci_low": -0.031708941945525156
+          }
+        },
+        "horizon_epochs": 2,
+        "nested_cv": {
+          "delta_rfs_bits": 0.008664856058430905,
+          "delta_rfs_bits_std": 0.0064318503961761486,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 6120,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.4234687184597749,
+          "rfs_bits": 0.008305431461463297,
+          "rfs_ci_high": 0.014516314549484197,
+          "rfs_ci_low": 0.0015288776013194737,
+          "rfs_p_value_two_sided": 0.016611295681063124
+        },
+        "subject_probe": {
+          "accuracy": 0.19934140891450075,
+          "chance": 0.04
+        }
+      },
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 25,
+          "n_permutations": 300,
+          "null_ci_high": 0.01125621553765419,
+          "null_ci_low": -0.010929235600575337,
+          "null_mean_rfs_bits": 0.00024630524209638287,
+          "observed_rfs_bits": 0.015573990539145256,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.0033222591362126247,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 310,
+          "significant": true,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.4880920631165511,
+            "rfs_bits": -0.0007675249190143961,
+            "rfs_ci_high": 0.0005375815607639843,
+            "rfs_ci_low": -0.0022216378944912075
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.6449128480630141,
+            "rfs_bits": -0.2270120936695911,
+            "rfs_ci_high": -0.188780671497916,
+            "rfs_ci_low": -0.27429253541955145
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.5109668916236901,
+            "rfs_bits": -0.033768926567449335,
+            "rfs_ci_high": -0.01912300749068878,
+            "rfs_ci_low": -0.04917595216372825
+          }
+        },
+        "horizon_epochs": 4,
+        "nested_cv": {
+          "delta_rfs_bits": 0.0159538478849323,
+          "delta_rfs_bits_std": 0.007285637202744778,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 8690,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.47676498775065096,
+          "rfs_bits": 0.015573990539145311,
+          "rfs_ci_high": 0.0246059957039706,
+          "rfs_ci_low": 0.006589898919348671,
+          "rfs_p_value_two_sided": 0.0033222591362126247
+        },
+        "subject_probe": {
+          "accuracy": 0.19934140891450075,
+          "chance": 0.04
+        }
+      }
+    ],
+    "n_datasets": 1,
+    "n_subjects": 25,
+    "n_windows": 25508,
+    "positive_events": 18931
+  },
+  "shhs_failures": [],
+  "shhs_status": "evaluated",
+  "stop_reason": "Autonomic RFS honest negative on MESA under held-out evaluation; do not claim autonomic residual forecastability beyond cortical spectral baseline.",
+  "synthetic_known": {
+    "channels_used": null,
+    "horizons": [
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 16,
+          "n_permutations": 300,
+          "null_ci_high": 0.017214651889726495,
+          "null_ci_low": -0.017351581279525213,
+          "null_mean_rfs_bits": -0.00013343838108171742,
+          "observed_rfs_bits": 0.021109406475706582,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.009966777408637873,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 7,
+          "significant": true,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.5400228391213723,
+            "rfs_bits": -0.003113892192830264,
+            "rfs_ci_high": -0.0012350335158193449,
+            "rfs_ci_low": -0.005661623195035279
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.5862706126860372,
+            "rfs_bits": -0.06983532576672805,
+            "rfs_ci_high": -0.04384705188009266,
+            "rfs_ci_low": -0.10275142151649969
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.561500708204338,
+            "rfs_bits": -0.03409990740768723,
+            "rfs_ci_high": -0.006771786664647206,
+            "rfs_ci_low": -0.06744199227781521
+          }
+        },
+        "horizon_epochs": 1,
+        "nested_cv": {
+          "delta_rfs_bits": 0.021109406475706645,
+          "delta_rfs_bits_std": 0.003140752030903516,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 784,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.5232325279454144,
+          "rfs_bits": 0.021109406475706683,
+          "rfs_ci_high": 0.03379251793391475,
+          "rfs_ci_low": 0.00791117104277789,
+          "rfs_p_value_two_sided": 0.009966777408637873
+        },
+        "subject_probe": {
+          "accuracy": 0.08333333333333333,
+          "chance": 0.0625
+        }
+      },
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 16,
+          "n_permutations": 300,
+          "null_ci_high": 0.00635252249909611,
+          "null_ci_low": -0.007264841166602431,
+          "null_mean_rfs_bits": -0.00021390190552848817,
+          "observed_rfs_bits": 0.006165564177317709,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.03986710963455149,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 8,
+          "significant": true,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.61588350794736,
+            "rfs_bits": -0.0032887806884834884,
+            "rfs_ci_high": -0.0010122549219995925,
+            "rfs_ci_low": -0.004970141557806627
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.6706074968494662,
+            "rfs_bits": -0.08223880809521474,
+            "rfs_ci_high": -0.0548789663082027,
+            "rfs_ci_low": -0.11011988815599022
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.6597750034027905,
+            "rfs_bits": -0.0666108235192335,
+            "rfs_ci_high": -0.026350752840387917,
+            "rfs_ci_low": -0.11048849224351998
+          }
+        },
+        "horizon_epochs": 2,
+        "nested_cv": {
+          "delta_rfs_bits": 0.006165564177317716,
+          "delta_rfs_bits_std": 0.00249594688341238,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 1104,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.6093302554595885,
+          "rfs_bits": 0.006165564177317716,
+          "rfs_ci_high": 0.013178614453863752,
+          "rfs_ci_low": -0.0006601018215704906,
+          "rfs_p_value_two_sided": 0.03986710963455149
+        },
+        "subject_probe": {
+          "accuracy": 0.08333333333333333,
+          "chance": 0.0625
+        }
+      },
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 16,
+          "n_permutations": 300,
+          "null_ci_high": 0.0019483393720481606,
+          "null_ci_low": -0.002215703585064242,
+          "null_mean_rfs_bits": -6.445890750123041e-05,
+          "observed_rfs_bits": 6.268095265394256e-05,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.46511627906976744,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 10,
+          "significant": false,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.6451757900974917,
+            "rfs_bits": 0.002375098932525943,
+            "rfs_ci_high": 0.009196770864284567,
+            "rfs_ci_low": -0.0048003275543049475
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.6841475787555811,
+            "rfs_bits": -0.05384930729907234,
+            "rfs_ci_high": -0.02754614024187433,
+            "rfs_ci_low": -0.07723808201175637
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.7148590374839734,
+            "rfs_bits": -0.09815657650499,
+            "rfs_ci_high": -0.047504663932450654,
+            "rfs_ci_low": -0.14312423514457884
+          }
+        },
+        "horizon_epochs": 4,
+        "nested_cv": {
+          "delta_rfs_bits": 6.268095265401728e-05,
+          "delta_rfs_bits_std": 0.0010005430861400994,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 1495,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.6467786361005162,
+          "rfs_bits": 6.268095265377706e-05,
+          "rfs_ci_high": 0.0022231626101513243,
+          "rfs_ci_low": -0.0022305345993051708,
+          "rfs_p_value_two_sided": 0.46511627906976744
+        },
+        "subject_probe": {
+          "accuracy": 0.08333333333333333,
+          "chance": 0.0625
+        }
+      }
+    ],
+    "n_datasets": 2,
+    "n_subjects": 16,
+    "n_windows": 2880,
+    "positive_events": 3383
+  },
+  "synthetic_null": {
+    "channels_used": null,
+    "horizons": [
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 16,
+          "n_permutations": 300,
+          "null_ci_high": 0.001377798454526794,
+          "null_ci_low": -0.0014703579290107228,
+          "null_mean_rfs_bits": -3.0994243283025034e-05,
+          "observed_rfs_bits": -0.00011394643709303697,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.5083056478405316,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 107,
+          "significant": false,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.37694092145421193,
+            "rfs_bits": -0.000887598270483153,
+            "rfs_ci_high": 0.0007420695487084718,
+            "rfs_ci_low": -0.002353255996886615
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.39514592651751423,
+            "rfs_bits": -0.02715186879466786,
+            "rfs_ci_high": -0.01740445280798764,
+            "rfs_ci_low": -0.03777762239371922
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.4363287244118854,
+            "rfs_bits": -0.0865660870868096,
+            "rfs_ci_high": -0.06492021267886426,
+            "rfs_ci_low": -0.1126822795923027
+          }
+        },
+        "horizon_epochs": 1,
+        "nested_cv": {
+          "delta_rfs_bits": -0.00011394643709305172,
+          "delta_rfs_bits_std": 0.001702640686182508,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 385,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.3764046668671625,
+          "rfs_bits": -0.00011394643709299168,
+          "rfs_ci_high": 0.0010721139573775153,
+          "rfs_ci_low": -0.001679435317274402,
+          "rfs_p_value_two_sided": 0.5083056478405316
+        },
+        "subject_probe": {
+          "accuracy": 0.06041666666666667,
+          "chance": 0.0625
+        }
+      },
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 16,
+          "n_permutations": 300,
+          "null_ci_high": 0.0011026390334037005,
+          "null_ci_low": -0.0010331176888346417,
+          "null_mean_rfs_bits": -1.9437942361434492e-05,
+          "observed_rfs_bits": -0.0012767566961284912,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.9966777408637874,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 108,
+          "significant": false,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.5204865374659599,
+            "rfs_bits": -0.0007418926286268451,
+            "rfs_ci_high": 0.0006910323068846802,
+            "rfs_ci_low": -0.0021961782640186143
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.5553828186727583,
+            "rfs_bits": -0.051086584471141686,
+            "rfs_ci_high": -0.031887204014644004,
+            "rfs_ci_low": -0.07249428695931284
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.6542401459248404,
+            "rfs_bits": -0.1937075602532579,
+            "rfs_ci_high": -0.15756497100481467,
+            "rfs_ci_low": -0.22519124736833937
+          }
+        },
+        "horizon_epochs": 2,
+        "nested_cv": {
+          "delta_rfs_bits": -0.0012767566961284678,
+          "delta_rfs_bits_std": 0.0007181308864366181,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 691,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.5208572769863314,
+          "rfs_bits": -0.001276756696128488,
+          "rfs_ci_high": -0.0003689232693346687,
+          "rfs_ci_low": -0.0023794493964581272,
+          "rfs_p_value_two_sided": 0.9966777408637874
+        },
+        "subject_probe": {
+          "accuracy": 0.06041666666666667,
+          "chance": 0.0625
+        }
+      },
+      {
+        "best_baseline": "nuisance_only",
+        "cluster_permutation": {
+          "alpha": 0.05,
+          "alternative": "greater",
+          "method": "patient_cluster_sign_flip_rfs",
+          "mode": "sampled",
+          "n_clusters": 16,
+          "n_permutations": 300,
+          "null_ci_high": 0.0010961224630102876,
+          "null_ci_low": -0.0011032201012109218,
+          "null_mean_rfs_bits": -2.1741297279382318e-05,
+          "observed_rfs_bits": -0.0008800016002176237,
+          "p_resolution": 0.0033222591362126247,
+          "p_value": 0.9169435215946844,
+          "permutation_unit": "patient_cluster_sign_flip",
+          "scope": "primary_horizon_control_only_not_claim_enabling",
+          "seed": 110,
+          "significant": false,
+          "statistic": "rfs_bits"
+        },
+        "controls": {
+          "circular_shift_surrogate": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.6276318688529756,
+            "rfs_bits": -0.0008279213936274013,
+            "rfs_ci_high": 0.00022208551397383616,
+            "rfs_ci_low": -0.0020011198914169012
+          },
+          "label_shuffle": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.6789054293181447,
+            "rfs_bits": -0.07480003280544723,
+            "rfs_ci_high": -0.05011025952585848,
+            "rfs_ci_low": -0.10082289890432045
+          },
+          "time_shift": {
+            "bootstrap_mode": "smoke",
+            "bootstrap_samples": 300,
+            "nll": 0.8832751807695745,
+            "rfs_bits": -0.369643259732135,
+            "rfs_ci_high": -0.3105500563302933,
+            "rfs_ci_low": -0.4339813697942488
+          }
+        },
+        "horizon_epochs": 4,
+        "nested_cv": {
+          "delta_rfs_bits": -0.0008800016002176496,
+          "delta_rfs_bits_std": 0.00045111646460635994,
+          "n_folds": 4
+        },
+        "nuisance_probe_failures": [],
+        "positive_events": 1168,
+        "residual_model": {
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "nll": 0.6276679681013366,
+          "rfs_bits": -0.0008800016002176496,
+          "rfs_ci_high": 9.280936233978192e-05,
+          "rfs_ci_low": -0.0018827675221294868,
+          "rfs_p_value_two_sided": 0.9169435215946844
+        },
+        "subject_probe": {
+          "accuracy": 0.06041666666666667,
+          "chance": 0.0625
+        }
+      }
+    ],
+    "n_datasets": 2,
+    "n_subjects": 16,
+    "n_windows": 2880,
+    "positive_events": 2244
+  }
+}

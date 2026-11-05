@@ -421,9 +421,23 @@ def load_nsrr_autonomic_fixture(
     base_rates: list[float] = []
     channels_used: dict[str, list[str]] = {}
     max_h = max(horizons)
+    # Montage is locked to the first recording so every window has the same channel
+    # count (some SHHS1 nights carry an extra AIRFLOW channel). Recordings missing a
+    # locked channel are skipped rather than zero-filled.
+    locked: dict[str, tuple[str, ...]] | None = None
+    skipped: list[str] = []
     for rec in recordings:
         events = parse_nsrr_arousal_events(rec.xml_path)
-        matrix = load_nsrr_epoch_matrix(rec.edf_path, epoch_seconds=epoch_seconds)
+        try:
+            matrix = load_nsrr_epoch_matrix(rec.edf_path, epoch_seconds=epoch_seconds, channel_groups=locked)
+        except ValueError:
+            skipped.append(rec.subject_id)
+            continue
+        if locked is None:
+            locked = {g: tuple(labels) for g, labels in matrix["channels"].items()}
+        elif {g: tuple(v) for g, v in matrix["channels"].items()} != locked:
+            skipped.append(rec.subject_id)
+            continue
         for group, labels in matrix["channels"].items():
             channels_used.setdefault(group, [])
             for label in labels:

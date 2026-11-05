@@ -2,11 +2,11 @@
   "assets": {
     "pdf": {
       "file": "figure_a1_real_sleep_edf_waveform.pdf",
-      "sha256": "01bf87fae4b2ffad236f7987c2549f47827f07b89b5e2c075cc574a7a16b1855"
+      "sha256": "4ea051a9e381c3c4329b94ba3940a9f3dc0a308f95d6ff094bc472b565717701"
     },
     "png": {
       "file": "figure_a1_real_sleep_edf_waveform.png",
-      "sha256": "92d27ff814c959c58ddd68b5499225f3d84e48f5247bae32ff0444110c710c87"
+      "sha256": "f54417700296ba5fbda294cb1bf843841a219e66f08fa005d017605106be6fa8"
     }
   },
   "claim_boundary": "The rendered image is a descriptive single-label Sleep-EDF transport example. The current HNPH v0.4 build does not independently qualify its raw source, and this image cannot enable repeated-rater construct validity or any empirical HNPH frontier claim.",
