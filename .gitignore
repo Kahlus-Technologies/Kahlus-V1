@@ -32,3 +32,4 @@ graphify-out/
 # Local virtualenv. Previously committed by accident; keep it out of the shared ignore.
 .venv/
 artifacts/heart_arousal_*/cache/
+artifacts/beat_warning_*/cache/
