@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/kahlus-wordmark-light.png">
-  <img src="docs/assets/kahlus-wordmark-dark.png" alt="KAHLUS" width="360">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/kahlus-wordmark-light.svg">
+  <img src="docs/assets/kahlus-wordmark-dark.svg" alt="KAHLUS" width="420">
 </picture>
 
 <p><strong>Leakage-controlled neural-state forecasting.</strong><br>
