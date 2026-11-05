@@ -1,0 +1,1281 @@
+{
+  "horizons_s": [
+    5,
+    15,
+    30,
+    60,
+    120
+  ],
+  "normalize": "causal",
+  "nights": {
+    "mesa": 25,
+    "shhs": 25
+  },
+  "results": {
+    "h5": {
+      "mesa_cv": {
+        "n_windows": 44266,
+        "n_positive": 757,
+        "base_rate": 0.017101161162065694,
+        "prior": {
+          "auroc": 0.663255188885289,
+          "auprc": 0.03532494168078789
+        },
+        "prior+cardiac": {
+          "auroc": 0.6677382195147343,
+          "auprc": 0.034641244840791875
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6536864189989936,
+          "auprc": 0.03516921189951157
+        },
+        "prior+eeg": {
+          "auroc": 0.6635935236588261,
+          "auprc": 0.03496616472206571
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6679112959607835,
+          "auprc": 0.034421378453969045
+        },
+        "prior+ppg": {
+          "auroc": 0.6554712271528389,
+          "auprc": 0.033071940204596265
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.0006802877974825152,
+          "rfs_ci_high": 0.0006433544340627371,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 1.3633813489875212e-05
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.0009769840047802864,
+          "rfs_ci_high": 0.00031714631104114486,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.0004379566040341769
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.0009072847595592524,
+          "rfs_ci_high": 0.001393728046768736,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0004515904175240521
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.0006069817283841913,
+          "rfs_ci_high": 0.0007798732388441416,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 2.5927033478073667e-05
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": -0.0007413794315087367,
+          "rfs_ci_high": 0.0006154643334070328,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -2.870212213904331e-05
+        },
+        "prior+ppg vs prior": {
+          "rfs_ci_low": -0.0011898035772490863,
+          "rfs_ci_high": 7.719684359795969e-05,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.0006074137686628702
+        }
+      },
+      "shhs_cv": {
+        "n_windows": 45502,
+        "n_positive": 660,
+        "base_rate": 0.014504856929365742,
+        "prior": {
+          "auroc": 0.6566406561489296,
+          "auprc": 0.027084384315315693
+        },
+        "prior+cardiac": {
+          "auroc": 0.6794658315459127,
+          "auprc": 0.02855564250496353
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.658366091448358,
+          "auprc": 0.027775021524901727
+        },
+        "prior+eeg": {
+          "auroc": 0.6752767123084014,
+          "auprc": 0.027358309531281252
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6905725557614412,
+          "auprc": 0.029245877310284538
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": 5.6852356776930926e-05,
+          "rfs_ci_high": 0.001509661324110709,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0008034720190622725
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.0005230600358499298,
+          "rfs_ci_high": 0.0005073631040594731,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 1.4464666744275409e-05
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": 0.00014179470386257282,
+          "rfs_ci_high": 0.001629252014914629,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0007890073523179971
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -3.89374334492872e-05,
+          "rfs_ci_high": 0.001255091923609077,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0005668999503086175
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.0003007078875406588,
+          "rfs_ci_high": 0.0022936512299126855,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.001310975543335779
+        }
+      },
+      "mesa_to_shhs": {
+        "n_windows": 45502,
+        "n_positive": 660,
+        "base_rate": 0.014504856929365742,
+        "prior": {
+          "auroc": 0.6687409868724261,
+          "auprc": 0.02786785394431639
+        },
+        "prior+cardiac": {
+          "auroc": 0.6827622879254163,
+          "auprc": 0.029025198931631732
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6693194657876206,
+          "auprc": 0.026856025511694262
+        },
+        "prior+eeg": {
+          "auroc": 0.679213092298481,
+          "auprc": 0.029976438869975253
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6928338455695621,
+          "auprc": 0.029718576310813365
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.00035083923407746426,
+          "rfs_ci_high": 0.0008360805002923362,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.00027654857459267064
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.001015467131724577,
+          "rfs_ci_high": 0.00024053835547864762,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.00036475343262459223
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": 6.979611532549032e-05,
+          "rfs_ci_high": 0.001205184977848406,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0006413020072172629
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.0001952055748819205,
+          "rfs_ci_high": 0.0009001877347661104,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0003112840541193744
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.0001591365971687213,
+          "rfs_ci_high": 0.0014778730876249765,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0007699304706204042
+        }
+      },
+      "shhs_to_mesa": {
+        "n_windows": 44266,
+        "n_positive": 757,
+        "base_rate": 0.017101161162065694,
+        "prior": {
+          "auroc": 0.6614512225457658,
+          "auprc": 0.03248176487600906
+        },
+        "prior+cardiac": {
+          "auroc": 0.6688001629083377,
+          "auprc": 0.03296267955623563
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.659002557450799,
+          "auprc": 0.030563886413941012
+        },
+        "prior+eeg": {
+          "auroc": 0.6694938956889316,
+          "auprc": 0.03458721380293156
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6684287946862784,
+          "auprc": 0.031545855347477336
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.0009135452993397397,
+          "rfs_ci_high": 0.0010556740394756933,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.00014659049541425586
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.0011784048249870386,
+          "rfs_ci_high": -0.0001232932718257476,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.0004697531893589082
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.00031221250516560935,
+          "rfs_ci_high": 0.0015175985600811574,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.000616343684773164
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.0006753390591637382,
+          "rfs_ci_high": 0.0009328429568978091,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.00022387247459420913
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": -0.001390749980009736,
+          "rfs_ci_high": 0.0006421616965976056,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.0002896145925002295
+        }
+      }
+    },
+    "h15": {
+      "mesa_cv": {
+        "n_windows": 44208,
+        "n_positive": 2124,
+        "base_rate": 0.04804560260586319,
+        "prior": {
+          "auroc": 0.6312823527906075,
+          "auprc": 0.07876420908062944
+        },
+        "prior+cardiac": {
+          "auroc": 0.6342231799516382,
+          "auprc": 0.08305951453893347
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6284330887592584,
+          "auprc": 0.08553567178599486
+        },
+        "prior+eeg": {
+          "auroc": 0.6367797932518069,
+          "auprc": 0.08299147764927377
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6425907768804602,
+          "auprc": 0.08290694909272665
+        },
+        "prior+ppg": {
+          "auroc": 0.6373303019555007,
+          "auprc": 0.0812980743104162
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.0011111651723654896,
+          "rfs_ci_high": 0.00959425728474875,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0033474863035290203
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.002581361629384087,
+          "rfs_ci_high": 0.011256055229830655,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0029928552841552575
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.0031285797420635988,
+          "rfs_ci_high": 0.0032751254857934452,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.000354631019373763
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": 0.00011264567260551797,
+          "rfs_ci_high": 0.006280296106239924,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.002753869083820815
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": -0.0009877670504768962,
+          "rfs_ci_high": 0.011539719870650793,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.004240464403080902
+        },
+        "prior+ppg vs prior": {
+          "rfs_ci_low": -0.0011173843611805572,
+          "rfs_ci_high": 0.004504370061059557,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.001630360609709516
+        }
+      },
+      "shhs_cv": {
+        "n_windows": 45469,
+        "n_positive": 1862,
+        "base_rate": 0.04095097758912666,
+        "prior": {
+          "auroc": 0.6305370948608282,
+          "auprc": 0.0638048882223561
+        },
+        "prior+cardiac": {
+          "auroc": 0.644980935938482,
+          "auprc": 0.06413574225574444
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6426823810572297,
+          "auprc": 0.06488264113259465
+        },
+        "prior+eeg": {
+          "auroc": 0.6475166077283832,
+          "auprc": 0.06637670600723246
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6545025228633141,
+          "auprc": 0.06734912811378402
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.0014754248915283797,
+          "rfs_ci_high": 0.005216876258794261,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0019589679979668483
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": 0.0007759996552377817,
+          "rfs_ci_high": 0.0076697561626717006,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.004412279457475592
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.00607245180449009,
+          "rfs_ci_high": 0.0004290908057115835,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.0024533114595087437
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": 0.00118856986515444,
+          "rfs_ci_high": 0.006538094975927634,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0037921028784387877
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.0010660684884822725,
+          "rfs_ci_high": 0.009653839777876181,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.005316259871531782
+        }
+      },
+      "mesa_to_shhs": {
+        "n_windows": 45469,
+        "n_positive": 1862,
+        "base_rate": 0.04095097758912666,
+        "prior": {
+          "auroc": 0.648740371382249,
+          "auprc": 0.06946329237829481
+        },
+        "prior+cardiac": {
+          "auroc": 0.6586517547106926,
+          "auprc": 0.07323073035707958
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6223834223641457,
+          "auprc": 0.06570633171781931
+        },
+        "prior+eeg": {
+          "auroc": 0.6569295504518103,
+          "auprc": 0.07044266968738411
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6686936798078591,
+          "auprc": 0.07620958732486449
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.0005944301416750394,
+          "rfs_ci_high": 0.007730493825396983,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0035449174967201198
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.003023852857040525,
+          "rfs_ci_high": 0.0034741962466779044,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.00034173177734072587
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.00041325576354490874,
+          "rfs_ci_high": 0.006418281732280024,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.003203185719379394
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.00011891834688305887,
+          "rfs_ci_high": 0.005616110731270948,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.002742065091153486
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.00181699976865991,
+          "rfs_ci_high": 0.00925094248558575,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.005370566653374031
+        }
+      },
+      "shhs_to_mesa": {
+        "n_windows": 44208,
+        "n_positive": 2124,
+        "base_rate": 0.04804560260586319,
+        "prior": {
+          "auroc": 0.6316985625645847,
+          "auprc": 0.07056338970912353
+        },
+        "prior+cardiac": {
+          "auroc": 0.6507758404811755,
+          "auprc": 0.07791256136223813
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6297926633505475,
+          "auprc": 0.07030261754147515
+        },
+        "prior+eeg": {
+          "auroc": 0.6206745217304607,
+          "auprc": 0.0687030124083093
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6445650757493175,
+          "auprc": 0.07610251631250912
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": 0.00329791579059083,
+          "rfs_ci_high": 0.01276184532149874,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.007443797651303819
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -2.896258923145292e-05,
+          "rfs_ci_high": 0.01046768132661555,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.00465851330500944
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.0005337501308316187,
+          "rfs_ci_high": 0.0071934129421885405,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0027852843462943797
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.004286265144820115,
+          "rfs_ci_high": 0.00490361716816102,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.0006635607544274347
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": -0.00029240050714187055,
+          "rfs_ci_high": 0.012701833891625481,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.005654969644258596
+        }
+      }
+    },
+    "h30": {
+      "mesa_cv": {
+        "n_windows": 44035,
+        "n_positive": 3887,
+        "base_rate": 0.08827069376632224,
+        "prior": {
+          "auroc": 0.6157604533665366,
+          "auprc": 0.13080824030516874
+        },
+        "prior+cardiac": {
+          "auroc": 0.6193884787336508,
+          "auprc": 0.13148450179244633
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6103068152594853,
+          "auprc": 0.14010371634952518
+        },
+        "prior+eeg": {
+          "auroc": 0.633339509777292,
+          "auprc": 0.1415344845379106
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6236594045048499,
+          "auprc": 0.13456568736445904
+        },
+        "prior+ppg": {
+          "auroc": 0.629778146686947,
+          "auprc": 0.13376447509932043
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.009644657870289085,
+          "rfs_ci_high": 0.010364435910474952,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0017799959302651264
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.00010515703934089814,
+          "rfs_ci_high": 0.014006724541493765,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.006146378711597845
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.015837656951053856,
+          "rfs_ci_high": 0.00490645264974299,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.004366382781332719
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": 0.0021625328231872263,
+          "rfs_ci_high": 0.016289135313918773,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.00855335326661943
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": -0.0042895544967560505,
+          "rfs_ci_high": 0.012299276534506666,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.003518918359442087
+        },
+        "prior+ppg vs prior": {
+          "rfs_ci_low": -0.009445411214356369,
+          "rfs_ci_high": 0.009917021361054318,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0019468123657088495
+        }
+      },
+      "shhs_cv": {
+        "n_windows": 45318,
+        "n_positive": 3459,
+        "base_rate": 0.07632728717066066,
+        "prior": {
+          "auroc": 0.6112866926475542,
+          "auprc": 0.11005831993938794
+        },
+        "prior+cardiac": {
+          "auroc": 0.627971821534071,
+          "auprc": 0.1120603545669403
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6160774423802658,
+          "auprc": 0.11106593926324526
+        },
+        "prior+eeg": {
+          "auroc": 0.6355966737850312,
+          "auprc": 0.12233678335537014
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6383362948235456,
+          "auprc": 0.11975598367566623
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": 0.0011543347529543834,
+          "rfs_ci_high": 0.011199731943150694,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.006264749940253384
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": 0.001918334011171978,
+          "rfs_ci_high": 0.00892120943601767,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0057877952223100914
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.005437188200529145,
+          "rfs_ci_high": 0.005937999786212695,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0004769547179432923
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": 0.005025414970221536,
+          "rfs_ci_high": 0.01597447366648416,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.010407127570408297
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.006174300203701342,
+          "rfs_ci_high": 0.018392463602046837,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.012021180505002081
+        }
+      },
+      "mesa_to_shhs": {
+        "n_windows": 45318,
+        "n_positive": 3459,
+        "base_rate": 0.07632728717066066,
+        "prior": {
+          "auroc": 0.6443922848661368,
+          "auprc": 0.12524494846188589
+        },
+        "prior+cardiac": {
+          "auroc": 0.6518868624890645,
+          "auprc": 0.13142732872130813
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6086850263105712,
+          "auprc": 0.11161560301679083
+        },
+        "prior+eeg": {
+          "auroc": 0.6420926242970687,
+          "auprc": 0.12277744123847434
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6563945856282992,
+          "auprc": 0.13317728863982886
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.0037408177689207123,
+          "rfs_ci_high": 0.010307502912927806,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0038477856020467482
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.011912262429637612,
+          "rfs_ci_high": 0.0008011931261232023,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.005865561990163953
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": 0.004218723901152127,
+          "rfs_ci_high": 0.016519808267607877,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.009713347592210701
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.007621593401024148,
+          "rfs_ci_high": 0.004768018236647086,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.0010243416819136766
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": -0.002570117823359746,
+          "rfs_ci_high": 0.011944621738046828,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.00497828349085615
+        }
+      },
+      "shhs_to_mesa": {
+        "n_windows": 44035,
+        "n_positive": 3887,
+        "base_rate": 0.08827069376632224,
+        "prior": {
+          "auroc": 0.6284921087833006,
+          "auprc": 0.13313410251040425
+        },
+        "prior+cardiac": {
+          "auroc": 0.6418277681300567,
+          "auprc": 0.13650598762915975
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6135159537957563,
+          "auprc": 0.12224080977536218
+        },
+        "prior+eeg": {
+          "auroc": 0.627090784806276,
+          "auprc": 0.12737211460208864
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6468002530077869,
+          "auprc": 0.1388066800914675
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.0007441350392858168,
+          "rfs_ci_high": 0.02298389802421627,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.010221103431980502
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.007883080738764748,
+          "rfs_ci_high": 0.008669744870390395,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.00013315738420238197
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": 0.004540880922459469,
+          "rfs_ci_high": 0.016954214474466624,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.010354260816182884
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.005524012460002353,
+          "rfs_ci_high": 0.012595503201633062,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0018555246501916675
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.003175056838354058,
+          "rfs_ci_high": 0.025616463501915442,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.012421382699220414
+        }
+      }
+    },
+    "h60": {
+      "mesa_cv": {
+        "n_windows": 43592,
+        "n_positive": 6854,
+        "base_rate": 0.15723068452927141,
+        "prior": {
+          "auroc": 0.5839107090273363,
+          "auprc": 0.20496520910330593
+        },
+        "prior+cardiac": {
+          "auroc": 0.6054635861636377,
+          "auprc": 0.22372405330856682
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.586028080876735,
+          "auprc": 0.21397353668739355
+        },
+        "prior+eeg": {
+          "auroc": 0.6037592646311996,
+          "auprc": 0.22200334389707646
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6079509427898206,
+          "auprc": 0.22534693583014354
+        },
+        "prior+ppg": {
+          "auroc": 0.6031589066169274,
+          "auprc": 0.21497822348779483
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": 0.00998590846738985,
+          "rfs_ci_high": 0.024088198277130327,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.01636880411185393
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.001370799005086818,
+          "rfs_ci_high": 0.03853052330783439,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.016422072250758406
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.019154022025050798,
+          "rfs_ci_high": 0.01596341449043828,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -5.3268138904476204e-05
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": 0.002052748838451372,
+          "rfs_ci_high": 0.03032264980007467,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.015284521904674704
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.01016120758464019,
+          "rfs_ci_high": 0.0302295310096923,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.019040518994731945
+        },
+        "prior+ppg vs prior": {
+          "rfs_ci_low": -0.011640805968292624,
+          "rfs_ci_high": 0.032401763392498034,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.011805723190360426
+        }
+      },
+      "shhs_cv": {
+        "n_windows": 44914,
+        "n_positive": 6223,
+        "base_rate": 0.13855368036692345,
+        "prior": {
+          "auroc": 0.6098306016669326,
+          "auprc": 0.18674310230372715
+        },
+        "prior+cardiac": {
+          "auroc": 0.6188075060052246,
+          "auprc": 0.18994322133960764
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6071608003108541,
+          "auprc": 0.19118774028537694
+        },
+        "prior+eeg": {
+          "auroc": 0.6360289310694236,
+          "auprc": 0.20650905181552226
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6355143802784463,
+          "auprc": 0.19499850098718458
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": 0.004270396248694521,
+          "rfs_ci_high": 0.024522451292611137,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.014367040970559996
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.0014699868264067214,
+          "rfs_ci_high": 0.023049218873038336,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.011294466106542998
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.007794760320176881,
+          "rfs_ci_high": 0.015292012518765581,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0030725748640169992
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": 0.01399891795591214,
+          "rfs_ci_high": 0.036827571754234116,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.024180479328122197
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.011214049354525439,
+          "rfs_ci_high": 0.03144590540897254,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.02163703082604326
+        }
+      },
+      "mesa_to_shhs": {
+        "n_windows": 44914,
+        "n_positive": 6223,
+        "base_rate": 0.13855368036692345,
+        "prior": {
+          "auroc": 0.6259127637955633,
+          "auprc": 0.19113424003149843
+        },
+        "prior+cardiac": {
+          "auroc": 0.6343100584330723,
+          "auprc": 0.20788565994083918
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.5994415582742949,
+          "auprc": 0.18792295691027996
+        },
+        "prior+eeg": {
+          "auroc": 0.631261916953831,
+          "auprc": 0.2022907777589753
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6462023221078026,
+          "auprc": 0.21085610046639333
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.006390253002277377,
+          "rfs_ci_high": 0.03798973068839293,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.015015001251022082
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.010514623484139436,
+          "rfs_ci_high": 0.020122755608434014,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.003428893316518188
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": 0.0011379643886301695,
+          "rfs_ci_high": 0.020647558367784404,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.011586107934503893
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.0078047300550980895,
+          "rfs_ci_high": 0.025112295225266534,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.008429396121997132
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": -0.002575535446370101,
+          "rfs_ci_high": 0.041868353796922955,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.018828715613429328
+        }
+      },
+      "shhs_to_mesa": {
+        "n_windows": 43592,
+        "n_positive": 6854,
+        "base_rate": 0.15723068452927141,
+        "prior": {
+          "auroc": 0.6045021551276674,
+          "auprc": 0.20628982619518557
+        },
+        "prior+cardiac": {
+          "auroc": 0.6192020693285936,
+          "auprc": 0.2162966954885398
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.593834744575676,
+          "auprc": 0.19258178164755996
+        },
+        "prior+eeg": {
+          "auroc": 0.6028114613526172,
+          "auprc": 0.20346061229519194
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6260260035323274,
+          "auprc": 0.22137812394990644
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.0076040343456812145,
+          "rfs_ci_high": 0.03370759295571926,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.013992768432668213
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.010122262457019906,
+          "rfs_ci_high": 0.02760191451955807,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.005725128834569085
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.00967316410787789,
+          "rfs_ci_high": 0.023995618216923333,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.008267639598099128
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.0037155241628555958,
+          "rfs_ci_high": 0.037235633380023614,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.011609754621081235
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.004926118253611745,
+          "rfs_ci_high": 0.052135678821161546,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.025184698250304203
+        }
+      }
+    },
+    "h120": {
+      "mesa_cv": {
+        "n_windows": 43002,
+        "n_positive": 11313,
+        "base_rate": 0.2630807869401423,
+        "prior": {
+          "auroc": 0.5520161990905285,
+          "auprc": 0.300452058099421
+        },
+        "prior+cardiac": {
+          "auroc": 0.5736083360232394,
+          "auprc": 0.3181040710054111
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.5505771757386967,
+          "auprc": 0.30620835827649207
+        },
+        "prior+eeg": {
+          "auroc": 0.5625542414632851,
+          "auprc": 0.31560451732811756
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.5783867591636729,
+          "auprc": 0.3203846302993285
+        },
+        "prior+ppg": {
+          "auroc": 0.5586214068339086,
+          "auprc": 0.3068645127019921
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": 0.015205198817343772,
+          "rfs_ci_high": 0.0411204295324911,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.02745428371449943
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": 0.005577883231266937,
+          "rfs_ci_high": 0.056595789206747994,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.02626914557531663
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.0299131823818899,
+          "rfs_ci_high": 0.02218270561825051,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0011851381391828019
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": 0.006447534048740008,
+          "rfs_ci_high": 0.04010968967393386,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.021044313667988226
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.008997337968062043,
+          "rfs_ci_high": 0.04516434496107156,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.026009656947620852
+        },
+        "prior+ppg vs prior": {
+          "rfs_ci_low": 5.13162963658564e-05,
+          "rfs_ci_high": 0.044382257717101845,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.018804788345777902
+        }
+      },
+      "shhs_cv": {
+        "n_windows": 44252,
+        "n_positive": 10532,
+        "base_rate": 0.23800054234836843,
+        "prior": {
+          "auroc": 0.6021670188667515,
+          "auprc": 0.29796842795363604
+        },
+        "prior+cardiac": {
+          "auroc": 0.6015464562837136,
+          "auprc": 0.293793658854825
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.6087984905855465,
+          "auprc": 0.30759963778055577
+        },
+        "prior+eeg": {
+          "auroc": 0.6191013877269027,
+          "auprc": 0.31304892052890865
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6185287331406877,
+          "auprc": 0.30648956450778697
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.016740509907750077,
+          "rfs_ci_high": 0.026326340906846112,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.0038891663371060856
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": 0.007865499251048394,
+          "rfs_ci_high": 0.04347873112222843,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.024433991339887162
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.04749156207559716,
+          "rfs_ci_high": 0.00977796967305244,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": -0.020544825002781077
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": 0.011064873997313358,
+          "rfs_ci_high": 0.038687522376545255,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.02594686267274126
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.0013040025119212797,
+          "rfs_ci_high": 0.038710529142148585,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.021149433699296026
+        }
+      },
+      "mesa_to_shhs": {
+        "n_windows": 44252,
+        "n_positive": 10532,
+        "base_rate": 0.23800054234836843,
+        "prior": {
+          "auroc": 0.6144897981365269,
+          "auprc": 0.29737695823004884
+        },
+        "prior+cardiac": {
+          "auroc": 0.6011251424230915,
+          "auprc": 0.30634786087213983
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.5889595494767346,
+          "auprc": 0.288318878074039
+        },
+        "prior+eeg": {
+          "auroc": 0.611766980053784,
+          "auprc": 0.3030664386231121
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.6157192490017431,
+          "auprc": 0.3096743776353237
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.016930072326555728,
+          "rfs_ci_high": 0.03985995686560384,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.01117961230963429
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.021294989768696218,
+          "rfs_ci_high": 0.02891870295903086,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.002134488165810839
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.009598404220439805,
+          "rfs_ci_high": 0.02607136713568416,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.009045124143823451
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.0070149477942601166,
+          "rfs_ci_high": 0.022071236749009095,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.007914275466749188
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": -0.013235766967540918,
+          "rfs_ci_high": 0.047116301462389855,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.01607409559521299
+        }
+      },
+      "shhs_to_mesa": {
+        "n_windows": 43002,
+        "n_positive": 11313,
+        "base_rate": 0.2630807869401423,
+        "prior": {
+          "auroc": 0.5841182178214348,
+          "auprc": 0.3110585910484729
+        },
+        "prior+cardiac": {
+          "auroc": 0.577583392685883,
+          "auprc": 0.3038027362115831
+        },
+        "prior+cardiac_shift": {
+          "auroc": 0.5750927083464872,
+          "auprc": 0.29991831364521215
+        },
+        "prior+eeg": {
+          "auroc": 0.5816310077027923,
+          "auprc": 0.3126941366530973
+        },
+        "prior+cardiac+eeg": {
+          "auroc": 0.5918952198340309,
+          "auprc": 0.3174439700414336
+        },
+        "prior+cardiac vs prior": {
+          "rfs_ci_low": -0.007866748862997241,
+          "rfs_ci_high": 0.05279777690293839,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.019090118418874227
+        },
+        "prior+cardiac_shift vs prior": {
+          "rfs_ci_low": -0.029846099570288137,
+          "rfs_ci_high": 0.0417091107514073,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.001716990148325336
+        },
+        "prior+cardiac vs prior+cardiac_shift": {
+          "rfs_ci_low": -0.008645650596648319,
+          "rfs_ci_high": 0.04415626494724434,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.01737312827054889
+        },
+        "prior+eeg vs prior": {
+          "rfs_ci_low": -0.0037599386072614495,
+          "rfs_ci_high": 0.0237683127979862,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.010235466268917979
+        },
+        "prior+cardiac+eeg vs prior": {
+          "rfs_ci_low": 0.008843654536736625,
+          "rfs_ci_high": 0.055672997621990454,
+          "bootstrap_mode": "smoke",
+          "bootstrap_samples": 300,
+          "rfs_bits": 0.033294459558417616
+        }
+      }
+    }
+  }
+}

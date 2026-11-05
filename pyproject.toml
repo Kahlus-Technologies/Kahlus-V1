@@ -24,6 +24,10 @@ moabb = [
 edf = [
   "edfio>=0.4.13",
 ]
+nsrr = [
+  "mne>=1.6",
+  "scipy>=1.10",
+]
 bids = []
 algonauts = [
   "h5py>=3.10",
@@ -32,6 +36,8 @@ h100 = []
 cluster = [
   "edfio>=0.4.13",
   "h5py>=3.10",
+  "mne>=1.6",
+  "scipy>=1.10",
 ]
 dev = [
   "pytest>=8",

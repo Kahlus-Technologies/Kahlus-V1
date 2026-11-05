@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
@@ -43,6 +44,8 @@ class PropofolPciTests(unittest.TestCase):
             self.assertIn("stop_reason", gate)
 
     def test_loader_on_synthetic_bids_stub(self) -> None:
+        if importlib.util.find_spec("pybv") is None:  # writes the BrainVision stub
+            self.skipTest("pybv not installed")
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "participants.tsv").write_text(

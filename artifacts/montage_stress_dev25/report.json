@@ -1,0 +1,141 @@
+{
+  "tol_s": 3.0,
+  "levels": [
+    "clean",
+    "noise_5uv",
+    "noise_10uv",
+    "noise_20uv",
+    "dry_headband",
+    "dry_headband_bad"
+  ],
+  "results": {
+    "mesa_to_shhs": {
+      "threshold": 0.3,
+      "train_f1": 0.2977370963640986,
+      "clean": {
+        "tp": 892,
+        "n_detected": 4616,
+        "n_true": 2500,
+        "precision": 0.19324090121317158,
+        "recall": 0.3568,
+        "f1": 0.2507026419336706,
+        "median_abs_timing_error_s": 2.0999999999885404,
+        "false_detections_per_hour": 27.643372778502897
+      },
+      "noise_5uv": {
+        "tp": 1114,
+        "n_detected": 8194,
+        "n_true": 2500,
+        "precision": 0.1359531364412985,
+        "recall": 0.4456,
+        "f1": 0.20834112586497103,
+        "median_abs_timing_error_s": 1.9000000000014552,
+        "false_detections_per_hour": 52.55506962185836
+      },
+      "noise_10uv": {
+        "tp": 1371,
+        "n_detected": 21405,
+        "n_true": 2500,
+        "precision": 0.06405045550105115,
+        "recall": 0.5484,
+        "f1": 0.11470403681238234,
+        "median_abs_timing_error_s": 1.6000000000931323,
+        "false_detections_per_hour": 148.71303175202124
+      },
+      "noise_20uv": {
+        "tp": 1293,
+        "n_detected": 29513,
+        "n_true": 2500,
+        "precision": 0.043811201843255515,
+        "recall": 0.5172,
+        "f1": 0.08077968325367821,
+        "median_abs_timing_error_s": 1.5,
+        "false_detections_per_hour": 209.47797524418684
+      },
+      "dry_headband": {
+        "tp": 1218,
+        "n_detected": 21014,
+        "n_true": 2500,
+        "precision": 0.057961359093937376,
+        "recall": 0.4872,
+        "f1": 0.10359785659607043,
+        "median_abs_timing_error_s": 1.6000000000931323,
+        "false_detections_per_hour": 146.94635003309435
+      },
+      "dry_headband_bad": {
+        "tp": 1004,
+        "n_detected": 27016,
+        "n_true": 2500,
+        "precision": 0.037163162570328694,
+        "recall": 0.4016,
+        "f1": 0.06803089849573113,
+        "median_abs_timing_error_s": 1.5,
+        "false_detections_per_hour": 193.0879196333022
+      }
+    },
+    "shhs_to_mesa": {
+      "threshold": 0.35,
+      "train_f1": 0.32626865671641786,
+      "clean": {
+        "tp": 1042,
+        "n_detected": 7221,
+        "n_true": 2971,
+        "precision": 0.14430134330425148,
+        "recall": 0.35072366206664424,
+        "f1": 0.2044740973312402,
+        "median_abs_timing_error_s": 1.8999999999068677,
+        "false_detections_per_hour": 42.564134946011265
+      },
+      "noise_5uv": {
+        "tp": 988,
+        "n_detected": 7155,
+        "n_true": 2971,
+        "precision": 0.13808525506638714,
+        "recall": 0.3325479636486032,
+        "f1": 0.19514122062018566,
+        "median_abs_timing_error_s": 1.8999999999941792,
+        "false_detections_per_hour": 42.481472764533336
+      },
+      "noise_10uv": {
+        "tp": 996,
+        "n_detected": 10051,
+        "n_true": 2971,
+        "precision": 0.0990946174509999,
+        "recall": 0.3352406597105352,
+        "f1": 0.15297189371832284,
+        "median_abs_timing_error_s": 1.8999999999068677,
+        "false_detections_per_hour": 62.375504440222045
+      },
+      "noise_20uv": {
+        "tp": 1207,
+        "n_detected": 18939,
+        "n_true": 2971,
+        "precision": 0.06373092560325255,
+        "recall": 0.4062605183439919,
+        "f1": 0.1101780009128252,
+        "median_abs_timing_error_s": 1.6999999999534339,
+        "false_detections_per_hour": 122.14715016388926
+      },
+      "dry_headband": {
+        "tp": 764,
+        "n_detected": 8855,
+        "n_true": 2971,
+        "precision": 0.08627893845285149,
+        "recall": 0.2571524739145069,
+        "f1": 0.12920683240317943,
+        "median_abs_timing_error_s": 2.0,
+        "false_detections_per_hour": 55.734975861494924
+      },
+      "dry_headband_bad": {
+        "tp": 745,
+        "n_detected": 14265,
+        "n_true": 2971,
+        "precision": 0.05222572730459166,
+        "recall": 0.25075732076741836,
+        "f1": 0.08644697145509397,
+        "median_abs_timing_error_s": 1.8000000000465661,
+        "false_detections_per_hour": 93.13272446513551
+      }
+    }
+  }
+}

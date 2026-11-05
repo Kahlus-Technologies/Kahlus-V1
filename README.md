@@ -1,35 +1,70 @@
-# KAHLUS-V1 / NeuroTwin
+<div align="center">
 
-> A leakage-controlled benchmark and model scaffold for neural translation:
-> can noninvasive biosignals forecast future brain and body state under
-> honest, held-out splits?
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/kahlus-wordmark-light.png">
+  <img src="docs/assets/kahlus-wordmark-dark.png" alt="KAHLUS" width="440">
+</picture>
 
-Kahlus is the leakage-controlled engine behind NeuroTwin. It asks one falsifiable
-question — **do noninvasive recordings (fMRI, EEG, behavior, stimulus) carry
-residual information about *future* neural state that survives strict
-subject/site/dataset holdout** — and refuses to let a model answer it by leaking.
-The current architecture is NeuroTwin NFC (a Neural Field Compiler) that treats
-every modality as a partial observation of one latent neural field.
+<p><strong>Leakage-controlled neural-state forecasting.</strong><br>
+Can noninvasive biosignals predict what the brain does next, under honest held-out splits?</p>
 
-The claim is deliberately **not** "first brain foundation model", "first
-multimodal brain model", or a clinical digital twin. The defensible v1 target is
-stricter: cross-modal neural translation, missing-modality reconstruction,
-future-state forecasting, and few-shot subject adaptation, all measured under
-held-out subject/site/dataset splits with a pre-declared leakage contract.
+[![Kahlus Technologies](https://img.shields.io/badge/Kahlus-Technologies-111111?style=flat-square&logo=github&logoColor=white)](https://github.com/Kahlus-Technologies)
+[![Last commit](https://img.shields.io/github/last-commit/Kahlus-Technologies/Kahlus-V1?style=flat-square&logo=github&color=111111)](https://github.com/Kahlus-Technologies/Kahlus-V1/commits)
+[![Python](https://img.shields.io/badge/python-3.10%2B-111111?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
+[![Data: NSRR](https://img.shields.io/badge/data-NSRR%20MESA%20%C2%B7%20SHHS-111111?style=flat-square)](https://sleepdata.org)
+[![Status: research](https://img.shields.io/badge/status-research-555555?style=flat-square)](AGENTS.md)
 
-The full research constitution, claim boundaries, and gate discipline live in
-**[AGENTS.md](AGENTS.md)**.
+<img src="docs/assets/hero.png" alt="Real MESA recording: C4 EEG, ECG and beat-to-beat heart rate around a scored spontaneous arousal" width="900">
+
+<sub>One real night (MESA 0002). EEG arousal at the dashed line, heart rate climbs 65 → 81 bpm. Rendered by <code>scripts/make_readme_hero.py</code>.</sub>
+
+</div>
 
 ---
 
-## The headline result
+<div align="center">
 
-On recovered EEG v1 sidecars the honest finding is a **split verdict** — and an
-overlap audit later showed the forecasting number was inflated by input–target
-overlap. Under isolated (strictly future-sample) evaluation on Sleep-EDF and
-BNCI2014_001, the Kahlus GRU does **not** beat the best trivial baseline. Report
-the loss: a leakage-controlled benchmark that only flattered its own model would
-be worthless.
+## What this is
+
+</div>
+
+Kahlus asks one falsifiable question:
+
+> **Do noninvasive recordings carry information about *future* neural state that survives strict subject, site and dataset holdout?**
+
+Most neural forecasting numbers in the literature leak: overlapping windows, reused subjects, scores computed with the future in hand. Kahlus is built to make that impossible, then report whatever is left, including losses.
+
+- **Split first.** The split manifest is frozen before preprocessing, windowing or augmentation.
+- **Causal everything.** Features end at the prediction time. Beat detection, quality masks and normalizers only read the past, and tests prove it.
+- **Controls, not vibes.** Every gain is checked against a time-shifted copy of the same features. If the shifted copy gains too, it was the person, not the signal.
+- **Losses are results.** If a ridge baseline wins, that goes in the table.
+
+The full research constitution and claim boundaries live in **[AGENTS.md](AGENTS.md)**.
+
+---
+
+<div align="center">
+
+## Results so far
+
+</div>
+
+> Every number below is a dev slice (25 MESA + 25 SHHS nights, smoke bootstrap). None is a claim until the full-cohort run.
+
+| study | question | where it stands |
+| --- | --- | --- |
+| **Heart-only arousal forecasting** · [#83](https://github.com/Kahlus-Technologies/Kahlus-V1/issues/83) | does ECG predict a spontaneous arousal 5–120 s ahead, beyond time-since-last-arousal and sleep stage? | **unresolved** · 5/20 cells above zero after review fixes, sign moved with each fix |
+| **Beat-level warning** · [#83](https://github.com/Kahlus-Technologies/Kahlus-V1/issues/83) | do the last 5 heartbeats warn 1–5 s ahead? | **small, consistent** · 16/16 cells positive, 8 clear zero, ~1% of label entropy |
+| **Conformal alarm budget** · [#89](https://github.com/Kahlus-Technologies/Kahlus-V1/issues/89) | can a threshold guarantee a miss rate on new people? | **works on average** · per-person miss rate spreads 0.07–0.36 |
+| **Closed-loop stimulation veto** · [#96](https://github.com/Kahlus-Technologies/Kahlus-V1/issues/96) | can a forecast hold back clicks that land right before an arousal? | **yes, from context** · ~2× better than random, heart adds a little on SHHS only |
+| **Low-cost headband stress test** · [#97](https://github.com/Kahlus-Technologies/Kahlus-V1/issues/97) | how much does dry-electrode noise cost arousal detection? | **about half** · event F1 0.20–0.25 clean → 0.10–0.13 dry headband |
+
+Write-ups: [`docs/results/`](docs/results/) · earlier findings F0–F9: [`findings-ledger.md`](docs/results/findings-ledger.md)
+
+<details>
+<summary><b>Earlier v1 headline (EEG neural translation)</b></summary>
+
+On recovered EEG v1 sidecars the honest finding is a **split verdict**, and an overlap audit later showed the forecasting number was inflated by input–target overlap. Under isolated, strictly-future evaluation on Sleep-EDF and BNCI2014_001, the Kahlus GRU does **not** beat the best trivial baseline.
 
 | task / audit | honest status | note |
 | --- | --- | --- |
@@ -41,154 +76,118 @@ Do **not** headline 3.116 MSE / 0.972 Pearson as whole-model performance.
 
 ![Recovered Kahlus v1 versus standard EEG baselines](docs/research/eeg_v1_figure_source/figures/Figure3_eeg_v1_baseline_ranking.png)
 
-Publishing the reconstruction loss and the isolated-forecast loss is the point.
-Neural-CASP (gates, copy-trap, overlap audit, residual forecastability) is the
-real product surface — not a forecasting-skill claim.
+Powered Passive PCI on the full Sleep-EDF cassette (F4): the complexity block **hurts** prediction vs a spectral baseline, wake RFS **−0.330** bits (CI excludes 0).
 
-**Findings ledger (F0–F6):** [`docs/results/findings-ledger.md`](docs/results/findings-ledger.md)  
-**NeurIPS submission packet:** [`docs/paper/neurips_2026/`](docs/paper/neurips_2026/)  
-**Arena paper packet:** [`docs/paper/neural_casp_arena/`](docs/paper/neural_casp_arena/)
+Papers: [NeurIPS 2026 packet](docs/paper/neurips_2026/) · [Neural-CASP arena](docs/paper/neural_casp_arena/) · figure provenance: [`eeg_v1_figure_source/`](docs/research/eeg_v1_figure_source/)
 
-Powered Passive PCI on full Sleep-EDF cassette (F4): complexity block **hurts**
-prediction vs spectral baseline — wake RFS **−0.330** bits (CI excludes 0).
-Tag: `finding/passive-pci-negative-v1`.
-
-Every figure is rendered only from cached CSV/JSON evidence artifacts (no raw
-tensors, no waveform overlays without provenance); the figure-source packet and
-its provenance rule are in
-[`docs/research/eeg_v1_figure_source/`](docs/research/eeg_v1_figure_source/).
-
-## Why this exists
-
-The neural foundation-model lane is crowded (TRIBE, BrainVista, Brain-OF,
-BrainOmni, Brain Harmony), and most benchmarks are built by the same group that
-builds the model. Leakage — reusing records, overlapping held-out groups,
-repeated windows, forbidden target metadata — is the field's quiet failure mode,
-and it inflates exactly the future-state and cross-subject claims that matter
-most. Kahlus is built the other way around: **the split manifest is frozen at
-recording-manifest time, before preprocessing, windowing, or augmentation**, and
-every competitor is a first-class baseline rather than a strawman.
-
-## The tasks (v1 neural translation)
-
-Five task families, each scored under held-out subject/site/dataset splits:
-
-1. **Future-state forecasting** — predict future neural state from past.
-2. **Masked reconstruction** — recover masked channels of the present.
-3. **Cross-modal translation** — map one modality to another.
-4. **Subject adaptation** — few-shot to a held-out subject.
-5. **Dataset/site generalization** — transfer across recording sites.
-
-Baseline failures are explicit and excluded from rankings rather than silently
-imputed. The competitor registry names the crowded lanes instead of pretending
-they do not exist.
-
-## Honest scope
-
-- The headline numbers are from the **recovered EEG v1 benchmark**, rendered from
-  cached evidence artifacts. Synthetic smoke results elsewhere in the repo are
-  plumbing checks, not science, and are labeled as such.
-- Kahlus **loses** masked reconstruction to a linear ridge. That is reported, not
-  buried.
-- Directed information / neural translation is not new; the contribution here is
-  the **leakage contract + held-out-split discipline + explicit competitor
-  baselines**, validated end-to-end on a benchmark that can fail its own model.
-- Clinical, physiological, and "digital twin" claims are out of scope for v1 by
-  the constitution in [AGENTS.md](AGENTS.md).
-
-## Independent coupling benchmark
-
-The directed-information estimator lane is checked separately by
-[kahlus-bench](https://github.com/ptlnextdoor/kahlus-bench), a leakage-sealed
-benchmark that certifies neural-coupling estimators against synthetic systems
-whose true directed information is analytically known. That benchmark reads
-ground truth; the estimators never do, so the pass is an independent check.
+</details>
 
 ---
 
-## Current Scaffold
+<div align="center">
 
-- Shared `NeuralEventBatch` schema for fMRI, EEG, MEG, spikes, behavior, stimulus, anatomy, and clinical metadata.
-- `SplitManifest` built at recording-manifest time, before preprocessing, windowing, or augmentation.
-- Leakage checks and audits for record reuse, held-out group overlap, repeated windows, and forbidden target metadata.
-- Required v1 Neural Translation task registry.
-- Competitor registry that names crowded lanes instead of pretending they do not exist.
-- Synthetic CPU smoke data for testable benchmark plumbing. These results are not science.
-- Optional MOABB EEG adapter and BIDS/OpenNeuro manifest scanner. BIDS can emit prepared events from precomputed `_timeseries.npy/.npz/.tsv/.csv` derivatives without raw NIfTI preprocessing.
-- Prepared `event_manifest.json` artifacts for offline train/eval jobs. Synthetic and MOABB preparation emit `NeuralEventBatch` `.npz` files; BIDS is manifest-only in this pass.
-- Prepared-manifest NeuroTwin training path with single-task or `neural_translation_v1` multi-task training, DDP under `torchrun`, checkpoint save/resume, best checkpoints, objective-level JSONL metrics, gradient accumulation, bf16 autocast hooks, CSV/JSON metrics, config snapshots, environment info, split hashes, and synthetic/demo labels.
-- Prepared training uses train for optimization, val for periodic evaluation and best-checkpoint selection, and test for final held-out reporting.
-- Prepared-manifest benchmark suite covers the five v1 task families: forecasting, masked reconstruction, cross-modal translation, subject adaptation, and dataset/site generalization. Baseline failures are explicit and excluded from rankings.
-- A100 is the canonical cluster target through `configs/train/*_a100.yaml`, `scripts/slurm/*_a100.sh`, and `docs/deploy/A100_RUNBOOK.md`; H100 remains a compatible high-memory variant. Docker/handoff assets live under `deploy/a100/`.
-- Chapman A100 first launch has a guarded one-command path in `scripts/cluster/chapman_a100_first_run.sh`, with explicit preflight against placeholder paths, zero-window data, missing CUDA, and non-persistent run roots.
-- Modular NeuroTwin model internals now expose modality encoders, `transformer`/`ssm_fallback` backbone selection, geometry/metadata encoders, projection heads, and leakage-safe subject-adapter controls. `mamba` remains an upstream baseline target, not a wired NeuroTwin backbone selector.
-- Experimental NFC internals expose `NeuralFieldCompiler`, `LatentNeuralField`, causal field updates, low-rank pair kernels, observation operators, stimulus conditioning, uncertainty maps, and a synthetic latent-field suite. Synthetic NFC outputs are plumbing checks, not science.
-- Reproducibility helpers for deterministic seeds, config snapshots, environment capture, git commit capture, and stable manifest hashes.
-- CLI surface:
-  - `nt doctor`
-- `nt data prepare --dataset synthetic --split subject`
-- `nt data smoke --dataset moabb --split subject --out-dir /tmp/neurotwin_moabb_smoke`
-- `nt data audit --dataset synthetic`
-  - `nt split audit --dataset synthetic --split subject`
-  - `nt estimate --config <experiment>`
-  - `nt train --dry-run --config <experiment>`
-  - `nt train --config <experiment>`
-  - `nt train --config <experiment> --resume runs/<run_id>/checkpoint.pt`
-  - `nt eval --suite translation_smoke`
-  - `nt eval --suite neural_translation_v1 --event-manifest <prepared>/event_manifest.json --split-manifest <prepared>/split_manifest.json`
-  - `nt eval audit --suite neural_translation_v1 --event-manifest <prepared>/event_manifest.json --split-manifest <prepared>/split_manifest.json`
-  - `nt report --suite translation_smoke`
-  - `nt report --run-dir runs/<run_id>`
-  - `nt report --compare runs/<run_a> runs/<run_b> --out-dir reports/compare`
+## Quickstart
 
-## Install
-
-Local CPU/dev:
+</div>
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
+git clone https://github.com/Kahlus-Technologies/Kahlus-V1.git && cd Kahlus-V1
+python -m venv .venv && source .venv/bin/activate
+pip install -e '.[nsrr,dev]'          # add ,moabb for MOABB EEG adapters
+python -m pytest -q tests/adapters tests/forecastability
 ```
 
-Optional real-data adapters:
+**NSRR studies** (needs [sleepdata.org](https://sleepdata.org) access, token in `~/.nsrr_token`):
 
 ```bash
-python -m pip install -e '.[moabb]'
+scripts/nsrr_fetch_slice.sh                       # all MESA + SHHS1 annotations + 25 EDFs each (~7 GB)
+scripts/repro_dev_slice.sh runs/dev ~/data/nsrr/mesa ~/data/nsrr/shhs   # every study, ~30 min on a laptop
 ```
 
-BIDS derivative scanning is included in the base install; it does not install
-heavy BIDS preprocessing libraries.
-
-A100/H100 jobs should use prepared local manifests and data roots. Do not depend on internet downloads inside training jobs.
-
-For the first Chapman A100 run:
+**Cluster** (A100, full cohorts):
 
 ```bash
+pip install -e '.[cluster]'
 scripts/cluster/chapman_a100_first_run.sh /path/to/shared/persistent/neurotwin
 ```
 
-## Local Verification
+---
+
+<div align="center">
+
+## How it works
+
+</div>
+
+```mermaid
+flowchart LR
+  A[EDF + XML<br/>MESA · SHHS] --> B[NSRR adapter<br/>channel map · arousal subtypes]
+  B --> C[Causal anchors<br/>60 s quiet · last completed stage]
+  C --> D[Features ending at t<br/>causal beats · EEG bands · context]
+  D --> E[Subject-held-out CV<br/>+ cross-cohort transfer]
+  E --> F{vs shift control}
+  F -->|gain survives| G[Report bits + CI]
+  F -->|gain vanishes| H[Report the null]
+```
+
+| piece | file |
+| --- | --- |
+| NSRR loading, arousal subtypes, montage | `src/neurotwin/adapters/nsrr.py` |
+| Causal QRS detector + beat-quality mask | `src/neurotwin/adapters/qrs_fast.py` |
+| Anchors, labels, features, shift control, model | `src/neurotwin/forecastability/heart_arousal.py` |
+| Conformal alarms · CLAS replay · headband degradation | `src/neurotwin/forecastability/{conformal,clas_replay,montage_degrade}.py` |
+| Study runners | `scripts/run_*.py` |
+| Reproduce everything / prove a refactor changed nothing | `scripts/repro_dev_slice.sh` · `scripts/check_artifacts_unchanged.sh` |
+
+<details>
+<summary><b>v1 scaffold: NeuroTwin NFC, split manifests, CLI</b></summary>
+
+- Shared `NeuralEventBatch` schema for fMRI, EEG, MEG, spikes, behavior, stimulus, anatomy and clinical metadata.
+- `SplitManifest` built at recording-manifest time, before preprocessing, windowing or augmentation.
+- Leakage checks for record reuse, held-out group overlap, repeated windows and forbidden target metadata.
+- Five v1 task families scored under held-out splits: future-state forecasting, masked reconstruction, cross-modal translation, subject adaptation, dataset/site generalization. Baseline failures are explicit and excluded from rankings.
+- Competitor registry that names the crowded lanes (TRIBE, BrainVista, Brain-OF, BrainOmni, Brain Harmony) instead of pretending they do not exist.
+- NeuroTwin NFC (Neural Field Compiler): every modality is a partial observation of one latent neural field. Synthetic NFC outputs are plumbing checks, not science.
+- Prepared-manifest training with DDP under `torchrun`, checkpoint resume, bf16, config snapshots and split hashes. A100 is the canonical target (`configs/train/*_a100.yaml`, `docs/deploy/A100_RUNBOOK.md`).
+- Directed-information estimators are checked separately by [kahlus-bench](https://github.com/ptlnextdoor/kahlus-bench), which certifies estimators against synthetic systems with analytically known ground truth.
+
+```bash
+nt doctor
+nt data prepare --dataset synthetic --split subject
+nt data smoke   --dataset moabb --split subject --out-dir /tmp/neurotwin_moabb_smoke
+nt split audit  --dataset synthetic --split subject
+nt train --dry-run --config configs/train/neurotwin_v1_a100.yaml
+nt eval  --suite neural_translation_v1 --event-manifest <prepared>/event_manifest.json --split-manifest <prepared>/split_manifest.json
+nt report --compare runs/<a> runs/<b> --out-dir reports/compare
+```
+
+Full local verification:
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
-PYTHONPATH=src python3 -m neurotwin.cli doctor
-PYTHONPATH=src python3 -m neurotwin.cli data prepare --dataset synthetic --split subject --out-dir /tmp/neurotwin_prepared
-PYTHONPATH=src python3 -m neurotwin.cli data smoke --dataset moabb --split subject --out-dir /tmp/neurotwin_moabb_smoke
-scripts/prepare_moabb_smoke.sh /tmp/neurotwin_moabb_smoke
-scripts/prepare_moabb_benchmark.sh /tmp/neurotwin_moabb_benchmark
-PYTHONPATH=src python3 -m neurotwin.cli train --dry-run --config configs/train/neurotwin_v1_a100.yaml
-PYTHONPATH=src python3 -m neurotwin.cli train --dry-run --config configs/train/synthetic_debug.yaml
-PYTHONPATH=src python3 -m neurotwin.cli train --config configs/train/prepared_synthetic_debug.yaml --run-root /tmp/neurotwin_runs
-PYTHONPATH=src python3 -m neurotwin.cli train --config configs/train/moabb_smoke_locked.yaml --run-root /tmp/neurotwin_moabb_runs
-PYTHONPATH=src python3 -m neurotwin.cli eval --suite translation_smoke
-PYTHONPATH=src python3 -m neurotwin.cli eval audit --suite neural_translation_v1 --event-manifest /tmp/neurotwin_prepared/event_manifest.json --split-manifest /tmp/neurotwin_prepared/split_manifest.json
-PYTHONPATH=src python3 -m neurotwin.cli eval --suite neural_translation_v1 --event-manifest /tmp/neurotwin_prepared/event_manifest.json --split-manifest /tmp/neurotwin_prepared/split_manifest.json --train-steps 1
 PYTHONPATH=src python3 -m neurotwin.cli eval --suite nfc_synthetic --out-dir /tmp/neurotwin_nfc_synthetic --train-steps 1 --seed 0
-PYTHONPATH=src python3 -m neurotwin.cli report --suite translation_smoke
 bash -n scripts/slurm/*.sh
 ```
 
-## Repo Rule
+</details>
 
-Raw public neural data is never committed. The repo stores manifests, configs, adapters, reproducible download/prep scripts, benchmark definitions, and license notes.
+---
+
+<div align="center">
+
+## Scope and safety
+
+</div>
+
+- **Not a medical device.** No clinical, diagnostic or "digital twin" claims. See [AGENTS.md](AGENTS.md).
+- **Dev-slice numbers are not claims.** Claims need the full cohort, claim-mode bootstrap (2,000 resamples) and multiplicity control.
+- **No human stimulation** without engineering validation, informed consent, safety review and applicable regulatory review.
+- **Raw data is never committed.** The repo stores manifests, configs, adapters, download scripts and cached JSON results. NSRR data requires your own credentialed access.
+
+<div align="center">
+
+<br>
+
+<sub>Built by <a href="https://github.com/Kahlus-Technologies">Kahlus Technologies</a> · Sense · Understand · Recover</sub>
+
+</div>
