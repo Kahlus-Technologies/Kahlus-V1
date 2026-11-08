@@ -13,6 +13,7 @@ import numpy as np
 
 from neurotwin.adapters.nsrr import (
     discover_nsrr_recordings,
+    mesa_fit_allowed,
     epoch_arousal_mask,
     load_nsrr_epoch_matrix,
     parse_nsrr_arousal_events,
@@ -72,6 +73,8 @@ def run_autonomic_rfs_gate(
     shhs_payload: dict[str, Any] | None = None
     shhs_failures: list[str] = []
 
+    if mesa_root is not None and not mesa_fit_allowed():
+        raise RuntimeError("autonomic RFS fits on MESA (within-cohort CV); not allowed with KAHLUS_MESA=final")
     if mesa_root is not None and Path(mesa_root).is_dir():
         try:
             mesa_fixture = load_nsrr_autonomic_fixture(
