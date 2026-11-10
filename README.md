@@ -1,5 +1,8 @@
 # KAHLUS-V1 / NeuroTwin
 
+> [!NOTE]
+> **Active work moved to [Kahlus-V2](https://github.com/Kahlus-Technologies/Kahlus-V2)** (arousal forecasting and a safety veto for closed-loop sleep stimulation, on NSRR). This repository holds the v1 NeuroTwin EEG work and is kept for reference.
+
 > A leakage-controlled benchmark and model scaffold for neural translation:
 > can noninvasive biosignals forecast future brain and body state under
 > honest, held-out splits?
