@@ -17,30 +17,51 @@ from pathlib import Path
 
 import numpy as np
 
-from neurotwin.adapters.nsrr import classify_arousals, discover_nsrr, load_nsrr_epoch_matrix, parse_nsrr_events
+from neurotwin.adapters.nsrr import (
+    BAD_NIGHT_ERRORS,
+    SkippedNights,
+    classify_arousals,
+    discover_nsrr,
+    load_nsrr_epoch_matrix,
+    parse_nsrr_events,
+)
 from neurotwin.adapters.qrs_fast import beat_intervals, detect_qrs
 
 PRE_S, POST_S, BASELINE_S = 60, 15, 30
 MAX_MEDIAN_BPM = 110  # nights above this are QRS double-counting, not physiology
 
 
-def cohort_curves(root: Path, ecg_label: str) -> tuple[np.ndarray, int, str]:
-    curves, dropped = [], 0
+def night_hr(rec, ecg_label: str) -> tuple[np.ndarray, np.ndarray, list]:
+    """Beat times, RR intervals and scored events of one night."""
+    m = load_nsrr_epoch_matrix(rec.edf_path, channel_groups={"ecg": (ecg_label,)})
+    fs = m["sfreq"]
+    bt, rr = beat_intervals(detect_qrs(m["epochs"]["ecg"][:, :, 0].ravel(), fs), fs)
+    return bt, rr, parse_nsrr_events(rec.xml_path)
+
+
+def cohort_curves(root: Path, ecg_label: str) -> tuple[np.ndarray, int, str, int, SkippedNights]:
+    """Arousal-locked HR curves, nights dropped for bad ECG, cohort name, nights read, skipped nights."""
+    curves, dropped, n_read = [], 0, 0
     recs, found = discover_nsrr(root, dataset=root.name)
+    name = found.cohort or root.name
+    skipped = SkippedNights(name)
     for rec in recs:
-        m = load_nsrr_epoch_matrix(rec.edf_path, channel_groups={"ecg": (ecg_label,)})
-        fs = m["sfreq"]
-        bt, rr = beat_intervals(detect_qrs(m["epochs"]["ecg"][:, :, 0].ravel(), fs), fs)
+        try:
+            bt, rr, events = night_hr(rec, ecg_label)
+        except BAD_NIGHT_ERRORS as exc:
+            skipped.add(rec, exc)
+            continue
+        n_read += 1
         if rr.size < 100 or np.median(60 / rr) > MAX_MEDIAN_BPM:
             dropped += 1
             continue
         hr = np.interp(np.arange(0, bt[-1]), bt, 60 / rr)
-        for a in classify_arousals(parse_nsrr_events(rec.xml_path)):
+        for a in classify_arousals(events):
             o = int(a.onset)
             if a.clean and o > PRE_S + 10 and o + POST_S < hr.size:
                 seg = hr[o - PRE_S : o + POST_S]
                 curves.append(seg - seg[:BASELINE_S].mean())
-    return np.asarray(curves), dropped, found.cohort or root.name
+    return np.asarray(curves), dropped, name, n_read, skipped
 
 
 def main() -> int:
@@ -52,7 +73,9 @@ def main() -> int:
     report = {}
     for spec in a.cohorts:
         root, label = spec.rsplit(":", 1)
-        c, dropped, name = cohort_curves(Path(root).expanduser(), label)
+        c, dropped, name, n_read, skipped = cohort_curves(Path(root).expanduser(), label)
+        if not len(c):
+            raise RuntimeError(f"no arousal curves for {name} ({n_read} nights read, {len(skipped)} skipped)")
         mu, ci = c.mean(0), 1.96 * c.std(0) / np.sqrt(len(c))
         t = np.arange(-PRE_S, POST_S)
         # First second (scanning back from onset) where the 95% CI still excludes 0 on the rise side.
@@ -64,7 +87,9 @@ def main() -> int:
             lead = PRE_S - s
         report[name] = {
             "n_arousals": int(len(c)),
+            "nights_read": n_read,
             "nights_dropped_bad_ecg": dropped,
+            "skipped": skipped.to_json(),
             "earliest_significant_rise_s_before_onset": int(lead),
             "delta_hr_bpm": {int(s): round(float(mu[i]), 3) for i, s in enumerate(t)},
             "ci95_bpm": {int(s): round(float(ci[i]), 3) for i, s in enumerate(t)},

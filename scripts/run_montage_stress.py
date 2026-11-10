@@ -22,7 +22,9 @@ import numpy as np
 
 
 from neurotwin.adapters.nsrr import (
+    BAD_NIGHT_ERRORS,
     SLEEP_STAGES,
+    SkippedNights,
     discover_nsrr_recordings,
     event_kind,
     load_nsrr_epoch_matrix,
@@ -59,11 +61,45 @@ def night_rows(eeg_uv: np.ndarray, fs: float, events, level: str, seed: int) -> 
     return {"t": t[keep], "x": feats[keep], "y": inside[t.astype(int)][keep].astype(int), "onsets": np.asarray(onsets)}
 
 
-def load_eeg(cohort: str, root: Path) -> list[tuple[np.ndarray, float, list]]:
-    out = []
+def read_night(cohort: str, rec) -> tuple[np.ndarray, float, list]:
+    """One night's C4 EEG in microvolts, its sampling rate and its scored events."""
+    m = load_nsrr_epoch_matrix(rec.edf_path, channel_groups={"eeg": COHORTS[cohort]["eeg_labels"]})
+    return m["epochs"]["eeg"][:, :, 0].ravel() * 1e6, m["sfreq"], parse_nsrr_events(rec.xml_path)
+
+
+def load_clean(cohort: str, root: Path) -> tuple[list, list[dict], SkippedNights]:
+    """Clean-montage rows of every usable night, reading one night at a time.
+
+    Only the rows stay in memory, never a cohort's raw EEG. Night i keeps degrade
+    seed i, its position among the usable nights. Returns the usable recordings,
+    their rows and the skipped nights.
+    """
+    recs, clean, skipped = [], [], SkippedNights(cohort)
     for rec in discover_nsrr_recordings(root, dataset=cohort):
-        m = load_nsrr_epoch_matrix(rec.edf_path, channel_groups={"eeg": COHORTS[cohort]["eeg_labels"]})
-        out.append((m["epochs"]["eeg"][:, :, 0].ravel() * 1e6, m["sfreq"], parse_nsrr_events(rec.xml_path)))
+        try:
+            clean.append(night_rows(*read_night(cohort, rec), "clean", len(recs)))
+        except BAD_NIGHT_ERRORS as exc:
+            skipped.add(rec, exc)
+            continue
+        recs.append(rec)
+    if not recs:
+        raise RuntimeError(f"no readable {cohort} nights ({len(skipped)} skipped)")
+    return recs, clean, skipped
+
+
+def score_levels(cohort: str, recs: list, clean: list[dict], clf) -> dict[str, tuple[list[dict], list[np.ndarray]]]:
+    """Each level's night timing and detector scores on the test cohort.
+
+    Re-reads each test night once and degrades it at every level, so one night of raw
+    EEG is in memory at a time. The results are the same as degrading all nights first.
+    """
+    out = {level: ([], []) for level in LEVELS}
+    for i, (rec, night) in enumerate(zip(recs, clean)):
+        eeg, fs, events = read_night(cohort, rec)
+        for level in LEVELS:
+            n = night if level == "clean" else night_rows(eeg, fs, events, level, i)
+            out[level][0].append({"t": n["t"], "onsets": n["onsets"]})
+            out[level][1].append(clf.predict_proba(n["x"])[:, 1])
     return out
 
 
@@ -86,9 +122,12 @@ def main() -> int:
     ap.add_argument("--shhs", type=Path, default=nsrr_root("shhs"))
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args()
-    raw = {c: load_eeg(c, getattr(a, c)) for c in ("mesa", "shhs")}
-    clean = {c: [night_rows(e, fs, ev, "clean", i) for i, (e, fs, ev) in enumerate(raw[c])] for c in raw}
-    report = {"tol_s": TOL_S, "levels": list(LEVELS), "results": {}}
+    loaded = {c: load_clean(c, getattr(a, c)) for c in ("mesa", "shhs")}
+    recs = {c: r for c, (r, _, _) in loaded.items()}
+    clean = {c: rows for c, (_, rows, _) in loaded.items()}
+    report = {"tol_s": TOL_S, "levels": list(LEVELS), "results": {},
+              "nights": {c: len(r) for c, r in recs.items()},
+              "skipped": {c: s.to_json() for c, (_, _, s) in loaded.items()}}
     for src, dst in (("mesa", "shhs"), ("shhs", "mesa")):
         if src == "mesa" and not mesa_fit_allowed():
             continue  # final mode: held-out MESA is test-only
@@ -99,9 +138,9 @@ def main() -> int:
         p_tr = [clf.predict_proba(n["x"])[:, 1] for n in tr]
         thr = max(np.linspace(0.05, 0.9, 18), key=lambda th: score_nights(tr, p_tr, th)["f1"])
         rows = {"threshold": float(thr), "train_f1": score_nights(tr, p_tr, thr)["f1"]}
+        scored = score_levels(dst, recs[dst], clean[dst], clf)
         for level in LEVELS:
-            te = clean[dst] if level == "clean" else [night_rows(e, fs, ev, level, i) for i, (e, fs, ev) in enumerate(raw[dst])]
-            rows[level] = score_nights(te, [clf.predict_proba(n["x"])[:, 1] for n in te], thr)
+            rows[level] = score_nights(*scored[level], thr)
             r = rows[level]
             print(f"{src}->{dst} {level:17s} F1 {r['f1']:.3f} P {r['precision']:.3f} R {r['recall']:.3f} "
                   f"timing {r['median_abs_timing_error_s']:.2f}s FD/h {r['false_detections_per_hour']:.1f}")

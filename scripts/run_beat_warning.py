@@ -15,7 +15,15 @@ from pathlib import Path
 import numpy as np
 
 
-from neurotwin.adapters.nsrr import discover_nsrr, load_nsrr_epoch_matrix, mesa_fit_allowed, nsrr_root, parse_nsrr_events
+from neurotwin.adapters.nsrr import (
+    BAD_NIGHT_ERRORS,
+    SkippedNights,
+    discover_nsrr,
+    load_nsrr_epoch_matrix,
+    mesa_fit_allowed,
+    nsrr_root,
+    parse_nsrr_events,
+)
 from neurotwin.adapters.nsrr_cache import NightCache
 from neurotwin.adapters.qrs_fast import causal_beats
 from neurotwin.forecastability.heart_arousal import COHORTS, anchor_labels, beat_features, fit_predict, half_night_shift, prior_features
@@ -36,16 +44,23 @@ def night(rec, cohort: str) -> dict:
     return {"y": y, "prior": prior_features(events, t), "beats": beats, "beats_shift": half_night_shift(beats)}
 
 
-def load(cohort: str, root: Path, cache: Path) -> dict:
+def load(cohort: str, root: Path, cache: Path) -> tuple[dict, int, SkippedNights]:
+    """All usable nights of a cohort stacked, their count, and the nights skipped as unreadable."""
     recs, found = discover_nsrr(root, dataset=cohort)
     store = NightCache.bind(cache, cohort, producer="run_beat_warning", report=found, ids=[r.subject_id for r in recs])
-    parts = []
+    parts, skipped = [], SkippedNights(cohort)
     for i, rec in enumerate(recs):
         if not store.has(rec.subject_id):
-            store.save(rec.subject_id, **night(rec, cohort))
+            try:
+                store.save(rec.subject_id, **night(rec, cohort))
+            except BAD_NIGHT_ERRORS as exc:
+                skipped.add(rec, exc)
+                continue
         z = store.load(rec.subject_id)
         parts.append(z | {"subject": np.full(z["y"].shape[0], i)})
-    return {k: np.concatenate([p[k] for p in parts]) for k in parts[0]}
+    if not parts:
+        raise RuntimeError(f"no readable {cohort} nights ({len(skipped)} skipped)")
+    return {k: np.concatenate([p[k] for p in parts]) for k in parts[0]}, len(parts), skipped
 
 
 def design(d: dict, model: str) -> np.ndarray:
@@ -85,7 +100,8 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--bootstrap", choices=("smoke", "claim"), default="smoke", help="smoke: 300 resamples; claim: 2000")
     a = ap.parse_args()
-    data = {c: load(c, getattr(a, c), a.out / "cache") for c in ("mesa", "shhs")}
+    loaded = {c: load(c, getattr(a, c), a.out / "cache") for c in ("mesa", "shhs")}
+    data = {c: d for c, (d, _, _) in loaded.items()}
     report = {}
     for k, h in enumerate(HORIZONS):
         r = report[f"h{h}"] = {
@@ -97,6 +113,8 @@ def main() -> int:
             r["mesa_to_shhs"] = run(data["mesa"], data["shhs"], k, a.seed, a.bootstrap)
         key = "prior+beats vs prior+beats_shift"
         print(f"h={h}s aligned-beat bits " + "  ".join(f"{s}: {v[key]['bits']:+.4f} [{v[key]['lo']:+.4f},{v[key]['hi']:+.4f}] pos={v['pos']}" for s, v in r.items()))
+    report["nights"] = {c: n for c, (_, n, _) in loaded.items()}
+    report["skipped"] = {c: s.to_json() for c, (_, _, s) in loaded.items()}
     a.out.mkdir(parents=True, exist_ok=True)
     (a.out / "report.json").write_text(json.dumps(report, indent=2))
     return 0

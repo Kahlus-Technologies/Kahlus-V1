@@ -24,6 +24,8 @@ import numpy as np
 
 
 from neurotwin.adapters.nsrr import (
+    BAD_NIGHT_ERRORS,
+    SkippedNights,
     classify_arousals,
     discover_nsrr,
     load_nsrr_epoch_matrix,
@@ -77,15 +79,22 @@ def night(rec, cohort: str) -> dict:
     return {"clicks": clicks, "bad": bad, "x_click": x, "x_train": xt, "y_train": y[:, 0]}
 
 
-def load(cohort: str, root: Path, cache: Path) -> list[dict]:
+def load(cohort: str, root: Path, cache: Path) -> tuple[list[dict], SkippedNights]:
+    """Each usable night of a cohort, and the nights skipped as unreadable."""
     recs, found = discover_nsrr(root, dataset=cohort)
     store = NightCache.bind(cache, cohort, producer="run_clas_replay", report=found, ids=[r.subject_id for r in recs])
-    out = []
+    out, skipped = [], SkippedNights(cohort)
     for rec in recs:
         if not store.has(rec.subject_id):
-            store.save(rec.subject_id, **night(rec, cohort))
+            try:
+                store.save(rec.subject_id, **night(rec, cohort))
+            except BAD_NIGHT_ERRORS as exc:
+                skipped.add(rec, exc)
+                continue
         out.append(store.load(rec.subject_id))
-    return out
+    if not out:
+        raise RuntimeError(f"no readable {cohort} nights ({len(skipped)} skipped)")
+    return out, skipped
 
 
 def columns(x: np.ndarray, x_shift: np.ndarray, veto: str) -> np.ndarray:
@@ -121,7 +130,8 @@ def main() -> int:
     ap.add_argument("--shhs", type=Path, default=nsrr_root("shhs"))
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args()
-    data = {c: load(c, getattr(a, c), a.out / "cache") for c in ("mesa", "shhs")}
+    loaded = {c: load(c, getattr(a, c), a.out / "cache") for c in ("mesa", "shhs")}
+    data = {c: nights for c, (nights, _) in loaded.items()}
     report = {"window_s": WINDOW_S, "replay_on_mesa_risk_from_shhs": replay(data["mesa"], data["shhs"], 0)}
     if mesa_fit_allowed():  # final mode: held-out MESA is test-only
         report["replay_on_shhs_risk_from_mesa"] = replay(data["shhs"], data["mesa"], 0)
@@ -132,6 +142,8 @@ def main() -> int:
                 row = r[q]
                 print(f"  veto {q}: random {row['random_mean']:.1f} (p95 {row['random_p95']:.0f})  " + "  ".join(
                     f"{v} {row[v]['bad_removed']} x{row[v]['enrichment']:.2f}" for v in VETOES))
+    report["nights"] = {c: len(nights) for c, nights in data.items()}
+    report["skipped"] = {c: s.to_json() for c, (_, s) in loaded.items()}
     a.out.mkdir(parents=True, exist_ok=True)
     (a.out / "report.json").write_text(json.dumps(report, indent=2))
     return 0

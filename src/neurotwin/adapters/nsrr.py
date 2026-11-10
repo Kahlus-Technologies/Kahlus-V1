@@ -391,6 +391,44 @@ def parse_nsrr_events(xml_path: str | Path) -> list[tuple[str, float, float]]:
     return out
 
 
+# Errors that mean one night's files can't be used: a missing channel or too few epochs
+# (ValueError), a truncated or unreadable file (OSError, EOFError) or broken XML
+# (ParseError). The studies skip such a night and count it. Any other error, including
+# the MESA seal's RuntimeError, still stops the run.
+BAD_NIGHT_ERRORS: tuple[type[BaseException], ...] = (ValueError, OSError, EOFError, ET.ParseError)
+
+
+def skip_reason(exc: BaseException) -> str:
+    """Error type and message for a run report, with file paths and NSRR night names removed."""
+    msg = str(exc).split(" in /")[0]
+    msg = re.sub(r"(?:[A-Za-z]:)?[\\/][^\s'\",:]+", "<path>", msg)
+    msg = re.sub(r"\b(?:mesa|shhs)\d?-[\w.-]+", "<night>", msg, flags=re.IGNORECASE)
+    return f"{type(exc).__name__}: {msg.strip()}"
+
+
+class SkippedNights:
+    """Nights a study skipped because their files could not be used, counted by reason.
+
+    The log line names the SHHS night; MESA nights stay unnamed, as in discovery reports.
+    """
+
+    def __init__(self, cohort: str) -> None:
+        self.cohort = cohort
+        self.reasons: list[str] = []
+
+    def add(self, rec: NsrrRecording, exc: BaseException) -> None:
+        reason = skip_reason(exc)
+        who = "(MESA night)" if self.cohort == "mesa" else rec.subject_id
+        print(f"skip {self.cohort} {who}: {reason}", file=sys.stderr)
+        self.reasons.append(reason)
+
+    def __len__(self) -> int:
+        return len(self.reasons)
+
+    def to_json(self) -> dict[str, int]:
+        return {r: self.reasons.count(r) for r in sorted(set(self.reasons))}
+
+
 @dataclass(frozen=True)
 class Arousal:
     onset: float

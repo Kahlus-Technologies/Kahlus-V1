@@ -23,14 +23,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
 import numpy as np
 from sklearn.metrics import average_precision_score, roc_auc_score
 from sklearn.model_selection import GroupKFold
 
-from neurotwin.adapters.nsrr import discover_nsrr, mesa_fit_allowed, nsrr_root
+from neurotwin.adapters.nsrr import BAD_NIGHT_ERRORS, SkippedNights, discover_nsrr, mesa_fit_allowed, nsrr_root
 from neurotwin.adapters.nsrr_cache import NightCache
 from neurotwin.forecastability.heart_arousal import (
     COHORTS,
@@ -86,17 +85,18 @@ def load_cohort(name: str, root: Path, cache: Path, max_nights: int | None, norm
     recs = recs[:max_nights]
     store = NightCache.bind(cache, name, producer="run_heart_arousal_benchmark", report=found,
                             ids=[r.subject_id for r in recs])
-    nights, skipped = [], []
+    nights, skipped = [], SkippedNights(name)
     for rec in recs:
         if not store.has(rec.subject_id):
             try:
                 r = build_recording(rec.edf_path, rec.xml_path, **COHORTS[name])
-            except ValueError as exc:
-                print(f"skip {name} {rec.subject_id}: {exc}", file=sys.stderr)
-                skipped.append(str(exc).split(" in /")[0])
+            except BAD_NIGHT_ERRORS as exc:
+                skipped.add(rec, exc)
                 continue
             store.save(rec.subject_id, anchors=r["anchors"], labels=r["labels"], **{f"x_{k}": v for k, v in r["blocks"].items()})
         nights.append((rec.subject_id, store.load(rec.subject_id)))
+    if not nights:
+        raise RuntimeError(f"no readable {name} nights ({len(skipped)} skipped)")
     blocks = {k[2:] for _, z in nights for k in z if k.startswith("x_")}
     norm = NORMALIZERS[normalize]
 
@@ -113,7 +113,7 @@ def load_cohort(name: str, root: Path, cache: Path, max_nights: int | None, norm
         "labels": np.concatenate([z["labels"] for _, z in nights]),
         "x": {b: np.concatenate([n[b] for n in per_night]) for b in per_night[0]},
         "n_nights": len(nights),
-        "skipped": {reason: skipped.count(reason) for reason in sorted(set(skipped))},
+        "skipped": skipped.to_json(),
         "discovery": found.to_json(),
     }
 
