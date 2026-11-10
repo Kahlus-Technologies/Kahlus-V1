@@ -18,7 +18,7 @@ SCRIPT = REPO / "scripts/repro_dev_slice.sh"
 STUB = r"""#!/usr/bin/env bash
 set -eu
 name=$(basename "$1" .py)
-printf '%s|%s|ids=%s|omp=%s\n' "$name" "$*" "${NSRR_SHHS_IDS:-}" "${OMP_NUM_THREADS:-}" >> "$STUB_LOG"
+printf '%s|%s|ids=%s|omp=%s|workers=%s\n' "$name" "$*" "${NSRR_SHHS_IDS:-}" "${OMP_NUM_THREADS:-}" "${NEUROTWIN_BOOTSTRAP_WORKERS:-}" >> "$STUB_LOG"
 out="" prev=""
 for a in "$@"; do [[ $prev == --out ]] && out=$a; prev=$a; done
 [[ -n $out ]] && mkdir -p "$out"
@@ -36,7 +36,7 @@ def env(tmp_path):
     stub.chmod(0o755)
     for d in ("mesa", "shhs", "runs"):
         (tmp_path / d).mkdir()
-    e = {k: v for k, v in os.environ.items() if not k.startswith(("NSRR_", "KAHLUS_", "STEPS", "JOBS", "THREADS", "SHHS_"))}
+    e = {k: v for k, v in os.environ.items() if not k.startswith(("NSRR_", "KAHLUS_", "STEPS", "JOBS", "THREADS", "SHHS_", "BOOTSTRAP", "NEUROTWIN_"))}
     return e | {"PYTHON": str(stub), "STUB_LOG": str(tmp_path / "calls.log"), "OUT_BASE": str(tmp_path / "runs"),
                 "NSRR_MESA_ROOT": str(tmp_path / "mesa"), "NSRR_SHHS_ROOT": str(tmp_path / "shhs")}
 
@@ -64,8 +64,10 @@ def test_full_run_uses_claim_bootstrap_causal_norm_and_a_fresh_dir(env):
     assert f"--cache {run}/bench/cache" in args["run_heart_arousal_benchmark"]
     assert all(c[2] == f"ids={run}/discovery/ids_shhs.txt" for c in calls[2:])  # every study sees the subset
     assert all(c[3] == "omp=2" for c in calls[2:])
+    assert all(c[4] == "workers=16" for c in calls[2:])  # parallel bootstrap by default
     meta = json.loads((run / "run.json").read_text())
     assert (meta["bootstrap"], meta["shhs_limit"], meta["normalize"]) == ("claim", "3", "causal")
+    assert meta["bootstrap_workers"] == 16
     assert json.loads((run / "run_end.json").read_text())["status"] == "ok"
     rows = (run / "steps.tsv").read_text().splitlines()
     assert len(rows) == 9 and all(row.split("\t")[1] == "0" for row in rows[1:])
@@ -75,8 +77,9 @@ def test_full_run_uses_claim_bootstrap_causal_norm_and_a_fresh_dir(env):
 
 
 def test_a_failed_step_stops_the_run(env):
-    r = _run(env, "r2", STUB_FAIL="run_beat_warning", BOOTSTRAP="smoke")
+    r = _run(env, "r2", STUB_FAIL="run_beat_warning", BOOTSTRAP="smoke", BOOTSTRAP_WORKERS="4")
     assert r.returncode == 1
+    assert _calls(env)[-1][4] == "workers=4"
     names = [c[0] for c in _calls(env)]
     assert names[-1] == "run_beat_warning" and "run_conformal_alarm" not in names
     assert "--bootstrap smoke" in _calls(env)[-1][1]
@@ -87,6 +90,7 @@ def test_a_failed_step_stops_the_run(env):
 @pytest.mark.parametrize("extra, msg", [
     ({"KAHLUS_MESA": "final"}, "dev mode only"),
     ({"BOOTSTRAP": "fast"}, "claim or smoke"),
+    ({"BOOTSTRAP_WORKERS": "0"}, "BOOTSTRAP_WORKERS must be a positive integer"),
     ({"STEPS": "conf"}, "must include bench"),
     ({"STEPS": "bench nope"}, "unknown step"),
     ({"NSRR_SHHS_ROOT": "/nonexistent"}, "not a directory"),

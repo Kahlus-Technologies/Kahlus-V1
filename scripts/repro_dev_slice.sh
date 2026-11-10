@@ -24,6 +24,8 @@
 #                    bench_raw and bench_night (--normalize none / night diagnostics) are opt-in.
 #   JOBS             steps run at once (default 1; more needs bash 4.3+)
 #   THREADS          OpenMP/BLAS threads per step (default: library default)
+#   BOOTSTRAP_WORKERS  processes per cluster bootstrap in bench and beat (default 16;
+#                    1 is serial). Results are bit-identical for any value.
 #   PYTHON           interpreter (default python3)
 # KAHLUS_MESA must be unset or dev: this script never makes the final MESA look.
 set -euo pipefail
@@ -45,6 +47,9 @@ JOBS=${JOBS:-1}
 if (( JOBS > 1 )) && (( BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] < 403 )); then
   die "JOBS>1 needs bash 4.3 or newer (wait -n); this is $BASH_VERSION"
 fi
+BOOTSTRAP_WORKERS=${BOOTSTRAP_WORKERS:-16}
+[[ $BOOTSTRAP_WORKERS =~ ^[1-9][0-9]*$ ]] || die "BOOTSTRAP_WORKERS must be a positive integer"
+export NEUROTWIN_BOOTSTRAP_WORKERS=$BOOTSTRAP_WORKERS
 SUBSET_SEED=${SUBSET_SEED:-0}
 [[ -z ${SHHS_LIMIT:-} || $SHHS_LIMIT =~ ^[1-9][0-9]*$ ]] || die "SHHS_LIMIT must be a positive integer"
 read -r -a steps <<< "${STEPS-census bench beat conf conf_prior clas mont elhr}"
@@ -97,6 +102,7 @@ json_str() { local s=${1//\\/\\\\}; s=${s//\"/\\\"}; printf '"%s"' "$s"; }
   printf '  "bootstrap": %s,\n  "normalize": "causal",\n' "$(json_str "$BOOTSTRAP")"
   printf '  "shhs_limit": %s,\n  "subset_seed": %s,\n' "$(json_str "${SHHS_LIMIT:-all}")" "$(json_str "$SUBSET_SEED")"
   printf '  "steps": %s,\n  "jobs": %s,\n' "$(json_str "${steps[*]}")" "$JOBS"
+  printf '  "bootstrap_workers": %s,\n' "$BOOTSTRAP_WORKERS"
   printf '  "threads": %s,\n  "python": %s,\n' "$(json_str "${THREADS:-default}")" "$(json_str "$PY")"
   printf '  "kahlus_mesa": "dev"\n}\n'
 } > "$run_dir/run.json"
@@ -192,7 +198,7 @@ run_phase() {
   set +m
 }
 
-echo "run $run_id: mesa=$mesa shhs=$shhs bootstrap=$BOOTSTRAP jobs=$JOBS threads=${THREADS:-default}"
+echo "run $run_id: mesa=$mesa shhs=$shhs bootstrap=$BOOTSTRAP bootstrap_workers=$BOOTSTRAP_WORKERS jobs=$JOBS threads=${THREADS:-default}"
 subset=()
 [[ -n ${SHHS_LIMIT:-} ]] && subset=(--limit "$SHHS_LIMIT" --seed "$SUBSET_SEED")
 "$PY" scripts/nsrr_discover.py --cohort mesa --root "$mesa" --out "$run_dir/discovery" \

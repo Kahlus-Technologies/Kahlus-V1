@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import multiprocessing
+import os
 from pathlib import Path
 from typing import Any, Callable
 
@@ -363,6 +365,49 @@ def _rows_by_group(groups: np.ndarray) -> tuple[np.ndarray, list[np.ndarray]]:
     return np.arange(len(unique)), rows
 
 
+# Processes that score bootstrap resamples. Override per run with the environment
+# variable below or per call with workers=; 1 runs the serial loop.
+BOOTSTRAP_WORKERS = 16
+BOOTSTRAP_WORKERS_ENV = "NEUROTWIN_BOOTSTRAP_WORKERS"
+# Below this many rows x resamples, starting the processes costs more than they save,
+# so a call that didn't ask for workers explicitly stays serial.
+_PARALLEL_MIN_WORK = 20_000_000
+
+
+def bootstrap_workers() -> int:
+    """The default worker count: NEUROTWIN_BOOTSTRAP_WORKERS if set, else 16."""
+    raw = os.environ.get(BOOTSTRAP_WORKERS_ENV, "").strip()
+    if not raw:
+        return BOOTSTRAP_WORKERS
+    if not raw.isdigit() or int(raw) < 1:
+        raise ValueError(f"{BOOTSTRAP_WORKERS_ENV} must be a positive integer, got {raw!r}")
+    return int(raw)
+
+
+def _effective_workers(workers: int | None, n_rows: int, n_boot: int) -> int:
+    if workers is None:
+        workers = bootstrap_workers() if n_rows * n_boot >= _PARALLEL_MIN_WORK else 1
+    elif workers < 1:
+        raise ValueError(f"workers must be at least 1, got {workers}")
+    # Workers are forked so they share the arrays without copying them. Without fork,
+    # or inside a daemon process (which may not start children), stay serial.
+    if "fork" not in multiprocessing.get_all_start_methods() or multiprocessing.current_process().daemon:
+        return 1
+    return min(workers, n_boot)
+
+
+def _resample_rfs(chosen: np.ndarray, y: np.ndarray, baseline: np.ndarray, pred: np.ndarray, rows: list[np.ndarray]) -> float:
+    idx = np.concatenate([rows[i] for i in chosen.tolist()])
+    return _rfs_bits(y[idx], baseline[idx], pred[idx])
+
+
+_FORKED_DATA: tuple | None = None  # set only while a worker pool is open; children inherit it
+
+
+def _resample_rfs_forked(chosen: np.ndarray) -> float:
+    return _resample_rfs(chosen, *_FORKED_DATA)
+
+
 def _cluster_bootstrap_rfs(
     y: np.ndarray,
     baseline: np.ndarray,
@@ -371,15 +416,34 @@ def _cluster_bootstrap_rfs(
     *,
     seed: int,
     mode: str = "smoke",
+    workers: int | None = None,
 ) -> dict[str, float | str]:
+    """Subject-clustered bootstrap CI of the residual bits of pred over baseline.
+
+    workers > 1 scores the resamples in forked processes. The parent draws every
+    resample first, from the same generator in the same order as the serial loop, and
+    pool.map returns the scores in that order, so the samples and the CI are
+    bit-identical to workers=1. workers=None uses bootstrap_workers() for large inputs
+    and the serial loop for small ones.
+    """
+    global _FORKED_DATA
     n_boot = 2_000 if mode == "claim" else 300
     rng = np.random.default_rng(seed)
     positions, rows = _rows_by_group(patient)
-    samples = []
-    for _ in range(n_boot):
-        chosen = rng.choice(positions, size=len(positions), replace=True)
-        idx = np.concatenate([rows[i] for i in chosen.tolist()])
-        samples.append(_rfs_bits(y[idx], baseline[idx], pred[idx]))
+    n_workers = _effective_workers(workers, len(y), n_boot)
+    if n_workers == 1:
+        samples = []
+        for _ in range(n_boot):
+            chosen = rng.choice(positions, size=len(positions), replace=True)
+            samples.append(_resample_rfs(chosen, y, baseline, pred, rows))
+    else:
+        draws = [rng.choice(positions, size=len(positions), replace=True) for _ in range(n_boot)]
+        _FORKED_DATA = (y, baseline, pred, rows)
+        try:
+            with multiprocessing.get_context("fork").Pool(n_workers) as pool:
+                samples = pool.map(_resample_rfs_forked, draws, chunksize=max(1, n_boot // (4 * n_workers)))
+        finally:
+            _FORKED_DATA = None
     return {
         "rfs_ci_low": float(np.percentile(samples, 2.5)),
         "rfs_ci_high": float(np.percentile(samples, 97.5)),
