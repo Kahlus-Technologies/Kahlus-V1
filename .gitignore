@@ -31,3 +31,7 @@ graphify-out/
 
 # Local virtualenv. Previously committed by accident; keep it out of the shared ignore.
 .venv/
+
+# NSRR per-participant derived data: covered by the NSRR data use agreement, never commit.
+artifacts/nsrr_arousal_census/*_per_subject.jsonl
+artifacts/runs/
