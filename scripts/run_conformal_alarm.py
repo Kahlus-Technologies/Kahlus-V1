@@ -24,6 +24,7 @@ from neurotwin.adapters.nsrr import gate_mesa_ids, mesa_fit_allowed
 from neurotwin.adapters.nsrr_cache import NightCache
 from neurotwin.forecastability.conformal import alarm_metrics, miss_rate_threshold
 from neurotwin.forecastability.heart_arousal import HORIZONS_S, STEP_S, causal_z, fit_predict
+from neurotwin.forecastability.m1 import _rows_by_group
 
 ALPHAS = (0.1, 0.2, 0.3, 0.5)
 
@@ -54,20 +55,33 @@ def stack(subs: list[dict], idx) -> dict:
     }
 
 
+def positive_rows_by_subject(subject: np.ndarray, y: np.ndarray) -> list[np.ndarray]:
+    """Each subject's positive rows in ascending order, subjects in np.unique order.
+
+    The same rows as (subject == s) & (y == 1), built from one sort instead of two full
+    scans per subject for every alpha.
+    """
+    _, rows = _rows_by_group(subject)
+    pos = np.asarray(y) == 1
+    return [r[pos[r]] for r in rows]
+
+
+def per_subject_miss(scores: np.ndarray, pos_rows: list[np.ndarray], thr: float) -> list[float]:
+    """Miss rate per subject: the share of that subject's positive rows scored below thr."""
+    return [1.0 - np.mean(scores[r] >= thr) for r in pos_rows]
+
+
 def evaluate(train: dict, cal: dict, test: dict, blocks: tuple[str, ...], seed: int) -> dict:
     model_in = lambda d: design({"x": d["x"]}, blocks)  # noqa: E731
     xtr, xc, xt = model_in(train), model_in(cal), model_in(test)
     clf_scores_cal = fit_predict(xtr, train["y"], np.concatenate([xc, xt]), seed)
     s_cal, s_test = clf_scores_cal[: xc.shape[0]], clf_scores_cal[xc.shape[0] :]
     out = {}
+    pos_rows = [r for r in positive_rows_by_subject(test["subject"], test["y"]) if r.size >= 5]
     for alpha in ALPHAS:
         thr = miss_rate_threshold(s_cal[cal["y"] == 1], alpha)
         m = alarm_metrics(s_test, test["y"], thr, step_s=STEP_S)
-        per = [
-            1.0 - np.mean(s_test[(test["subject"] == s) & (test["y"] == 1)] >= thr)
-            for s in np.unique(test["subject"])
-            if ((test["subject"] == s) & (test["y"] == 1)).sum() >= 5
-        ]
+        per = per_subject_miss(s_test, pos_rows, thr)
         m["per_subject_miss"] = per
         m["per_subject_miss_p10_p90"] = [float(np.percentile(per, 10)), float(np.percentile(per, 90))] if per else None
         out[str(alpha)] = m
