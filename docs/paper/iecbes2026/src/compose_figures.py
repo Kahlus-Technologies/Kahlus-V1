@@ -148,8 +148,10 @@ def _trim(img, thresh: float = 0.985):
     rows = np.where(ink.any(axis=1))[0]
     cols = np.where(ink.any(axis=0))[0]
     pad = 2
-    r0 = max(rows[0] - pad, 0); r1 = min(rows[-1] + 1 + pad, a.shape[0])
-    c0 = max(cols[0] - pad, 0); c1 = min(cols[-1] + 1 + pad, a.shape[1])
+    r0 = max(rows[0] - pad, 0)
+    r1 = min(rows[-1] + 1 + pad, a.shape[0])
+    c0 = max(cols[0] - pad, 0)
+    c1 = min(cols[-1] + 1 + pad, a.shape[1])
     out = a[r0:r1, c0:c1].copy()
     # Measured background is 254/255, which reproduces as a faint grey panel
     # against the page. Snap that near-white plateau to true white and leave

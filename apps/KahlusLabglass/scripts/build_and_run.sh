@@ -6,7 +6,7 @@ APP_NAME="KahlusLabglass"
 BUNDLE_ID="dev.kahlus.labglass"
 MIN_SYSTEM_VERSION="14.0"
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 APP_DIR="$ROOT_DIR/apps/KahlusLabglass"
 DIST_DIR="$ROOT_DIR/dist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"

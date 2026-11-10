@@ -13,10 +13,10 @@ Only `\section{Introduction}` (three paragraphs). Title is a working label.
 Abstract, author block, methods, figures, tables, and references are still the
 stock NeurIPS 2026 template text. Do not submit this PDF.
 
-This PDF is current evidence only. Tests start 22 Aug 2026. The Amrith-only
-disclaimer and build plan live on `docs/comms/amrith_one_page/`, not here.
+This PDF is current evidence only. Tests start 22 Aug 2026. The collaborator
+disclaimer and build plan are kept outside the public repo.
 
-Numbers in the intro are the same artifacts as `docs/comms/amrith_one_page/`.
+Numbers in the intro come from the same committed artifacts as the collaborator one-pager.
 
 ## Build
 

@@ -33,10 +33,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-import numpy as np
 from matplotlib import font_manager as fm
 from matplotlib import pyplot as plt  # re-exported for the geometry gate
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+from matplotlib.patches import FancyBboxPatch, Rectangle
 
 OUT = Path(__file__).resolve().parent.parent / "figures"
 OUT.mkdir(parents=True, exist_ok=True)
