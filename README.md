@@ -101,7 +101,7 @@ python -m pytest -q tests/adapters tests/forecastability
 
 ```bash
 scripts/nsrr_fetch_slice.sh                       # all MESA + SHHS1 annotations + 25 EDFs each (~7 GB)
-scripts/repro_dev_slice.sh runs/dev ~/data/nsrr/mesa ~/data/nsrr/shhs   # every study, ~30 min on a laptop
+scripts/repro_dev_slice.sh dev    # every study into artifacts/runs/dev; data roots and settings are in the script header
 ```
 
 **Cluster** (A100, full cohorts):
