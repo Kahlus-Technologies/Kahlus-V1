@@ -34,3 +34,4 @@ graphify-out/
 artifacts/heart_arousal_*/cache/
 artifacts/beat_warning_*/cache/
 artifacts/clas_replay_*/cache/
+artifacts/runs/
