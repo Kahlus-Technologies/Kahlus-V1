@@ -340,6 +340,29 @@ def _rfs_payload(y: np.ndarray, baseline: np.ndarray, pred: np.ndarray, patient:
     return values
 
 
+def _rows_by_group(groups: np.ndarray) -> tuple[np.ndarray, list[np.ndarray]]:
+    """Positions 0..G-1 of the sorted unique groups and each group's row indices.
+
+    rows[i] is exactly np.flatnonzero(groups == np.unique(groups)[i]): the same rows in
+    the same ascending order, and no rows for a NaN group, since NaN == NaN is False.
+    It takes one sort instead of one full scan per group, so a cluster bootstrap over
+    G subjects stops costing G full scans per resample.
+
+    Draw from the returned positions with the same rng call the old code made on the
+    unique groups (rng.choice(positions, size=G, replace=True)). Generator.choice draws
+    from the array's length only, so the resamples stay identical.
+    """
+    groups = np.asarray(groups)
+    unique, inverse = np.unique(groups, return_inverse=True)
+    inverse = inverse.ravel()
+    order = np.argsort(inverse, kind="stable")
+    rows = np.split(order, np.cumsum(np.bincount(inverse, minlength=len(unique)))[:-1])
+    if unique.dtype.kind in "fc":
+        for i in np.flatnonzero(np.isnan(unique)):
+            rows[i] = order[:0]
+    return np.arange(len(unique)), rows
+
+
 def _cluster_bootstrap_rfs(
     y: np.ndarray,
     baseline: np.ndarray,
@@ -351,11 +374,11 @@ def _cluster_bootstrap_rfs(
 ) -> dict[str, float | str]:
     n_boot = 2_000 if mode == "claim" else 300
     rng = np.random.default_rng(seed)
-    unique = np.unique(patient)
+    positions, rows = _rows_by_group(patient)
     samples = []
     for _ in range(n_boot):
-        chosen = rng.choice(unique, size=len(unique), replace=True)
-        idx = np.concatenate([np.flatnonzero(patient == group) for group in chosen])
+        chosen = rng.choice(positions, size=len(positions), replace=True)
+        idx = np.concatenate([rows[i] for i in chosen.tolist()])
         samples.append(_rfs_bits(y[idx], baseline[idx], pred[idx]))
     return {
         "rfs_ci_low": float(np.percentile(samples, 2.5)),

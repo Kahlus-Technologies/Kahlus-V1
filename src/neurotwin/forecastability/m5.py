@@ -16,6 +16,7 @@ from neurotwin.forecastability.m1 import (
     _moving_average_proba,
     _nll,
     _rfs_payload,
+    _rows_by_group,
     _scaled_design,
     _within_patient_roll,
 )
@@ -312,12 +313,11 @@ def _cluster_bootstrap_mean(values: np.ndarray, patient: np.ndarray, *, seed: in
     n_boot = 2_000 if mode == "claim" else 300
     rng = np.random.default_rng(seed)
     values = np.asarray(values, dtype=np.float64)
-    groups = np.asarray(patient)
-    unique = np.unique(groups)
+    positions, rows = _rows_by_group(patient)
     samples = []
     for _ in range(n_boot):
-        chosen = rng.choice(unique, size=len(unique), replace=True)
-        idx = np.concatenate([np.flatnonzero(groups == group) for group in chosen])
+        chosen = rng.choice(positions, size=len(positions), replace=True)
+        idx = np.concatenate([rows[i] for i in chosen.tolist()])
         samples.append(float(np.mean(values[idx])))
     return {
         "pic_ci_low": float(np.percentile(samples, 2.5)),
