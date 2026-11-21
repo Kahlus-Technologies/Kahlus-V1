@@ -20,6 +20,8 @@ held-out subject/site/dataset splits with a pre-declared leakage contract.
 The full research constitution, claim boundaries, and gate discipline live in
 **[AGENTS.md](AGENTS.md)**.
 
+Follow-up work: Kahlus-V2 (https://github.com/Kahlus-Technologies/Kahlus-V2)
+
 ---
 
 ## The headline result
